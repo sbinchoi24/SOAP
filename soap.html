@@ -34,8 +34,10 @@
   .container{max-width:1680px;margin:0 auto;}
   /* 상단 페이지 탭 */
   .page-tabs{
-    display:flex;gap:6px;margin:4px 0 20px;
+    display:flex;gap:6px;margin:0 0 20px;
     border-bottom:2px solid var(--border);
+    position:sticky;top:0;z-index:200;
+    background:var(--bg);padding-top:8px;
   }
   .page-tab{
     padding:12px 24px;background:transparent;border:none;
@@ -413,7 +415,7 @@
 <body>
 <div class="container">
   <div class="page-tabs">
-    <button class="page-tab active" data-page="근골격계" onclick="switchPage('근골격계',this)">근골격계</button>
+    <button class="page-tab active" data-page="근골격계" onclick="switchPage('근골격계',this)">통증</button>
     <button class="page-tab" data-page="피부" onclick="switchPage('피부',this)">피부</button>
   </div>
 
