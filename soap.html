@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SOAP - 근골격계</title>
+<title>차트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -49,6 +49,13 @@
   .page-tab:hover{color:var(--text);}
   .page-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
   .page-content{display:none;}
+  .p-reset-row{display:flex;justify-content:flex-end;margin-top:14px;}
+  .p-reset-btn{
+    padding:8px 18px;font-size:12.5px;font-weight:700;
+    background:var(--danger-light);color:var(--danger);
+    border:none;border-radius:10px;cursor:pointer;font-family:inherit;
+  }
+  .p-reset-btn:hover{background:#fddfe2;}
   .page-content.active{display:block;}
   /* 피부 시술 선택 */
   .skin-layout{
@@ -62,7 +69,7 @@
     .skin-layout{grid-template-columns:1fr;}
     .skin-grid{grid-template-columns:1fr;}
   }
-  .skin-gen-btn{margin-left:auto;padding:6px 16px;font-size:13px;}
+  .skin-gen-btn{margin-left:20px;padding:6px 16px;font-size:13px;}
   .skin-group{
     padding:12px 14px;
     background:#fafbfc;border-radius:12px;
@@ -119,6 +126,8 @@
     font-weight:700;
     font-size:16px;
     letter-spacing:-0.01em;
+    display:flex;
+    align-items:center;
   }
   .step-badge{
     display:inline-flex;
@@ -466,6 +475,7 @@
       <div class="card">
         <div class="card-header"><span class="step-badge">3</span>P</div>
         <div id="pBody"></div>
+        <div class="p-reset-row"><button class="p-reset-btn" onclick="resetPBody()">초기화</button></div>
       </div>
     </div>
 
@@ -1006,6 +1016,24 @@ function applyChunaPreset(name){
 function toggleChunaBtn(k){ chunaSelected[k] = !chunaSelected[k]; renderPBody(); }
 function setChunaText(k,v){ chunaText[k]=v; }
 function toggleHerb(k){ pHerbActive[k]=!pHerbActive[k]; renderPBody(); }
+
+function resetPBody(){
+  acuAreas = [];
+  acuSt = {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:false, 핫팩:true, ir:true, ict:false};
+  pTaping = {active:false, buyi:'', gae:'4', allergy:false};
+  pShockwave = {active:false, buyi:'', ta:'', noFracture:false};
+  pYakchim = {active:false, kind:'', buyi:'', cc:'', gae:''};
+  pChunaActive = {단순추나:false, 복잡추나:false};
+  pChunaSpine = null;
+  chunaSelected = {};
+  chunaText = {};
+  pHerbActive = {'보험약':false, '상비약':false, '탕약':false, 'TA탕약':false};
+  pBohumyak = {name:'', perDay:'', totalDays:''};
+  pSangbiyak = {name:'', perDay:'', totalDays:''};
+  pTangyak = {name:'', perDay:'', totalDays:''};
+  pTATangyak = {name:'', perDay:'', totalDays:''};
+  renderPBody();
+}
 
 function renderPBody(){
   const body = document.getElementById('pBody');
