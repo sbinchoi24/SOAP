@@ -473,6 +473,10 @@
 
     <div class="col-right">
       <div class="card">
+        <div class="card-header"><span class="step-badge">A</span>변증</div>
+        <div id="bijeungBody" class="btn-toggle-row"></div>
+      </div>
+      <div class="card">
         <div class="card-header"><span class="step-badge">3</span>P</div>
         <div id="pBody"></div>
         <div class="p-reset-row"><button class="p-reset-btn" onclick="resetPBody()">초기화</button></div>
@@ -1033,6 +1037,32 @@ function resetPBody(){
   renderPBody();
 }
 
+var BIJEUNG_LIST = [
+  {name:'寒凝血瘀', maek:'脈沈', seol:'舌暗苔白'},
+  {name:'氣滯血瘀', maek:'脈澀', seol:'舌暗苔白'},
+  {name:'脾胃濕熱', maek:'脈滑', seol:'舌黃苔膩'},
+  {name:'脾胃虛弱', maek:'脈弱', seol:'舌淡苔白'},
+  {name:'氣血兩虛', maek:'脈弱', seol:'舌淡苔白'},
+  {name:'腎氣不足', maek:'脈細', seol:'舌淡苔白'}
+];
+var bijeungSel = null;
+function selectBijeung(name){
+  bijeungSel = (bijeungSel === name) ? null : name;
+  renderBijeung();
+}
+function renderBijeung(){
+  const body = document.getElementById('bijeungBody');
+  if(!body) return;
+  body.innerHTML = BIJEUNG_LIST.map(b =>
+    `<button class="btn-toggle${bijeungSel===b.name?' selected':''}" onclick="selectBijeung('${b.name}')">${b.name}</button>`
+  ).join('');
+}
+function getBijeungLine(){
+  if(!bijeungSel) return '';
+  const b = BIJEUNG_LIST.find(x => x.name === bijeungSel);
+  return b ? ('■ ' + b.name + ' | ' + b.maek + ' | ' + b.seol) : '';
+}
+
 function renderPBody(){
   const body = document.getElementById('pBody');
   if(!body) return;
@@ -1261,10 +1291,33 @@ function buildPText(){
 }
 
 renderPBody();
+renderBijeung();
 
 // ---------- Combine ----------
 document.getElementById('combineBtn').addEventListener('click', ()=>{
-  const soa = document.getElementById('soaOutput').value;
+  let soa = document.getElementById('soaOutput').value;
+  const bijeungLine = getBijeungLine();
+  if(bijeungLine){
+    const lines = soa.split('\n');
+    // "A)" 로 시작하는(단독) 줄 바로 아래에 변증 삽입
+    let aIdx = -1;
+    for(let i=0;i<lines.length;i++){
+      if(lines[i].trim() === 'A)'){ aIdx = i; break; }
+    }
+    if(aIdx >= 0){
+      // A) 블록의 맨 끝(빈 줄 또는 다음 섹션 직전)에 삽입
+      let insertAt = lines.length;
+      for(let i=aIdx+1;i<lines.length;i++){
+        const t = lines[i].trim();
+        if(t === '' || /^[SOAP]\)/.test(t) || t.startsWith('[SCRIPT]')){ insertAt = i; break; }
+      }
+      lines.splice(insertAt, 0, bijeungLine);
+      soa = lines.join('\n');
+    } else {
+      // A) 를 못 찾으면 맨 뒤에 A) 블록으로 추가
+      soa = soa + '\n\nA)\n' + bijeungLine;
+    }
+  }
   const p = buildPText();
   document.getElementById('fullOutput').value = `${soa}\n\n${p}`;
 });
