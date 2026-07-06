@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAP - 근골격계</title>
+<style>
+  :root{
+    --primary:#3182f6;
+    --primary-dark:#1b64da;
+    --primary-light:#eaf2ff;
+    --accent:#00c2b3;
+    --accent-light:#e3faf7;
+    --danger:#f04452;
+    --danger-light:#fef0f1;
+    --bg:#f2f4f6;
+    --card:#ffffff;
+    --border:#f2f4f6;
+    --text:#191f28;
+    --muted:#8b95a1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:20px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .container{max-width:1220px;margin:0 auto;}
+  h1{
+    font-size:21px;
+    color:var(--text);
+    text-align:center;
+    margin:4px 0 24px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+  }
+  h2{font-size:15px;color:var(--text);margin:0 0 10px;}
+  .card{
+    background:var(--card);
+    border:none;
+    border-radius:20px;
+    padding:20px;
+    margin-bottom:16px;
+    box-shadow:0 1px 3px rgba(25,31,40,0.04);
+  }
+  .card-muted{
+    background:#e8ebef;
+    box-shadow:none;
+  }
+  .card-muted input, .card-muted .btn-outline{background:#fff;}
+  .card-header{
+    color:var(--text);
+    margin:0 0 16px 0;
+    padding-bottom:0;
+    border-bottom:none;
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:-0.01em;
+  }
+  .step-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px;
+    height:22px;
+    border-radius:7px;
+    background:var(--primary);
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+    margin-right:8px;
+    vertical-align:middle;
+    flex:0 0 auto;
+  }
+  label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600;}
+  input[type="password"], input[type="text"], input[type="number"], textarea{
+    width:100%;
+    border:none;
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:14px;
+    font-family:inherit;
+    background:#f2f4f6;
+    color:var(--text);
+    transition:box-shadow .15s ease, background .15s ease;
+  }
+  input:focus, textarea:focus{outline:none;background:#fff;box-shadow:0 0 0 2px var(--primary);}
+  textarea{min-height:90px;resize:vertical;line-height:1.6;}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+  .row > *{flex:1;min-width:0;}
+  small.hint{color:var(--muted);font-size:12px;}
+  a.linklike{color:var(--primary);text-decoration:none;font-weight:700;font-size:12.5px;}
+  a.linklike:hover{text-decoration:underline;}
+  button{
+    cursor:pointer;
+    border:none;
+    font-family:inherit;
+    transition:background .15s ease, box-shadow .15s ease, transform .05s ease, opacity .15s ease;
+  }
+  button:active{transform:scale(0.98);}
+  .btn-primary{
+    background:var(--primary);
+    color:#fff;
+    padding:15px 16px;
+    border-radius:14px;
+    font-size:15px;
+    font-weight:700;
+    width:100%;
+    margin-top:8px;
+  }
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-primary:disabled{background:#d1d6db;cursor:not-allowed;}
+  .btn-outline{
+    background:var(--primary-light);
+    color:var(--primary);
+    border:none;
+    padding:14.5px 16px;
+    border-radius:14px;
+    font-size:15px;
+    font-weight:700;
+    width:100%;
+  }
+  .btn-outline:hover{background:#dce9ff;}
+  .btn-secondary{
+    background:#f2f4f6;
+    color:var(--text);
+    padding:10px 14px;
+    border-radius:10px;
+    font-size:12.5px;
+    font-weight:700;
+  }
+  .btn-secondary:hover{background:#e5e8eb;}
+  .btn-save{
+    background:var(--primary);
+    color:#fff;
+    padding:11px 16px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .btn-save:hover{background:var(--primary-dark);}
+  .tabs{display:flex;gap:4px;margin-bottom:14px;background:#f2f4f6;padding:4px;border-radius:14px;}
+  .tab-btn{
+    flex:1;
+    padding:10px;
+    border-radius:11px;
+    background:transparent;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:700;
+    border:none;
+  }
+  .tab-btn.active{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(25,31,40,0.08);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+  #recordBtn{
+    background:var(--primary-light);
+    color:var(--primary);
+    border:none;
+    padding:14.5px;
+    border-radius:14px;
+    width:100%;
+    font-size:15px;
+    font-weight:700;
+  }
+  #recordBtn:hover{background:#dce9ff;}
+  #recordBtn.recording{background:var(--danger);color:#fff;}
+  #recordTimer{display:block;text-align:center;margin-top:8px;font-size:13px;color:var(--muted);font-weight:600;}
+  audio{width:100%;margin-top:10px;}
+  #statusMsg{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px;}
+
+  .two-col{
+    display:grid;
+    grid-template-columns:1fr 1.6fr;
+    gap:16px;
+    align-items:start;
+  }
+  @media (max-width:720px){
+    .two-col{grid-template-columns:1fr;}
+  }
+
+  .p-group{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .p-group:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0;}
+  .btn-toggle-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;}
+  .btn-toggle{
+    height:34px;
+    padding:0 14px;
+    border-radius:17px;
+    border:none;
+    background:#f2f4f6;
+    color:var(--text);
+    font-size:12.5px;
+    font-weight:600;
+    white-space:nowrap;
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+  }
+  .btn-toggle:hover{background:#e5e8eb;}
+  .btn-toggle.sm{
+    padding:0 9px;
+    font-size:11.5px;
+  }
+  .btn-toggle.selected{
+    background:var(--primary);
+    color:#fff;
+  }
+  .btn-toggle.accent-item.selected{
+    background:var(--accent);
+    color:#fff;
+  }
+  /* 위계 2단계: 상위 토글 안에 속한 세부 옵션 (예: 약침 종류/용량/개수, 추나 루틴 프리셋) */
+  .btn-toggle.tier2{
+    background:var(--accent-light);
+    color:var(--accent);
+  }
+  .btn-toggle.tier2:hover{background:#d3f5f0;}
+  .btn-toggle.tier2.selected{
+    background:var(--accent);
+    color:#fff;
+  }
+  /* 위계 3단계: 세부 옵션 안의 더 상세한 항목 (예: 추나 개별 기법) */
+  .btn-toggle.tier3{
+    background:#f1edff;
+    color:#7c5cfc;
+  }
+  .btn-toggle.tier3:hover{background:#e5dcff;}
+  .btn-toggle.tier3.selected{
+    background:#7c5cfc;
+    color:#fff;
+  }
+  .taping-row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+  .area-sub{font-size:10px;color:var(--muted);margin-left:2px;font-weight:500;}
+  .btn-toggle.selected .area-sub{color:rgba(255,255,255,0.75);}
+  .herb-label{font-size:12px;color:var(--muted);font-weight:600;width:52px;flex:0 0 auto;}
+  .ch-inline{
+    height:34px;
+    padding:0 9px;
+    border:none;
+    border-radius:8px;
+    background:#f2f4f6;
+    font-family:inherit;
+    font-size:12.5px;
+    outline:none;
+    color:var(--text);
+    box-sizing:border-box;
+  }
+  .ch-inline::-webkit-outer-spin-button,
+  .ch-inline::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .ch-inline[type="number"]{ -moz-appearance:textfield; text-align:center; padding:0 4px; }
+  .ch-inline:focus{background:#fff;box-shadow:0 0 0 2px var(--primary);}
+  .warn-box{
+    background:var(--danger-light);
+    border:none;
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:12.5px;
+    color:var(--danger);
+    margin-bottom:12px;
+    line-height:1.7;
+    font-weight:600;
+  }
+  .copy-btn-row{display:flex;justify-content:flex-end;margin-top:6px;}
+  .disclaimer{
+    font-size:12px;
+    color:var(--muted);
+    text-align:center;
+    margin-top:20px;
+    line-height:1.7;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>근골격계</h1>
+
+  <div class="two-col">
+    <div class="col-left">
+      <div class="card">
+        <div class="card-header"><span class="step-badge">1</span>녹음</div>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="text">직접 입력</button>
+          <button class="tab-btn" data-tab="record">직접 녹음</button>
+          <button class="tab-btn" data-tab="upload">녹음 파일 업로드</button>
+        </div>
+
+        <div class="tab-content active" id="textTab">
+          <textarea id="directTextInput" style="min-height:140px;" placeholder="진료한 내용을 텍스트로 입력해주세요"></textarea>
+        </div>
+
+        <div class="tab-content" id="recordTab">
+          <button id="recordBtn">● 녹음 시작</button>
+          <span id="recordTimer">00:00</span>
+          <audio id="recordedPlayback" controls style="display:none"></audio>
+          <button class="btn-secondary" id="downloadRecordBtn" style="display:none;width:100%;margin-top:8px;">녹음 파일 다운로드 (백업)</button>
+        </div>
+
+        <div class="tab-content" id="uploadTab">
+          <label for="audioFileInput" class="btn-outline" id="fileSelectLabel" style="cursor:pointer;text-align:center;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">파일 선택</label>
+          <input type="file" id="audioFileInput" accept="audio/*,video/webm,.webm,.ogg,.m4a,.mp4,.wav,.mp3,.aac,.aiff,.flac" style="display:none;">
+        </div>
+
+        <div id="extraNotesWrap" style="display:none;margin-top:10px;">
+          <textarea id="extraNotesInput" style="min-height:70px;" placeholder="녹음에 없는 내용을 추가로 적어주세요 (선택)"></textarea>
+        </div>
+
+        <button class="btn-primary" id="analyzeBtn">생성하기</button>
+        <div id="statusMsg"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="step-badge">2</span>S O A</div>
+        <div id="warnBox" class="warn-box" style="display:none;"></div>
+        <textarea id="soaOutput" style="min-height:280px;" placeholder="분석하여 출력되는 곳입니다"></textarea>
+        <div class="copy-btn-row"><button class="btn-secondary" data-copy="soaOutput">복사</button></div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="card">
+        <div class="card-header"><span class="step-badge">3</span>P</div>
+        <div id="pBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="step-badge">4</span>차트</div>
+    <button class="btn-primary" id="combineBtn" style="margin-bottom:10px;">생성하기</button>
+    <textarea id="fullOutput" style="min-height:200px;"></textarea>
+    <div class="copy-btn-row"><button class="btn-secondary" data-copy="fullOutput">복사</button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="step-badge">5</span>스크립트</div>
+    <textarea id="scriptOutput" style="min-height:160px;" placeholder="녹음한 내용이 추출됩니다"></textarea>
+    <div class="copy-btn-row"><button class="btn-secondary" data-copy="scriptOutput">복사</button></div>
+  </div>
+
+  <div class="card card-muted">
+    <div class="card-header" id="apiKeyHeader" style="cursor:pointer;">
+      <span>Gemini API 키</span>
+    </div>
+    <div id="apiKeyBody">
+      <div class="row">
+        <input type="password" id="apiKeyInput" placeholder="API 키를 입력하세요">
+        <button class="btn-save" id="saveKeyBtn">저장</button>
+      </div>
+      <small class="hint">키는 이 브라우저에만 저장되고 어디로도 전송되지 않습니다. &nbsp;
+        <a class="linklike" href="https://aistudio.google.com/apikey" target="_blank">무료 키 발급받기 →</a>
+      </small>
+      <div id="keyStatus" style="font-size:12px;color:var(--primary-dark);margin-top:6px;"></div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    녹음은 약 20분 이내 권장<br>
+    AI가 생성한 S/O/A 내용은 반드시 검수 후 사용
+  </div>
+</div>
+
+<script>
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab+'Tab').classList.add('active');
+    document.getElementById('extraNotesWrap').style.display = (btn.dataset.tab === 'text') ? 'none' : 'block';
+  });
+});
+
+// ---------- File select label ----------
+document.getElementById('audioFileInput').addEventListener('change', (e)=>{
+  const label = document.getElementById('fileSelectLabel');
+  label.textContent = e.target.files[0] ? e.target.files[0].name : '파일 선택';
+});
+
+// ---------- API KEY ----------
+const apiKeyInput = document.getElementById('apiKeyInput');
+const keyStatus = document.getElementById('keyStatus');
+const apiKeyBody = document.getElementById('apiKeyBody');
+const apiKeyHeaderEl = document.getElementById('apiKeyHeader');
+const apiKeyCard = apiKeyHeaderEl.parentElement;
+function collapseApiKey(){
+  apiKeyBody.style.display = 'none';
+  apiKeyHeaderEl.style.marginBottom = '0';
+  apiKeyCard.style.padding = '14px 20px';
+}
+function expandApiKey(){
+  apiKeyBody.style.display = 'block';
+  apiKeyHeaderEl.style.marginBottom = '';
+  apiKeyCard.style.padding = '';
+}
+document.getElementById('apiKeyHeader').addEventListener('click', ()=>{
+  if(apiKeyBody.style.display === 'none'){ expandApiKey(); } else { collapseApiKey(); }
+});
+
+// 이 파일 자체에 키를 고정하고 싶으면 아래 따옴표 안에 본인의 Gemini API 키를 붙여넣으세요.
+// (이 파일을 다른 사람과 공유하지 않는 경우에만 이렇게 하세요 — 파일을 열어보면 키가 그대로 보입니다)
+const DEFAULT_API_KEY = '';
+
+const savedKey = localStorage.getItem('gemini_api_key') || DEFAULT_API_KEY;
+if(savedKey){
+  apiKeyInput.value = savedKey;
+  localStorage.setItem('gemini_api_key', savedKey);
+  keyStatus.textContent = '저장된 키를 불러왔습니다.';
+  collapseApiKey();
+}
+document.getElementById('saveKeyBtn').addEventListener('click', ()=>{
+  localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
+  keyStatus.textContent = '저장되었습니다.';
+  collapseApiKey();
+});
+
+// ---------- Recording ----------
+let mediaRecorder, recordedChunks = [], recordedBlob = null, recordTimerInterval, recordSeconds = 0;
+const recordBtn = document.getElementById('recordBtn');
+const recordTimer = document.getElementById('recordTimer');
+const recordedPlayback = document.getElementById('recordedPlayback');
+
+recordBtn.addEventListener('click', async ()=>{
+  if(mediaRecorder && mediaRecorder.state === 'recording'){
+    mediaRecorder.stop();
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    recordedChunks = [];
+    let mimeType = '';
+    for(const t of ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg']){
+      if(MediaRecorder.isTypeSupported(t)){ mimeType = t; break; }
+    }
+    mediaRecorder = mimeType ? new MediaRecorder(stream,{mimeType}) : new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = ()=>{
+      recordedBlob = new Blob(recordedChunks, {type: mediaRecorder.mimeType || 'audio/webm'});
+      recordedPlayback.src = URL.createObjectURL(recordedBlob);
+      recordedPlayback.style.display = 'block';
+      document.getElementById('downloadRecordBtn').style.display = 'block';
+      stream.getTracks().forEach(t=>t.stop());
+      clearInterval(recordTimerInterval);
+      recordBtn.textContent = '● 녹음 시작';
+      recordBtn.classList.remove('recording');
+    };
+    mediaRecorder.start();
+    recordSeconds = 0;
+    recordTimer.textContent = '00:00';
+    recordTimerInterval = setInterval(()=>{
+      recordSeconds++;
+      const m = String(Math.floor(recordSeconds/60)).padStart(2,'0');
+      const s = String(recordSeconds%60).padStart(2,'0');
+      recordTimer.textContent = `${m}:${s}`;
+    },1000);
+    recordBtn.textContent = '■ 녹음 종료';
+    recordBtn.classList.add('recording');
+  }catch(err){
+    alert('마이크 접근 권한이 필요합니다: ' + err.message);
+  }
+});
+
+document.getElementById('downloadRecordBtn').addEventListener('click', ()=>{
+  if(!recordedBlob) return;
+  const ext = recordedBlob.type.includes('mp4') ? 'm4a' : recordedBlob.type.includes('ogg') ? 'ogg' : 'webm';
+  const ts = new Date().toISOString().replace(/[:.]/g,'-');
+  const url = URL.createObjectURL(recordedBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `recording_${ts}.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ---------- Convert any audio blob to 8kHz mono WAV (Gemini-compatible, small size) ----------
+async function convertToWav(blob){
+  const arrayBuf = await blob.arrayBuffer();
+  const tempCtx = new (window.AudioContext||window.webkitAudioContext)();
+  const decoded = await tempCtx.decodeAudioData(arrayBuf.slice(0));
+  const targetRate = 8000;
+  const offlineCtx = new OfflineAudioContext(1, Math.ceil(decoded.duration*targetRate), targetRate);
+  const src = offlineCtx.createBufferSource();
+  src.buffer = decoded;
+  src.connect(offlineCtx.destination);
+  src.start(0);
+  const rendered = await offlineCtx.startRendering();
+  tempCtx.close();
+  return audioBufferToWav(rendered);
+}
+function audioBufferToWav(buffer){
+  const samples = buffer.getChannelData(0);
+  const sampleRate = buffer.sampleRate;
+  const dataSize = samples.length*2;
+  const ab = new ArrayBuffer(44+dataSize);
+  const view = new DataView(ab);
+  function writeStr(off,str){ for(let i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); }
+  writeStr(0,'RIFF'); view.setUint32(4,36+dataSize,true); writeStr(8,'WAVE');
+  writeStr(12,'fmt '); view.setUint32(16,16,true); view.setUint16(20,1,true);
+  view.setUint16(22,1,true); view.setUint32(24,sampleRate,true);
+  view.setUint32(28,sampleRate*2,true); view.setUint16(32,2,true); view.setUint16(34,16,true);
+  writeStr(36,'data'); view.setUint32(40,dataSize,true);
+  let offset=44;
+  for(let i=0;i<samples.length;i++){
+    let s = Math.max(-1,Math.min(1,samples[i]));
+    view.setInt16(offset, s<0? s*0x8000 : s*0x7FFF, true);
+    offset+=2;
+  }
+  return new Blob([ab], {type:'audio/wav'});
+}
+function blobToBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onloadend = ()=> resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// ---------- Analyze (call Gemini) ----------
+const statusMsg = document.getElementById('statusMsg');
+document.getElementById('analyzeBtn').addEventListener('click', async ()=>{
+  const apiKey = apiKeyInput.value.trim();
+  if(!apiKey){ alert('Gemini API 키를 먼저 입력하고 저장해주세요.'); return; }
+
+  const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+  let sourceBlob = null;
+  let directText = '';
+  if(activeTab === 'text'){
+    directText = document.getElementById('directTextInput').value.trim();
+    if(!directText){ alert('진료 내용을 입력해주세요.'); return; }
+  } else if(activeTab === 'upload'){
+    const f = document.getElementById('audioFileInput').files[0];
+    if(!f){ alert('오디오 파일을 선택해주세요.'); return; }
+    sourceBlob = f;
+  } else {
+    if(!recordedBlob){ alert('먼저 녹음을 해주세요.'); return; }
+    sourceBlob = recordedBlob;
+  }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+
+  try{
+    let base64Audio = null;
+    if(activeTab !== 'text'){
+      statusMsg.textContent = '오디오 변환 중...';
+      let wavBlob;
+      try{
+        wavBlob = await convertToWav(sourceBlob);
+      }catch(convErr){
+        throw new Error('오디오 파일을 읽을 수 없습니다. 다른 형식(m4a, mp3, wav 등)으로 다시 시도해주세요. (' + convErr.message + ')');
+      }
+      if(wavBlob.size > 19*1024*1024){
+        statusMsg.textContent = '';
+        alert('녹음이 너무 깁니다 (약 20분 이상 추정). 더 짧게 나눠서 시도해주세요.');
+        btn.disabled = false;
+        return;
+      }
+      base64Audio = await blobToBase64(wavBlob);
+    }
+    statusMsg.textContent = 'Gemini로 분석 중... (일반적으로 1~2분 정도 걸리고, 녹음이 길수록 더 걸릴 수 있습니다)';
+
+    const prompt = `당신은 한의원 근골격계 진료 내용을 SOAP 노트로 정리하는 어시스턴트입니다.
+아래는 환자와 한의사 간의 진료 대화입니다 (오디오 또는 텍스트로 제공됨). 반드시 아래 형식과 규칙을 그대로 지켜 작성하세요.
+"S)", "O)", "A)" 는 반드시 그 줄에 단독으로 쓰고(뒤에 다른 내용 붙이지 말 것), "[SCRIPT]" 앞뒤에 다른 설명, 인사말, 마크다운 기호(**, ## 등)를 넣지 마세요.
+문장 끝에 마침표(.)를 쓰지 마세요. "-" 불렛은 "한 문장 = 한 불렛"이 아니라 "한 주제 = 한 불렛"으로 나누세요: 같은 맥락(예: 통증이 언제 심해지고 언제 나아지는지 같은 하나의 패턴 설명)을 이루는 문장들은 쉼표로 자연스럽게 이어서 한 줄로 쓰고, 완전히 다른 주제(통증 위치/양상 → 시간대별 패턴 → 과거 이력 등)로 넘어갈 때만 새 줄을 추가하세요.
+예시: "아침에 일어나면 통증이 심하고, 발바닥까지 아프지만 걷다 보면 통증이 괜찮아짐" 처럼 하나의 패턴을 설명하는 내용은 한 줄로 묶고, "전에도 비슷한 통증이 있었으나 이렇게 오래 가지는 않았음"처럼 완전히 다른 주제(과거 이력)는 별도 줄로 분리하세요. 무리하게 한 줄에 다 몰아넣지도, 같은 맥락을 억지로 쪼개지도 마세요.
+줄을 나누는 기준은 글자 수/분량이 아니라 "주제"입니다. 서로 다른 주제(예: 통증 위치·양상 / 시간대별 패턴 / 과거 이력)마다 새 줄을 만드세요. 결과적으로 주제가 하나면 한 줄, 두 개면 두 줄, 세 개면 세 줄이 되는 식입니다. 억지로 줄 수를 맞추려 하지 말고, 실제 언급된 주제 개수에 따라 자연스럽게 줄 수가 정해지게 하세요.
+중복된 표현 없이 간결하게 서술하세요.
+C/C는 대표 통증 부위 하나만 한 줄로 쓰세요. 다른 부위의 통증도 언급되면 새로운 C/C 줄을 만들지 말고 아래 "-" 문장 안에서 함께 서술하세요.
+"치료 :" 줄과 "S/H :" 줄 사이에는 반드시 빈 줄을 하나 넣으세요.
+
+S)
+C/C : [Lt./Rt./양측 등 방향, 좌우 구분이 필요 없는 부위면 생략] [부위 표기] pain (NRS [숫자, 언급 없으면 "#"])
+  * 부위 표기 규칙 (아래에 없는 부위는 해당 부위를 영어 단어로 표기, 예: shoulder pain):
+    - 허리 통증 → LBP
+    - 등 통증 → UBP
+    - 목 뒤쪽 통증 → posterior neck pain
+    - 목 앞쪽 통증 → anterior neck pain
+    - 무릎 통증 → knee pain
+    - 손목 통증 → wrist pain
+    - 고관절 통증 → hip pain
+    - 엉덩이 통증 → buttock pain
+    - 팔꿈치 통증은 안쪽/바깥쪽을 구분해서 "[Lt./Rt.] elbow pain - medial" 또는 "[Lt./Rt.] elbow pain - lateral" 형태로 쓰고 NRS는 그 뒤에 괄호로 추가 (예: "Lt. elbow pain - medial (NRS #)")
+- [환자가 말한 표현을 살려서 어디가 어떻게 아픈지. 다른 부위 통증이나 같은 맥락의 시간대별 패턴(언제 심하고 언제 괜찮은지 등)이 함께 언급되면 쉼표로 자연스럽게 이어서 이 줄 안에 포함]
+- [과거 이력처럼 위와 완전히 다른 주제가 언급되면 새 줄로 분리. 더 없으면 줄 추가 안 함]
+
+O/S : ['YY.MM.DD 형식. 정확한 날짜가 언급되면 '26.07.02처럼 정확히 쓰고 괄호는 붙이지 마세요. "일주일 전", "며칠 전", "한두 달 전"처럼 근사치로 언급되면 '26.07이나 '26.04처럼 월까지만 쓰고, "일 년 전"처럼 막연하면 '25처럼 연도만 쓰세요. 날짜를 근사치로 추정한 경우에는 "발생" 뒤에 환자가 말한 원래 표현을 그대로 괄호로 덧붙이세요 (예: "발생 (일주일 전)", "발생 (한두 달 전)")] [증상이 시작된 계기나 상황을 짧게. 예: "발목 삔 후", "자고 일어난 후", "무거운 물건 들다가" 등. 계기 언급이 전혀 없으면 이 부분은 생략] 발생[근사치로 추정한 경우에만 위 규칙대로 괄호 표현 추가]
+- 검사 : [이번 증상 관련해서 받은 검사만. 검사 결과나 소견이 언급되면 "→"로 구분해서 뒤에 자연스러운 표현으로 이어 쓰세요 (예: "정형외과에서 MRI 또는 X-ray 검사 → L4/L5 디스크 부어있다 또는 튀어나와있다 소견"). 결과 언급이 없으면 검사명까지만. 검사 자체가 없으면 빈칸]
+- 치료 : [이번 증상 관련해서 받은 치료만. 없으면 빈칸]
+
+S/H : [직업 또는 주로 취하는 자세/습관. 전혀 언급 없으면 빈칸으로 두고 "S/H : "만 출력]
+P/H : [HTN/DM/HL/Hepa/Tb/Osteoporosis 관련 언급이 하나라도 있으면 "HTN/DM/HL/Hepa/Tb/Osteoporosis (+/-...)" 형식으로 6개 다 표기. 전혀 언급 없으면 빈칸으로 두고 "P/H : "만 출력]
+- 기타 : [기타 질환 언급 있으면 내용. 없으면 이 줄 생략]
+- 알러지 : [알러지 언급 있으면 내용. 없으면 이 줄 생략]
+F/H : [가족력 언급 있으면 내용. 전혀 언급 없으면 빈칸으로 두고 "F/H : "만 출력]
+
+O)
+TD : [의사가 압통 소견을 실제로 확인/언급한 근육·부위만 반영. 압통이 확인된 부위는 뒤에 "(+)"를 붙이세요 (예: "요방형근(+)"). 좌우가 언급되면 반드시 "좌측"/"우측"이라는 한글 표현을 근육명 앞에 붙이세요 ("Rt."/"Lt." 같은 영문 약어는 절대 쓰지 마세요). 같은 쪽에서 근육이 여러 개 확인되면 각 근육 앞에 좌측/우측을 각각 반복해서 붙이고 쉼표로 나열하세요 (예: "좌측 비복근(+), 좌측 가자미근(+)"). 좌우를 비교해서 한쪽은 있고 한쪽은 없다고 말하면 "우측 요방형근(+), 좌측 요방형근(-)"처럼 표기하세요. 단순히 눌러보는 검사 동작 설명("~눌러볼게요", "여기 한 번 봅시다" 등)은 소견이 아니므로 절대 반영하지 말 것. 압통 소견 언급이 없으면 빈칸으로 두고 "TD : "만 출력]
+ROM : [통증 있는 방향만: 굴곡 시 통증, 신전 시 통증, 좌측굴 시 통증, 우측굴 시 통증, 좌회전 시 통증, 우회전 시 통증 중 해당하는 것만 쉼표로 나열. 각도 언급 있으면 방향 뒤에 괄호로 각도 추가. ROM 검사를 아예 하지 않았거나 전혀 언급이 없으면 "ROM :" 줄 자체를 통째로 생략하세요 (빈칸으로 남기지 말고 줄을 아예 쓰지 마세요)]
+
+A)
+[가능한 한 실제 의학적 진단명을 구체적으로 사용 (예: 요추 추간판 탈출증, 극상근건염, 회전근개 파열, 외측 상과염 등). "디스크로 인한", "근육 문제로 인한" 같은 모호한 표현 대신 정식 진단명을 쓰세요]으로 추정됨을 환자에게 설명함
+
+[SCRIPT]
+[대화 내용을 화자 구분 없이 최대한 그대로 옮겨 적은 텍스트. 입력이 이미 텍스트로 제공된 경우 그 내용을 거의 그대로 반복해서 쓰세요]
+
+--- 아래는 형식 예시입니다. 줄바꿈과 기호를 정확히 그대로 따르세요 (예시 1: 항목이 채워진 경우) ---
+S)
+C/C : Lt. shoulder pain (NRS #)
+- 가만히 있을 때는 괜찮다가 팔을 들려고 하면 아프고, 밤에 잘 땐 괜찮음
+- 예전에도 비슷한 적 있었으나 이번에는 오래 감
+
+O/S : '26.07 자고 일어난 후 발생 (일주일 전)
+- 검사 : 없음
+- 치료 : 과거 동일 증상으로 정형외과에서 소염진통제 복용 후 호전
+
+S/H : 교사
+P/H : HTN/DM/HL/Hepa/Tb/Osteoporosis (+/+/-/-/-/-)
+- 기타 : 없음
+- 알러지 : 없음
+F/H : 유방암
+
+O)
+TD : 좌측 극상근(+), 좌측 삼각근(+)
+
+A)
+극상근 건염으로 추정됨을 환자에게 설명함
+
+[SCRIPT]
+(실제 대화 전문)
+--- (예시 2: 항목이 확인되지 않은 경우, 좌우 비교 TD 예시) ---
+S)
+C/C : Rt. LBP (NRS #)
+- 오른쪽 허리부터 엉덩이까지 아픔
+- 과거에도 종종 있었으나 이번에는 통증이 더 심함
+
+O/S : '26.07.02 자고 일어난 후 발생
+- 검사 : 정형외과에서 MRI 또는 X-ray 검사 → L4/L5 디스크 부어있다 또는 튀어나와있다 소견
+- 치료 :
+
+S/H :
+P/H :
+F/H :
+
+O)
+TD : 우측 요방형근(+), 좌측 요방형근(-)
+ROM : 굴곡 시 통증, 신전 시 통증
+
+A)
+요추 추간판 탈출증으로 인한 허리 통증으로 추정됨을 환자에게 설명함
+
+[SCRIPT]
+(실제 대화 전문)
+--- 예시 끝 ---
+
+실제 대화에 없는 내용은 지어내지 말고, 규칙에 따라 빈칸 또는 #으로 채우세요. A) 아래에는 진단 설명 한 줄만 쓰고 다른 문구는 추가하지 마세요.`;
+
+    const contentParts = [{text: prompt}];
+    if(activeTab === 'text'){
+      contentParts.push({text: '아래는 텍스트로 입력된 진료 내용입니다:\n' + directText});
+    } else {
+      contentParts.push({inline_data: {mime_type:'audio/wav', data: base64Audio}});
+      const extraNotes = document.getElementById('extraNotesInput').value.trim();
+      if(extraNotes){
+        contentParts.push({text: '아래는 녹음 내용에 추가로 의사가 직접 적은 메모입니다. 녹음 내용과 함께 반영하세요:\n' + extraNotes});
+      }
+    }
+
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents: [{ parts: contentParts }],
+        generationConfig: {
+          temperature: 0.1,
+          seed: 42
+        }
+      })
+    });
+    const data = await resp.json();
+    if(!resp.ok){
+      throw new Error(data.error?.message || '알 수 없는 오류');
+    }
+    const text = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
+    let sMatch = text.split('O)')[0].trim();
+    sMatch = sMatch.replace(/([^\n])\nS\/H :/, '$1\n\nS/H :');
+    let rest = text.split('O)')[1] || '';
+    const oMatch = rest.split('A)')[0].trim();
+    rest = rest.split('A)')[1] || '';
+    let aMatch = rest.split('[SCRIPT]')[0].trim();
+    const scriptMatch = (rest.split('[SCRIPT]')[1] || '').trim();
+
+    const fixedAExplanation = '- 초기 통증 증가 가능성 및 경과에 따라서 추가 검사 필요성 설명함\n- 추정 진단, 치료 계획, 치료에 따른 효과 및 예상되는 부작용에 대해서 설명함';
+    aMatch = aMatch ? `${aMatch}\n${fixedAExplanation}` : fixedAExplanation;
+
+    document.getElementById('soaOutput').value = `${sMatch}\n\nO)\n${oMatch}\n\nA)\n${aMatch}`;
+    document.getElementById('scriptOutput').value = scriptMatch;
+
+    function fieldBlank(text, label){
+      const lines = text.split('\n');
+      for(const line of lines){
+        const marker = label + ' :';
+        const idx = line.indexOf(marker);
+        if(idx !== -1){
+          return line.slice(idx + marker.length).trim() === '';
+        }
+      }
+      return false;
+    }
+    const blankFields = [];
+    if(fieldBlank(sMatch, 'S/H')) blankFields.push('S/H');
+    if(fieldBlank(sMatch, 'P/H')) blankFields.push('P/H');
+    if(fieldBlank(sMatch, 'F/H')) blankFields.push('F/H');
+
+    const warnings = [];
+    if(/NRS\s*#/.test(sMatch)) warnings.push('⚠️ NRS 점수가 확인되지 않았습니다');
+    if(blankFields.length) warnings.push(`⚠️ ${blankFields.join(', ')}이 확인되지 않았습니다`);
+
+    const warnBox = document.getElementById('warnBox');
+    warnBox.innerHTML = warnings.map(w=>`<div>${w}</div>`).join('');
+    warnBox.style.display = warnings.length ? 'block' : 'none';
+
+    statusMsg.textContent = '완료. 내용을 검수해주세요.';
+  }catch(err){
+    statusMsg.textContent = '';
+    alert('오류가 발생했습니다: ' + err.message);
+  }finally{
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+});
+
+// ---------- P section (ported from clinic portal charting logic) ----------
+const ACU_AREAS = ['두경부','흉복부','요배부','상지부(견)','상지부(주)','상지부(완)','하지부(고)','하지부(슬)','하지부(족)'];
+const ACU_MAP = {
+  '두경부':    {경혈:'천주',   투자:['풍부','풍지'],    관절:null,   척추:'대추',   복강:null,   간접구:'대추'},
+  '흉복부':    {경혈:'단중',   투자:null,                관절:null,   척추:null,     복강:'중완', 간접구:'중완'},
+  '요배부':    {경혈:'신수',   투자:null,                관절:null,   척추:'요양관', 복강:null,   간접구:'명문'},
+  '상지부(견)':{경혈:'견우',   투자:['견료','극천'],     관절:'노수', 척추:null,     복강:null,   간접구:'견우'},
+  '상지부(주)':{경혈:'수삼리', 투자:['곡지','척택'],     관절:'소해', 척추:null,     복강:null,   간접구:'수삼리'},
+  '상지부(완)':{경혈:'열결',   투자:['내관','외관'],     관절:'양지', 척추:null,     복강:null,   간접구:'외관'},
+  '하지부(고)':{경혈:'풍시',   투자:null,                관절:'환도', 척추:null,     복강:null,   간접구:'풍시'},
+  '하지부(슬)':{경혈:'족삼리', 투자:['양릉천','음릉천'], 관절:'독비', 척추:null,     복강:null,   간접구:'내슬안'},
+  '하지부(족)':{경혈:'태충',   투자:['삼음교','현종'],   관절:'신맥', 척추:null,     복강:null,   간접구:'해계'}
+};
+function acuShortName(a){ return a.replace(/\(.*\)$/,''); }
+const AREA_LABELS = {
+  '상지부(견)':['견','상지'], '상지부(주)':['주','상지'], '상지부(완)':['완','상지'],
+  '하지부(고)':['고','하지'], '하지부(슬)':['슬','하지'], '하지부(족)':['족','하지']
+};
+function areaLabel(a){
+  const pair = AREA_LABELS[a];
+  if(!pair) return a;
+  return `${pair[0]} <span class="area-sub">${pair[1]}</span>`;
+}
+function escAttr(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); }
+function inputWidthFor(val, min, max){
+  const len = (val||'').length;
+  return Math.min(max||220, Math.max(min||80, len*8+24));
+}
+
+let acuAreas = [];
+let acuSt = {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:false, 핫팩:true, ir:true, ict:false};
+let pTaping = {active:false, buyi:'', gae:'4', allergy:false};
+let pShockwave = {active:false, buyi:'', ta:'', noFracture:false};
+let pYakchim = {active:false, kind:'', buyi:'', cc:'', gae:''};
+let pChunaActive = {단순추나:false, 복잡추나:false};
+let pChunaSpine = null;
+let chunaSelected = {};
+let chunaText = {};
+const CHUNA_BTNS = ['COX','drop','Lumbar roll','MET','SCS','골타','JS123','경추 thrust','흉추 thrust'];
+const CHUNA_TEXT_BTNS = ['MET','SCS'];
+let pHerbActive = {'보험약':false, '상비약':false, '탕약':false, 'TA탕약':false};
+var pBohumyak = {name:'', perDay:'', totalDays:''};
+var pSangbiyak = {name:'', perDay:'', totalDays:''};
+var pTangyak = {name:'', perDay:'', totalDays:''};
+var pTATangyak = {name:'', perDay:'', totalDays:''};
+
+function toggleAcuArea(area){
+  const idx = acuAreas.indexOf(area);
+  if(idx>=0){ acuAreas.splice(idx,1); }
+  else{ if(acuAreas.length>=2) acuAreas.shift(); acuAreas.push(area); }
+  renderPBody();
+}
+function toggleGyeolhyeol(k){ acuSt.경혈 = (acuSt.경혈===k) ? null : k; renderPBody(); }
+function toggleAcuFlag(k){ acuSt[k] = !acuSt[k]; renderPBody(); }
+function toggleTaping(){ pTaping.active = !pTaping.active; renderPBody(); }
+function toggleTapingAllergy(){ pTaping.allergy = !pTaping.allergy; renderPBody(); }
+function toggleShockwave(){ pShockwave.active = !pShockwave.active; renderPBody(); }
+function toggleShockwaveNoFracture(){ pShockwave.noFracture = !pShockwave.noFracture; renderPBody(); }
+function toggleYakchim(){ pYakchim.active = !pYakchim.active; renderPBody(); }
+function setYakchimKind(v){ pYakchim.kind = (pYakchim.kind===v?'':v); renderPBody(); }
+function setYakchimCc(v){ pYakchim.cc = (pYakchim.cc===v?'':v); renderPBody(); }
+function setYakchimGae(v){ pYakchim.gae = (pYakchim.gae===String(v)?'':String(v)); renderPBody(); }
+function toggleChuna(type){
+  if(type==='단순추나' && !pChunaActive['단순추나']) pChunaActive['복잡추나']=false;
+  if(type==='복잡추나' && !pChunaActive['복잡추나']) pChunaActive['단순추나']=false;
+  pChunaActive[type] = !pChunaActive[type];
+  if(!pChunaActive['복잡추나']) pChunaSpine = null;
+  renderPBody();
+}
+function setChunaSpine(v){ pChunaSpine = (pChunaSpine===v?null:v); renderPBody(); }
+function applyChunaPreset(name){
+  if(name==='C 경추'){ chunaSelected={COX:true,MET:true,JS123:true,SCS:true}; chunaText={MET:'사각근, 견갑거근, 승모근',SCS:'견갑거근'}; }
+  else{ chunaSelected={COX:true,MET:true,SCS:true}; chunaText={MET:'햄스트링, 둔근, 이상근, 내전근',SCS:'장요근'}; }
+  renderPBody();
+}
+function toggleChunaBtn(k){ chunaSelected[k] = !chunaSelected[k]; renderPBody(); }
+function setChunaText(k,v){ chunaText[k]=v; }
+function toggleHerb(k){ pHerbActive[k]=!pHerbActive[k]; renderPBody(); }
+
+function renderPBody(){
+  const body = document.getElementById('pBody');
+  if(!body) return;
+  let h = '';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  ACU_AREAS.slice(0,3).forEach(a=>{
+    h += `<button type="button" class="btn-toggle${acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${a}')">${areaLabel(a)}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ACU_AREAS.slice(3,6).forEach(a=>{
+    h += `<button type="button" class="btn-toggle${acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${a}')">${areaLabel(a)}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ACU_AREAS.slice(6).forEach(a=>{
+    h += `<button type="button" class="btn-toggle${acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${a}')">${areaLabel(a)}</button>`;
+  });
+  h += '</div>';
+  const needs2 = acuSt.경혈==='경혈2' || acuSt.습부2;
+  if(needs2 && acuAreas.length<2){
+    h += '<div style="font-size:11.5px;color:var(--danger);margin-top:4px;">부위를 두 개 선택해주세요</div>';
+  }
+  h += '</div>';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  ['경혈1','경혈2'].forEach(k=>{
+    h += `<button type="button" class="btn-toggle${acuSt.경혈===k?' selected':''}" onclick="toggleGyeolhyeol('${k}')">${k}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ['투자','관절','척추','복강'].forEach(k=>{
+    h += `<button type="button" class="btn-toggle${acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${k}')">${k}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  h += `<button type="button" class="btn-toggle${acuSt.전침?' selected':''}" onclick="toggleAcuFlag('전침')">전침</button>`;
+  h += '</div>';
+
+  h += '<div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${acuSt.건부?' selected':''}" onclick="toggleAcuFlag('건부')">건부</button>`;
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ['습부1','습부2'].forEach(k=>{
+    h += `<button type="button" class="btn-toggle${acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${k}')">${k}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  h += `<button type="button" class="btn-toggle${acuSt.간접구?' selected':''}" onclick="toggleAcuFlag('간접구')">간접구</button>`;
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  h += `<button type="button" class="btn-toggle${acuSt.핫팩?' selected':''}" onclick="toggleAcuFlag('핫팩')">핫팩</button>`;
+  h += `<button type="button" class="btn-toggle${acuSt.ir?' selected':''}" onclick="toggleAcuFlag('ir')">IR</button>`;
+  h += `<button type="button" class="btn-toggle${acuSt.ict?' selected':''}" onclick="toggleAcuFlag('ict')">ICT</button>`;
+  h += '</div></div>';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${pYakchim.active?' selected':''}" onclick="toggleYakchim()">약침</button>`;
+  if(pYakchim.active){
+    ['어혈','죽염','자하거','봉독','심부','초음파','밸런스','신경통'].forEach(k=>{
+      h += `<button type="button" class="btn-toggle tier2${pYakchim.kind===k?' selected':''}" onclick="setYakchimKind('${k}')">${k}</button>`;
+    });
+  }
+  h += '</div>';
+  if(pYakchim.active){
+    h += '<div class="btn-toggle-row">';
+    h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(pYakchim.buyi)}" oninput="pYakchim.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(pYakchim.buyi)}px;flex:0 0 auto;">`;
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    [0.5,1,2,3,4].forEach(n=>{
+      const v = n+'cc';
+      h += `<button type="button" class="btn-toggle tier2${pYakchim.cc===v?' selected':''}" onclick="setYakchimCc('${v}')">${v}</button>`;
+    });
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    [1,2,3,4].forEach(n=>{
+      h += `<button type="button" class="btn-toggle tier2${pYakchim.gae===String(n)?' selected':''}" onclick="setYakchimGae(${n})">${n}개</button>`;
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${pChunaActive['단순추나']?' selected':''}" onclick="toggleChuna('단순추나')">단순추나</button>`;
+  h += `<button type="button" class="btn-toggle${pChunaActive['복잡추나']?' selected':''}" onclick="toggleChuna('복잡추나')">복잡추나</button>`;
+  if(pChunaActive['복잡추나']){
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    h += `<button type="button" class="btn-toggle${pChunaSpine==='경추'?' selected':''}" onclick="setChunaSpine('경추')">경추</button>`;
+    h += `<button type="button" class="btn-toggle${pChunaSpine==='요추'?' selected':''}" onclick="setChunaSpine('요추')">요추</button>`;
+  }
+  if(pChunaActive['단순추나'] || pChunaActive['복잡추나']){
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    h += `<button type="button" class="btn-toggle tier2" onclick="applyChunaPreset('C 경추')">C 경추</button>`;
+    h += `<button type="button" class="btn-toggle tier2" onclick="applyChunaPreset('C 요추')">C 요추</button>`;
+  }
+  h += '</div>';
+  if(pChunaActive['복잡추나'] && !pChunaSpine){
+    h += '<div style="font-size:11.5px;color:var(--danger);margin:-4px 0 8px;">경추 또는 요추를 선택해주세요</div>';
+  }
+  if(pChunaActive['단순추나'] || pChunaActive['복잡추나']){
+    h += '<div style="margin-top:6px;">';
+    h += '<div class="btn-toggle-row">';
+    CHUNA_BTNS.forEach(k=>{
+      const active = !!chunaSelected[k];
+      h += `<button type="button" class="btn-toggle tier3${active?' selected':''}" onclick="toggleChunaBtn('${k}')">${k}</button>`;
+      if(active && CHUNA_TEXT_BTNS.includes(k)){
+        h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(chunaText[k]||'')}" oninput="setChunaText('${k}',this.value);this.style.width=inputWidthFor(this.value,90,200)+'px'" style="width:${inputWidthFor(chunaText[k]||'',90,200)}px;flex:0 0 auto;">`;
+      }
+    });
+    h += '</div></div>';
+  }
+  h += '</div>';
+
+  h += '<div class="p-group">';
+  h += '<div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${pTaping.active?' selected':''}" onclick="toggleTaping()">테이핑</button>`;
+  if(pTaping.active){
+    h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(pTaping.buyi)}" oninput="pTaping.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(pTaping.buyi)}px;flex:0 0 auto;">`;
+    h += `<input type="number" class="ch-inline" min="1" value="${escAttr(pTaping.gae)}" oninput="pTaping.gae=this.value" style="width:44px;flex:0 0 auto;">`;
+    h += `<span style="font-size:12px;color:var(--muted);">개</span>`;
+    h += `<button type="button" class="btn-toggle tier2${pTaping.allergy?' selected':''}" onclick="toggleTapingAllergy()">알러지 없음</button>`;
+  }
+  h += '</div>';
+  h += '<div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${pShockwave.active?' selected':''}" onclick="toggleShockwave()">충격파</button>`;
+  if(pShockwave.active){
+    h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(pShockwave.buyi)}" oninput="pShockwave.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(pShockwave.buyi)}px;flex:0 0 auto;">`;
+    h += `<input type="number" class="ch-inline" min="1" placeholder="타수" value="${escAttr(pShockwave.ta)}" oninput="pShockwave.ta=this.value" style="width:56px;flex:0 0 auto;">`;
+    h += `<span style="font-size:12px;color:var(--muted);">타</span>`;
+    h += `<button type="button" class="btn-toggle tier2${pShockwave.noFracture?' selected':''}" onclick="toggleShockwaveNoFracture()">골절, 골다공증 없음</button>`;
+  }
+  h += '</div>';
+  h += '</div>';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${pHerbActive['보험약']?' selected':''}" onclick="toggleHerb('보험약')">보험약</button>`;
+  h += `<button type="button" class="btn-toggle${pHerbActive['상비약']?' selected':''}" onclick="toggleHerb('상비약')">상비약</button>`;
+  h += `<button type="button" class="btn-toggle${pHerbActive['탕약']?' selected':''}" onclick="toggleHerb('탕약')">탕약</button>`;
+  h += `<button type="button" class="btn-toggle${pHerbActive['TA탕약']?' selected':''}" onclick="toggleHerb('TA탕약')">TA 탕약</button>`;
+  h += '</div>';
+  function herbRow(label, storeVar, unit){
+    const store = window[storeVar];
+    return `<div class="taping-row">
+      <span class="herb-label">${label}</span>
+      <input type="text" class="ch-inline" placeholder="약 이름" value="${escAttr(store.name)}" oninput="${storeVar}.name=this.value;this.style.width=inputWidthFor(this.value,90,200)+'px'" style="width:${inputWidthFor(store.name,90,200)}px;flex:0 0 auto;">
+      <span style="color:var(--muted);margin:0 2px;">|</span>
+      <span style="font-size:12px;color:var(--muted);">1일</span>
+      <input type="number" class="ch-inline" value="${escAttr(store.perDay)}" oninput="${storeVar}.perDay=this.value" style="width:40px;flex:0 0 auto;">
+      <span style="font-size:12px;color:var(--muted);">${unit}</span>
+      <span style="color:var(--muted);margin:0 2px;">|</span>
+      <span style="font-size:12px;color:var(--muted);">총</span>
+      <input type="number" class="ch-inline" value="${escAttr(store.totalDays)}" oninput="${storeVar}.totalDays=this.value" style="width:40px;flex:0 0 auto;">
+      <span style="font-size:12px;color:var(--muted);">일</span>
+    </div>`;
+  }
+  if(pHerbActive['보험약']) h += herbRow('보험약', 'pBohumyak', '회');
+  if(pHerbActive['상비약']) h += herbRow('상비약', 'pSangbiyak', '회');
+  if(pHerbActive['탕약']) h += herbRow('탕약', 'pTangyak', '첩');
+  if(pHerbActive['TA탕약']) h += herbRow('TA 탕약', 'pTATangyak', '첩');
+  h += '</div>';
+
+  body.innerHTML = h;
+}
+
+function buildPText(){
+  const a0 = acuAreas[0], a1 = acuAreas[1];
+  const m0 = a0 ? ACU_MAP[a0] : null, m1 = a1 ? ACU_MAP[a1] : null;
+  const parts = [];
+  if(acuSt.경혈==='경혈2' && m0 && m1) parts.push(`경혈2부위(${m0.경혈} ${m1.경혈})`);
+  else if(acuSt.경혈==='경혈1' && m0) parts.push(`경혈1부위(${m0.경혈})`);
+  if(acuSt.투자 && m0 && m0.투자) parts.push(`투자(${m0.투자.join(' ')})`);
+  if(acuSt.관절 && m0 && m0.관절) parts.push(`관절(${m0.관절})`);
+  if(acuSt.척추 && m0 && m0.척추) parts.push(`척추(${m0.척추})`);
+  if(acuSt.복강 && m0 && m0.복강) parts.push(`복강(${m0.복강})`);
+  if(acuSt.전침) parts.push('침전기자극술');
+  if(acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${acuShortName(a0)} ${acuShortName(a1)})`);
+  else if(acuSt.습부2 && m0) parts.push(`습부2부위(${acuShortName(a0)})`);
+  if(acuSt.습부1 && m0) parts.push(`습부1부위(${acuShortName(a0)})`);
+  if(acuSt.건부 && m0) parts.push(`건부(${acuShortName(a0)})`);
+  if(acuSt.간접구 && m0 && m0.간접구) parts.push(`간접구(${m0.간접구})`);
+  if(acuSt.핫팩 && a0) parts.push(`핫팩(${acuShortName(a0)})`);
+  if(acuSt.ir && a0) parts.push(`IR(${acuShortName(a0)})`);
+  if(acuSt.ict && a0) parts.push(`ICT(${acuShortName(a0)})`);
+
+  let result = 'P) ' + parts.join(', ');
+
+  if(pYakchim.active){
+    const main = (pYakchim.kind||'') + (pYakchim.cc ? ' '+pYakchim.cc : '') + (pYakchim.gae ? '*'+pYakchim.gae : '');
+    const detail = main + (pYakchim.buyi ? ` (${pYakchim.buyi})` : '');
+    result += `\n■ 약침 : ${detail}`;
+  }
+  const chunaType = pChunaActive['단순추나'] ? '단순추나' : (pChunaActive['복잡추나'] ? '복잡추나' : '');
+  if(chunaType){
+    const techList = [];
+    CHUNA_BTNS.forEach(k=>{
+      if(!chunaSelected[k]) return;
+      const txt = chunaText[k] ? `(${chunaText[k]})` : '';
+      techList.push(k+txt);
+    });
+    result += `\n■ ${chunaType}${techList.length ? ' : '+techList.join(' - ') : ''}`;
+    if(chunaType === '복잡추나'){
+      if(pChunaSpine === '경추'){
+        result += '\n- 상기 환자 경추 추간판 탈출증으로 인한 항강통 및 상지 방사통 호소하여 교정기법 포함한 복잡추나 시행함\n- 복잡추나 시행 이후 통증 감소 및 관절가동범위 증가를 확인함';
+      } else if(pChunaSpine === '요추'){
+        result += '\n- 상기 환자 요추 추간판 탈출증으로 인한 요통 및 하지 방사통 호소하여 교정기법 포함한 복잡추나 시행함\n- 복잡추나 시행 이후 통증 감소 및 관절가동범위 증가를 확인함';
+      }
+    }
+  }
+  let extGroupStarted = false;
+  if(pTaping.active){
+    const gae = pTaping.gae || '4';
+    const buyiPart = pTaping.buyi ? pTaping.buyi+' ' : '';
+    result += `${extGroupStarted?'\n':'\n\n'}■ 테이핑 : ${buyiPart}(${gae}개)${pTaping.allergy ? ' / 알러지 없음' : ''}`;
+    extGroupStarted = true;
+  }
+  if(pShockwave.active){
+    const buyiPart = pShockwave.buyi ? pShockwave.buyi+' ' : '';
+    result += `${extGroupStarted?'\n':'\n\n'}■ 충격파 : ${buyiPart}(${pShockwave.ta || ''}타)${pShockwave.noFracture ? ' / 골절, 골다공증 없음' : ''}`;
+    extGroupStarted = true;
+  }
+  let herbGroupStarted = false;
+  function herbLine(label, store, unit){
+    const dose = (store.perDay || store.totalDays) ? `1일 ${store.perDay||''}${unit} 총 ${store.totalDays||''}일` : '';
+    const s = [store.name, dose].filter(Boolean).join(' ');
+    const line = `${herbGroupStarted?'\n':'\n\n'}■ ${label}${s ? ' : '+s : ''}`;
+    herbGroupStarted = true;
+    return line;
+  }
+  if(pHerbActive['보험약']) result += herbLine('보험약', pBohumyak, '회');
+  if(pHerbActive['상비약']) result += herbLine('상비약', pSangbiyak, '회');
+  if(pHerbActive['탕약']) result += herbLine('탕약', pTangyak, '첩');
+  if(pHerbActive['TA탕약']) result += herbLine('TA 탕약', pTATangyak, '첩');
+  return result;
+}
+
+renderPBody();
+
+// ---------- Combine ----------
+document.getElementById('combineBtn').addEventListener('click', ()=>{
+  const soa = document.getElementById('soaOutput').value;
+  const p = buildPText();
+  document.getElementById('fullOutput').value = `${soa}\n\n${p}`;
+});
+
+// ---------- Copy buttons ----------
+document.querySelectorAll('[data-copy]').forEach(btn=>{
+  const orig = btn.textContent;
+  let revertTimer = null;
+  btn.addEventListener('click', async ()=>{
+    const el = document.getElementById(btn.dataset.copy);
+    try{
+      await navigator.clipboard.writeText(el.value);
+    }catch(e){
+      el.select();
+      document.execCommand('copy');
+    }
+    if(revertTimer) clearTimeout(revertTimer);
+    btn.textContent = '성공';
+    btn.style.background = 'var(--primary)';
+    btn.style.color = '#fff';
+    revertTimer = setTimeout(()=>{
+      btn.textContent = orig;
+      btn.style.background = '';
+      btn.style.color = '';
+      revertTimer = null;
+    }, 1200);
+  });
+});
+</script>
+</body>
+</html>
