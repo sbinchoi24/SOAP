@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOAP - 근골격계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --primary:#3182f6;
@@ -22,13 +25,68 @@
   *{box-sizing:border-box;}
   body{
     margin:0;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
+    font-family:'Noto Sans KR',sans-serif;
     background:var(--bg);
     color:var(--text);
     padding:20px;
     -webkit-font-smoothing:antialiased;
   }
-  .container{max-width:1220px;margin:0 auto;}
+  .container{max-width:1680px;margin:0 auto;}
+  /* 상단 페이지 탭 */
+  .page-tabs{
+    display:flex;gap:6px;margin:4px 0 20px;
+    border-bottom:2px solid var(--border);
+  }
+  .page-tab{
+    padding:12px 24px;background:transparent;border:none;
+    font-size:16px;font-weight:800;color:var(--muted);
+    cursor:pointer;border-bottom:3px solid transparent;
+    margin-bottom:-2px;letter-spacing:-0.02em;
+    font-family:inherit;
+  }
+  .page-tab:hover{color:var(--text);}
+  .page-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+  .page-content{display:none;}
+  .page-content.active{display:block;}
+  /* 피부 시술 선택 */
+  .skin-layout{
+    display:grid;grid-template-columns:1.7fr 1fr;gap:16px;align-items:start;
+  }
+  .skin-output-card{position:sticky;top:16px;}
+  .skin-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;
+  }
+  @media (max-width:900px){
+    .skin-layout{grid-template-columns:1fr;}
+    .skin-grid{grid-template-columns:1fr;}
+  }
+  .skin-gen-btn{margin-left:auto;padding:6px 16px;font-size:13px;}
+  .skin-group{
+    padding:12px 14px;
+    background:#fafbfc;border-radius:12px;
+  }
+  .skin-group-title{
+    font-size:13px;font-weight:800;color:var(--text);
+    margin-bottom:10px;
+  }
+  .skin-btn-row{display:flex;flex-wrap:wrap;gap:6px;}
+  /* 세부 버튼: 그룹 안에서만 딱 펼쳐짐 */
+  .skin-suffix-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .skin-suffix-row:not(:empty){
+    margin-top:8px;padding-top:8px;
+    border-top:1px dashed var(--border);
+  }
+  .skin-btn{
+    height:34px;padding:0 14px;border-radius:17px;border:none;
+    background:#f2f4f6;color:var(--text);font-size:12.5px;font-weight:600;
+    cursor:pointer;white-space:nowrap;font-family:inherit;
+  }
+  .skin-btn:hover{background:#e5e8eb;}
+  .skin-btn.viewing{background:var(--primary-light);color:var(--primary);}
+  .skin-btn.suffix{background:var(--accent-light);color:var(--accent);}
+  .skin-btn.suffix:hover{background:#d3f5f0;}
+  .skin-btn.suffix.selected{background:var(--accent);color:#fff;}
+  .skin-btn.direct.selected{background:var(--primary);color:#fff;}
   h1{
     font-size:21px;
     color:var(--text);
@@ -175,20 +233,95 @@
 
   .two-col{
     display:grid;
-    grid-template-columns:1fr 1.6fr;
+    grid-template-columns:0.95fr 1.55fr 1.25fr;
     gap:16px;
     align-items:start;
   }
+  @media (max-width:1200px){
+    .two-col{grid-template-columns:1fr 1.6fr;}
+    .col-cq{grid-column:1 / -1;}
+  }
   @media (max-width:720px){
     .two-col{grid-template-columns:1fr;}
+    .col-cq{grid-column:auto;}
   }
+  /* 청구 열: 스크롤 따라오도록 고정 + 좁은 폭 대응 */
+  .col-cq{position:sticky;top:16px;}
+  .cq-card{padding:16px;}
+  /* 청구 토글 */
+  .cq-toggle-header{
+    cursor:pointer;user-select:none;display:flex;align-items:center;
+    margin-bottom:0;
+  }
+  .cq-chevron{
+    margin-left:auto;width:26px;height:26px;border-radius:50%;
+    background:var(--primary-light);color:var(--primary);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:700;line-height:1;
+    transition:background .2s ease;
+  }
+  .cq-toggle-header:hover .cq-chevron{background:#dce9ff;}
+  .cq-chevron::before{content:'−';}
+  .cq-card.collapsed .cq-chevron::before{content:'+';}
+  .cq-body{margin-top:16px;}
+  .cq-card.collapsed .cq-body{display:none;}
+  .cq-card.collapsed{padding-bottom:16px;}
+
+  /* ── 청구 수가 조회 ── */
+  .cq-filters{
+    display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+    margin-bottom:16px;
+  }
+  .cq-filter-group{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;}
+  .cq-filter-label{
+    font-size:12.5px;font-weight:700;color:var(--muted);
+    min-width:30px;
+  }
+  .cq-btn{cursor:pointer;}
+  .cq-reset{
+    height:34px;padding:0 14px;border-radius:12px;
+    font-size:12.5px;font-weight:600;cursor:pointer;
+    background:#f2f4f6;color:var(--text);border:none;
+  }
+  .cq-reset:hover{background:#e5e8eb;}
+  .cq-row-card{
+    background:#fff;border-radius:14px;border:1.5px solid var(--border);
+    overflow:hidden;margin-bottom:10px;
+  }
+  .cq-row-card.filtered{border-color:var(--primary);}
+  .cq-row-head{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 14px;border-bottom:1px solid var(--border);
+  }
+  .cq-badge{
+    font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;
+  }
+  .cq-badge-초진{background:var(--primary-light);color:var(--primary-dark);}
+  .cq-badge-재진{background:#fef9e7;color:#8b6914;}
+  .cq-row-label{font-size:13px;font-weight:700;color:var(--text);flex:1;}
+  .cq-price-weekday{font-size:12.5px;color:var(--primary);font-weight:700;}
+  .cq-price-sep{font-size:11px;color:var(--muted);margin:0 4px;}
+  .cq-price-weekend{font-size:12.5px;color:#a07840;font-weight:700;}
+  .cq-combos{padding:8px 14px;display:flex;flex-direction:column;gap:4px;}
+  .cq-combo{
+    font-size:12px;padding:5px 8px;border-radius:6px;
+  }
+  .cq-combo:nth-child(odd){background:rgba(49,130,246,0.04);}
+  .cq-combo-num{color:var(--muted);font-size:11px;margin-right:6px;}
+  .cq-combo-sep{color:var(--border);margin:0 1px;}
+  .cq-empty{text-align:center;color:var(--muted);font-size:13px;padding:20px;}
+  /* 좁은 청구 열 컴팩트 대응 */
+  .cq-card .cq-row-head{padding:9px 12px;}
+  .cq-card .cq-row-label{font-size:12.5px;}
+  .cq-card .cq-combos{padding:6px 12px;}
+  .cq-card .cq-combo{font-size:11px;line-height:1.5;}
 
   .p-group{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);}
   .p-group:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0;}
   .btn-toggle-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;}
   .btn-toggle{
     height:34px;
-    padding:0 14px;
+    padding:0 12px;
     border-radius:17px;
     border:none;
     background:#f2f4f6;
@@ -279,8 +412,12 @@
 </head>
 <body>
 <div class="container">
-  <h1>근골격계</h1>
+  <div class="page-tabs">
+    <button class="page-tab active" data-page="근골격계" onclick="switchPage('근골격계',this)">근골격계</button>
+    <button class="page-tab" data-page="피부" onclick="switchPage('피부',this)">피부</button>
+  </div>
 
+  <div id="page-근골격계" class="page-content active">
   <div class="two-col">
     <div class="col-left">
       <div class="card">
@@ -329,6 +466,38 @@
         <div id="pBody"></div>
       </div>
     </div>
+
+    <div class="col-cq">
+      <div class="card cq-card">
+        <div class="card-header cq-toggle-header" onclick="toggleCQ()">
+          <span class="step-badge">6</span>청구
+          <span class="cq-chevron" id="cq-chevron"></span>
+        </div>
+        <div id="cq-body" class="cq-body">
+          <div class="cq-filters">
+            <div class="cq-filter-group">
+              <span class="cq-filter-label">진료</span>
+              <button class="btn-toggle cq-btn sm" id="cq-초진" onclick="setCQ('visit','초진',this)">초진</button>
+              <button class="btn-toggle cq-btn sm" id="cq-재진" onclick="setCQ('visit','재진',this)">재진</button>
+            </div>
+            <div class="cq-filter-group">
+              <span class="cq-filter-label">습부</span>
+              <button class="btn-toggle cq-btn sm" id="cq-없음" onclick="setCQ('cupping','없음',this)">없음</button>
+              <button class="btn-toggle cq-btn sm" id="cq-1부위" onclick="setCQ('cupping','1부위',this)">1부위</button>
+              <button class="btn-toggle cq-btn sm" id="cq-2부위" onclick="setCQ('cupping','2부위',this)">2부위</button>
+            </div>
+            <div class="cq-filter-group">
+              <span class="cq-filter-label">추나</span>
+              <button class="btn-toggle cq-btn sm" id="cq-추나없음" onclick="setCQ('chuna','없음',this)">없음</button>
+              <button class="btn-toggle cq-btn sm" id="cq-단순" onclick="setCQ('chuna','단순',this)">단순</button>
+              <button class="btn-toggle cq-btn sm" id="cq-복잡" onclick="setCQ('chuna','복잡',this)">복잡</button>
+            </div>
+            <button class="btn-outline cq-reset" onclick="resetCQ()">초기화</button>
+          </div>
+          <div id="cq-result-page"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -364,6 +533,24 @@
     녹음은 약 20분 이내 권장<br>
     AI가 생성한 S/O/A 내용은 반드시 검수 후 사용
   </div>
+  </div><!-- /page-근골격계 -->
+
+  <div id="page-피부" class="page-content">
+    <div class="skin-layout">
+      <div class="card skin-input-card">
+        <div class="card-header">시술 선택</div>
+        <div id="skin-p-buttons"></div>
+      </div>
+      <div class="card skin-output-card">
+        <div class="card-header">
+          차팅 결과
+          <button class="btn-primary skin-gen-btn" onclick="skinGenerate()">생성</button>
+        </div>
+        <textarea id="skin-result-area" style="min-height:400px;" placeholder="시술을 선택하고 생성 버튼을 눌러주세요."></textarea>
+        <div class="copy-btn-row"><button class="btn-secondary" data-copy="skin-result-area">복사</button></div>
+      </div>
+    </div>
+  </div><!-- /page-피부 -->
 </div>
 
 <script>
@@ -1078,6 +1265,179 @@ document.querySelectorAll('[data-copy]').forEach(btn=>{
     }, 1200);
   });
 });
+
+/* ════════════════════════════════════
+   청구 수가 조회 (포털에서 이식)
+════════════════════════════════════ */
+var CQ = {visit:null, cupping:null, chuna:null};
+var CQ_ALL = [
+  {visit:'초진',cupping:'1부위',chuna:'없음',label:'침+습부(1부위)+전침',평일:14300,주말:15500,조합:['이체+전침+관절+습부1부위(컵4)+IR+변증','이체+전침+관절+습부1부위(컵3)+IR+변증','이체+전침+척추+습부1부위(컵3)+IR+변증']},
+  {visit:'초진',cupping:'2부위',chuna:'없음',label:'침+습부(2부위)+전침',평일:15800,주말:17200,조합:['이체+전침+관절+습부2부위(컵4)+IR+변증','이체+전침+척추+습부2부위(컵3)+IR+변증']},
+  {visit:'초진',cupping:'없음',chuna:'없음',label:'침+전침',평일:11000,주말:12400,조합:['이체+전침+척추+IR+변증','이체+전침+투자+IR+변증']},
+  {visit:'초진',cupping:'없음',chuna:'없음',label:'침',평일:10000,주말:11200,조합:['이체+투자+IR+변증','이체+척추+IR+변증']},
+  {visit:'초진',cupping:'1부위',chuna:'단순',label:'침+습부(1부위)+단순+전침',평일:27500,주말:28900,조합:['이체+전침+관절+습부1부위(컵3)+핫팩+단순+변증','이체+전침+척추+습부1부위(컵5)+IR+단순+변증']},
+  {visit:'초진',cupping:'2부위',chuna:'단순',label:'침+습부(2부위)+단순+전침',평일:29000,주말:30400,조합:['이체+전침+투자+습부2부위(컵4)+IR+단순+변증','이체+전침+척추+습부2부위(컵4)+IR+단순+변증']},
+  {visit:'초진',cupping:'1부위',chuna:'복잡',label:'침+습부(1부위)+복잡+전침',평일:49900,주말:51300,조합:['이체+전침+투자+습부1부위(컵5)+IR+복잡+변증','이체+전침+척추+습부1부위(컵5)+IR+단순+변증']},
+  {visit:'초진',cupping:'2부위',chuna:'복잡',label:'침+습부(2부위)+복잡+전침',평일:50400,주말:51800,조합:['이체+전침+투자+습부2부위(컵5)+IR+복잡+변증']},
+  {visit:'재진',cupping:'1부위',chuna:'없음',label:'침+습부(1부위)+전침',평일:11200,주말:12100,조합:['이체+전침+투자+습부1부위(컵1)+핫팩','이체+전침+관절+습부1부위(컵2)+핫팩','이체+전침+척추+습부1부위(컵1)+핫팩']},
+  {visit:'재진',cupping:'2부위',chuna:'없음',label:'침+습부(2부위)+전침',평일:12700,주말:13600,조합:['이체+투자+습부2부위(컵4)+핫팩','이체+관절+습부2부위(컵4)+핫팩','이체+척추+습부2부위(컵3)+핫팩','이체+투자+습부2부위(컵2)+핫팩']},
+  {visit:'재진',cupping:'없음',chuna:'없음',label:'침+전침',평일:7900,주말:8800,조합:['이체+전침+척추+IR','이체+전침+투자+IR']},
+  {visit:'재진',cupping:'없음',chuna:'없음',label:'침',평일:6800,주말:7700,조합:['이체+투자+IR','이체+척추+IR']},
+  {visit:'재진',cupping:'2부위',chuna:'단순',label:'침+습부(2부위)+단순+전침',평일:26000,주말:26800,조합:['이체+전침+투자+습부2부위(컵5)+IR+단순','이체+전침+척추+습부2부위(컵5)+IR+단순']},
+  {visit:'재진',cupping:'1부위',chuna:'복잡',label:'침+습부(1부위)+복잡+전침',평일:46800,주말:47700,조합:['이체+전침+투자+습부1부위(컵5)+IR+복잡','이체+전침+척추+습부1부위(컵5)+IR+복잡']},
+  {visit:'재진',cupping:'2부위',chuna:'복잡',label:'침+습부(2부위)+복잡+전침',평일:48300,주말:49200,조합:['이체+전침+투자+습부2부위(컵5)+IR+복잡','이체+전침+척추+습부2부위(컵5)+IR+복잡']},
+];
+var PART_ORDER = ['변증','IR','핫팩','전침','이체','경혈','관절','척추','투자','습부','단순','복잡'];
+function cqGetPartOrder(p){for(var i=0;i<PART_ORDER.length;i++){if(p.indexOf(PART_ORDER[i])>=0)return i;}return 99;}
+function cqSortCombo(c){var p=c.split('+');p.sort(function(a,b){return cqGetPartOrder(a.trim())-cqGetPartOrder(b.trim());});return p.join('+');}
+function cqColorPart(p){
+  p=p.trim();
+  if(p.indexOf('변증')>=0)return '<span style="color:var(--danger);font-weight:700">'+p+'</span>';
+  if(p==='IR'||p.indexOf('핫팩')>=0)return '<span style="color:var(--muted)">'+p+'</span>';
+  if(p.indexOf('전침')>=0)return '<span style="color:var(--primary-dark);font-weight:600">'+p+'</span>';
+  if(p.indexOf('이체')>=0||p.indexOf('경혈')>=0)return '<span style="color:var(--primary);font-weight:700">'+p+'</span>';
+  if(p.indexOf('관절')>=0||p.indexOf('척추')>=0||p.indexOf('투자')>=0)return '<span style="color:#5b9bff;font-weight:600">'+p+'</span>';
+  if(p.indexOf('습부')>=0)return '<span style="color:#a07840;font-weight:700">'+p+'</span>';
+  if(p.indexOf('단순')>=0||p.indexOf('복잡')>=0)return '<span style="color:#2e7d32;font-weight:700">'+p+'</span>';
+  return '<span>'+p+'</span>';
+}
+function cqRenderCombo(c){var parts=cqSortCombo(c).split('+');return parts.map(cqColorPart).join('<span class="cq-combo-sep">+</span>');}
+function cqMatches(row){
+  if(CQ.visit&&row.visit!==CQ.visit)return false;
+  if(CQ.cupping&&row.cupping!==CQ.cupping)return false;
+  if(CQ.chuna&&row.chuna!==CQ.chuna)return false;
+  return true;
+}
+function setCQ(type,val,btn){
+  if(CQ[type]===val){
+    CQ[type]=null;btn.classList.remove('selected');
+  }else{
+    CQ[type]=val;
+    var groups={visit:['초진','재진'],cupping:['없음','1부위','2부위'],chuna:['없음','단순','복잡']};
+    groups[type].forEach(function(v){
+      var id='cq-'+(type==='chuna'&&v==='없음'?'추나없음':v);
+      var b=document.getElementById(id);
+      if(b)b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+  }
+  renderCQResult();
+}
+function resetCQ(){
+  CQ={visit:null,cupping:null,chuna:null};
+  document.querySelectorAll('.cq-btn').forEach(function(b){b.classList.remove('selected');});
+  renderCQResult();
+}
+function renderCQResult(){
+  var hasFilter=CQ.visit||CQ.cupping||CQ.chuna;
+  var rows=hasFilter?CQ_ALL.filter(cqMatches):CQ_ALL;
+  var html='';
+  if(!rows.length){
+    html='<div class="cq-empty">해당 조합이 없습니다.</div>';
+  }else{
+    rows.forEach(function(row){
+      html+='<div class="cq-row-card'+(hasFilter?' filtered':'')+'">';
+      html+='<div class="cq-row-head">';
+      html+='<span class="cq-badge cq-badge-'+row.visit+'">'+row.visit+'</span>';
+      html+='<span class="cq-row-label">'+row.label+'</span>';
+      html+='<span class="cq-price-weekday">'+row.평일.toLocaleString()+'원</span>';
+      html+='<span class="cq-price-sep">/</span>';
+      html+='<span class="cq-price-weekend">'+row.주말.toLocaleString()+'원</span>';
+      html+='</div>';
+      html+='<div class="cq-combos">';
+      row.조합.forEach(function(c,i){
+        html+='<div class="cq-combo"><span class="cq-combo-num">'+(i+1)+'</span>'+cqRenderCombo(c)+'</div>';
+      });
+      html+='</div></div>';
+    });
+  }
+  document.getElementById('cq-result-page').innerHTML=html;
+}
+function toggleCQ(){
+  document.querySelector('.cq-card').classList.toggle('collapsed');
+}
+
+/* ════════════════════════════════════
+   페이지 전환 (근골격계 / 피부)
+════════════════════════════════════ */
+function switchPage(name, btn){
+  document.querySelectorAll('.page-content').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ════════════════════════════════════
+   피부 시술 선택 (포털에서 이식)
+════════════════════════════════════ */
+var PROC_GROUPS={
+  '토닝':['제네시스 체험','제네시스 1회','제네시스 10회','듀얼 체험','듀얼 1회','듀얼 10회'],
+  '슈링크':['100샷 체험','100샷 1회','100샷 3회','300샷 체험','300샷 1회','300샷 3회'],
+  '볼뉴머':['300샷 체험','300샷 1회','300샷 패키지','600샷 체험','600샷 1회','600샷 패키지'],
+  '볼링크':['Light (300+100) 체험','Light (300+100) 1회','Light (300+100) 3회','Standard (300+300) 체험','Standard (300+300) 1회','Standard (300+300) 3회','Premium (300+600) 체험','Premium (300+600) 1회','Premium (300+600) 3회'],
+  'RF 시크릿':['RF+ASCE 체험','RF+ASCE 1회','RF+ASCE 3회','RF+엑소좀 체험','RF+엑소좀 1회','RF+엑소좀 3회'],
+  'AMTS':['AMTS 풀페이스 체험','AMTS 풀페이스 1회','AMTS 풀페이스 3회','AMTS+PLAA 체험','AMTS+PLAA 1회','AMTS+PLAA 3회','AMTS+라디쥬 체험','AMTS+라디쥬 1회','AMTS+라디쥬 3회'],
+  '스킨부스터':['ASCE','엑소좀','미주안','라디쥬','GFC CELL','PLAA'],
+  '여드름':['압출 체험','압출 1회','압출 4회','압출 8회','압출 12회','베이직 체험','베이직 1회','베이직 4회','베이직 8회','베이직 12회','프리미엄 체험','프리미엄 1회','프리미엄 4회','프리미엄 6회','프리미엄 8회'],
+  '바디관리':['베이직 체험','베이직 1회','베이직 5회','베이직 10회','플러스 체험','플러스 1회','플러스 5회','플러스 10회']
+};
+var skinSelection={};
+var PROC_COL1=['토닝','슈링크','볼뉴머','RF 시크릿'];
+var PROC_COL2=['볼링크','AMTS','여드름','바디관리','스킨부스터'];
+function buildProcGroupHTML(containerId,g){
+  var items=PROC_GROUPS[g];
+  var html='<div class="skin-group"><div class="skin-group-title">'+g+'</div>';
+  if(g==='스킨부스터'){
+    html+='<div class="skin-btn-row">';
+    items.forEach(function(it){html+='<button class="skin-btn suffix'+(skinSelection[g]===it?' selected':'')+'" data-group="'+g+'" data-label="'+it+'" onclick="procToggleSuffix(this)">'+it+'</button>';});
+    html+='</div>';
+  } else {
+    var map={};
+    items.forEach(function(it){var p=it.split(' ');var suf=p.pop();var pre=p.join(' ');if(!map[pre])map[pre]=[];map[pre].push(suf);});
+    html+='<div class="skin-btn-row" id="'+containerId+'-'+encodeURIComponent(g)+'-row">';
+    Object.keys(map).forEach(function(pre){html+='<button class="skin-btn direct" onclick="procSelectPrefix(\''+containerId+'\',\''+g+'\',\''+pre+'\',this)">'+pre+'</button>';});
+    html+='</div>';
+    html+='<div id="'+containerId+'-'+encodeURIComponent(g)+'-suffix" class="skin-suffix-row"></div>';
+  }
+  html+='</div>';
+  return html;
+}
+function buildProcUI(containerId){
+  var h='';
+  Object.keys(PROC_GROUPS).forEach(function(g){h+=buildProcGroupHTML(containerId,g);});
+  document.getElementById(containerId).innerHTML='<div class="skin-grid">'+h+'</div>';
+}
+function procSelectPrefix(containerId,g,pre,btn){
+  Array.prototype.forEach.call(btn.parentNode.querySelectorAll('button.skin-btn'),function(b){b.classList.remove('viewing');});
+  btn.classList.add('viewing');
+  var sufWrap=document.getElementById(containerId+'-'+encodeURIComponent(g)+'-suffix');
+  var suffixes=PROC_GROUPS[g].filter(function(it){return it.indexOf(pre+' ')===0;}).map(function(it){return it.slice(pre.length+1);});
+  var h='';
+  suffixes.forEach(function(suf){
+    var label=pre+' '+suf;
+    h+='<button class="skin-btn suffix'+(skinSelection[g]===label?' selected':'')+'" data-group="'+g+'" data-label="'+label+'" onclick="procToggleSuffix(this)">'+suf+'</button>';
+  });
+  sufWrap.innerHTML=h;
+}
+function procToggleSuffix(btn){
+  var group=btn.getAttribute('data-group');
+  var label=btn.getAttribute('data-label');
+  var nowActive=!btn.classList.contains('selected');
+  Array.prototype.forEach.call(document.querySelectorAll('#skin-p-buttons button[data-group="'+group+'"]'),function(b){b.classList.remove('selected');});
+  if(nowActive){btn.classList.add('selected');skinSelection[group]=label;}
+  else{skinSelection[group]=null;}
+}
+function skinTodayMD(){var d=new Date();return (d.getMonth()+1)+'/'+d.getDate();}
+function skinGenerate(){
+  var date=skinTodayMD();
+  var lines=[];
+  Object.keys(PROC_GROUPS).forEach(function(g){if(skinSelection[g])lines.push('* '+date+' '+skinSelection[g]+' 결제');});
+  document.getElementById('skin-result-area').value=lines.join('\n');
+}
+buildProcUI('skin-p-buttons');
+renderCQResult();
+// 초기엔 접어둠 (헤더만 보이게)
+document.querySelector('.cq-card').classList.add('collapsed');
 </script>
 </body>
 </html>
