@@ -1512,7 +1512,7 @@ function skinTodayMD(){var d=new Date();return (d.getMonth()+1)+'/'+d.getDate();
 function skinGenerate(){
   var date=skinTodayMD();
   var lines=[];
-  Object.keys(PROC_GROUPS).forEach(function(g){if(skinSelection[g])lines.push('* '+date+' '+skinSelection[g]+' 결제');});
+  Object.keys(PROC_GROUPS).forEach(function(g){if(skinSelection[g])lines.push('* '+date+' '+g+' '+skinSelection[g]+' 결제');});
   document.getElementById('skin-result-area').value=lines.join('\n');
 }
 buildProcUI('skin-p-buttons');
