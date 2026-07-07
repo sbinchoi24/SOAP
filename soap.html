@@ -1239,7 +1239,7 @@ function buildPText(){
   if(acuSt.ir && a0) parts.push(`IR(${acuShortName(a0)})`);
   if(acuSt.ict && a0) parts.push(`ICT(${acuShortName(a0)})`);
 
-  let result = 'P) ' + parts.join(', ');
+  let result = 'P) \n' + parts.join(', ');
 
   if(pYakchim.active){
     const main = (pYakchim.kind||'') + (pYakchim.cc ? ' '+pYakchim.cc : '') + (pYakchim.gae ? '*'+pYakchim.gae : '');
