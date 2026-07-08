@@ -693,12 +693,12 @@ document.getElementById('downloadRecordBtn').addEventListener('click', ()=>{
   URL.revokeObjectURL(url);
 });
 
-// ---------- Convert any audio blob to 8kHz mono WAV (Gemini-compatible, small size) ----------
+// ---------- Convert any audio blob to 16kHz mono WAV (음성인식 표준 품질) ----------
 async function convertToWav(blob){
   const arrayBuf = await blob.arrayBuffer();
   const tempCtx = new (window.AudioContext||window.webkitAudioContext)();
   const decoded = await tempCtx.decodeAudioData(arrayBuf.slice(0));
-  const targetRate = 8000;
+  const targetRate = 16000;
   const offlineCtx = new OfflineAudioContext(1, Math.ceil(decoded.duration*targetRate), targetRate);
   const src = offlineCtx.createBufferSource();
   src.buffer = decoded;
@@ -773,7 +773,7 @@ document.getElementById('analyzeBtn').addEventListener('click', async ()=>{
       }
       if(wavBlob.size > 19*1024*1024){
         statusMsg.textContent = '';
-        alert('녹음이 너무 깁니다 (약 20분 이상 추정). 더 짧게 나눠서 시도해주세요.');
+        alert('녹음이 너무 깁니다 (약 10분 이상). 더 짧게 나눠서 시도해주세요.');
         btn.disabled = false;
         return;
       }
@@ -782,6 +782,9 @@ document.getElementById('analyzeBtn').addEventListener('click', async ()=>{
     statusMsg.textContent = 'Gemini로 분석 중... (일반적으로 1~2분 정도 걸리고, 녹음이 길수록 더 걸릴 수 있습니다)';
 
     const prompt = `당신은 한의원 근골격계 진료 내용을 SOAP 노트로 정리하는 어시스턴트입니다.
+
+**가장 중요한 규칙**: 반드시 제공된 실제 오디오(또는 텍스트) 내용만을 근거로 작성하세요. 이 지시문에 포함된 예시(어깨, 허리 등)는 오직 '출력 형식'을 보여주기 위한 것이며, 그 안의 신체 부위·증상·진단명 등 구체적 내용은 절대 결과에 가져오지 마세요. 실제 녹음에서 환자가 무릎을 말했으면 무릎으로, 목을 말했으면 목으로 써야 합니다. 오디오가 잘 안 들리거나 특정 항목을 알 수 없으면, 예시를 베끼지 말고 해당 부분을 빈칸이나 #으로 두세요.
+
 아래는 환자와 한의사 간의 진료 대화입니다 (오디오 또는 텍스트로 제공됨). 반드시 아래 형식과 규칙을 그대로 지켜 작성하세요.
 "S)", "O)", "A)" 는 반드시 그 줄에 단독으로 쓰고(뒤에 다른 내용 붙이지 말 것), "[SCRIPT]" 앞뒤에 다른 설명, 인사말, 마크다운 기호(**, ## 등)를 넣지 마세요.
 문장 끝에 마침표(.)를 쓰지 마세요. "-" 불렛은 서로 밀접하게 연관된 정보(같은 시간대·같은 동작·같은 상황에 대한 설명)는 쉼표로 이어 한 줄로 묶고, 성격이 다른 정보(예: 시간대별 통증 패턴 / 특정 자세·동작에서의 통증 / 과거 이력 등)로 넘어가면 새 줄로 나누세요. 한 줄이 지나치게 길어져 읽기 어려워질 정도로 여러 상황을 몰아넣지 말고, 구분 가능한 상황·동작 단위로 적절히 줄을 나눠 가독성을 높이세요.
@@ -826,7 +829,7 @@ A)
 [SCRIPT]
 [대화 내용을 화자 구분 없이 최대한 그대로 옮겨 적은 텍스트. 입력이 이미 텍스트로 제공된 경우 그 내용을 거의 그대로 반복해서 쓰세요]
 
---- 아래는 형식 예시입니다. 줄바꿈과 기호를 정확히 그대로 따르세요 (예시 1: 항목이 채워진 경우) ---
+--- 아래는 '형식(줄바꿈·기호·항목 구조)'만 보여주는 예시입니다. 예시 속 신체 부위(어깨/허리 등)와 증상 내용은 절대 실제 결과에 복사하지 마세요. 오직 줄바꿈과 기호 배치 방식만 참고하세요 (예시 1) ---
 S)
 C/C : Lt. shoulder pain (NRS #)
 - 가만히 있을 때는 괜찮다가 팔을 들려고 하면 아프고, 밤에 잘 땐 괜찮음
@@ -877,15 +880,19 @@ A)
 
 실제 대화에 없는 내용은 지어내지 말고, 규칙에 따라 빈칸 또는 #으로 채우세요. A) 아래에는 진단 설명 한 줄만 쓰고 다른 문구는 추가하지 마세요.`;
 
-    const contentParts = [{text: prompt}];
+    const contentParts = [];
     if(activeTab === 'text'){
-      contentParts.push({text: '아래는 텍스트로 입력된 진료 내용입니다:\n' + directText});
+      contentParts.push({text: prompt});
+      contentParts.push({text: '\n\n아래는 이번 진료의 실제 내용입니다. 반드시 이 내용만을 근거로 작성하세요:\n' + directText});
     } else {
+      // 오디오를 먼저 제시해 모델이 실제 음성을 최우선으로 처리하도록 함
+      contentParts.push({text: '아래 오디오는 이번 진료의 실제 녹음입니다. 반드시 이 녹음 내용만을 근거로 작성하세요:'});
       contentParts.push({inline_data: {mime_type:'audio/wav', data: base64Audio}});
       const extraNotes = document.getElementById('extraNotesInput').value.trim();
       if(extraNotes){
-        contentParts.push({text: '아래는 녹음 내용에 추가로 의사가 직접 적은 메모입니다. 녹음 내용과 함께 반영하세요:\n' + extraNotes});
+        contentParts.push({text: '아래는 녹음에 추가로 의사가 직접 적은 메모입니다. 녹음 내용과 함께 반영하세요:\n' + extraNotes});
       }
+      contentParts.push({text: prompt});
     }
 
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
