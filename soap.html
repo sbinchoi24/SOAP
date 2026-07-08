@@ -1640,7 +1640,10 @@ function skinGenerate(){
   Object.keys(PROC_GROUPS).forEach(function(g){
     if(!skinSelection[g]) return;
     var amts=(g==='RF 시크릿' && rfAmtsChange) ? ' (AMTS로 변경)' : '';
-    lines.push('* '+date+' '+skinSelection[g]+amts+' 결제');
+    // 그룹명 앞에 붙이되, prefix가 그룹명과 같으면(바이오셀 등) 중복 제거
+    var sel=skinSelection[g];
+    var text=(sel.indexOf(g)===0) ? sel : (g+' '+sel);
+    lines.push('* '+date+' '+text+amts+' 결제');
   });
   document.getElementById('skin-result-area').value=lines.join('\n');
 }
