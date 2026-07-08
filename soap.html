@@ -1848,6 +1848,14 @@ function dvAdd(base){
   if(DV_EXCLUSIVE3.indexOf(base) >= 0){
     dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
   }
+  // 추나(계열) ↔ BC 상호 배타 (같이 사용 불가)
+  if(DV_EXCLUSIVE3.indexOf(base) >= 0){
+    // 추나 넣으면 BC 제거
+    dvTreatments = dvTreatments.filter(function(t){ return t.base !== 'BC'; });
+  } else if(base === 'BC'){
+    // BC 넣으면 추나(환자복 포함) 제거
+    dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
+  }
   dvInsertSorted({ id:dvNewId(), base:base, extra:{} });
   dvRender();
 }
