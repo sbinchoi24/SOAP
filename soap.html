@@ -894,20 +894,48 @@ A)
       contentParts.push({text: prompt});
     }
 
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        contents: [{ parts: contentParts }],
-        generationConfig: {
-          temperature: 0.1,
-          seed: 42
+    // 과부하/일시적 오류 시 자동 재시도 (최대 4회, 대기시간 점점 늘림)
+    const MAX_TRIES = 4;
+    let data = null;
+    for(let attempt = 1; attempt <= MAX_TRIES; attempt++){
+      let resp;
+      try{
+        resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            contents: [{ parts: contentParts }],
+            generationConfig: { temperature: 0.1, seed: 42 }
+          })
+        });
+      }catch(netErr){
+        // 네트워크 자체 실패도 재시도 대상
+        if(attempt < MAX_TRIES){
+          statusMsg.textContent = `연결이 불안정합니다. 잠시 후 자동으로 다시 시도합니다... (${attempt}/${MAX_TRIES-1})`;
+          await new Promise(r => setTimeout(r, attempt * 2500));
+          continue;
         }
-      })
-    });
-    const data = await resp.json();
-    if(!resp.ok){
-      throw new Error(data.error?.message || '알 수 없는 오류');
+        throw new Error('네트워크 연결에 실패했습니다. 인터넷 상태를 확인해주세요.');
+      }
+
+      data = await resp.json();
+      if(resp.ok) break;
+
+      // 과부하(503) / 요청 제한(429) / 일시적 서버 오류(500,502,504)는 재시도
+      const retryable = [429, 500, 502, 503, 504].includes(resp.status);
+      const isLast = attempt >= MAX_TRIES;
+      if(retryable && !isLast){
+        const waitSec = attempt * 3;   // 3초 → 6초 → 9초
+        statusMsg.textContent = `AI 서버가 잠시 혼잡합니다. ${waitSec}초 후 자동으로 다시 시도합니다... (${attempt}/${MAX_TRIES-1})`;
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        continue;
+      }
+      // 재시도 불가 오류이거나 마지막 시도 실패
+      const msg = data.error?.message || '알 수 없는 오류';
+      if(retryable){
+        throw new Error('AI 서버 혼잡이 계속되고 있습니다. 잠시 후 다시 생성하기를 눌러주세요.\n(원문: ' + msg + ')');
+      }
+      throw new Error(msg);
     }
     const text = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
     let sMatch = text.split('O)')[0].trim();
@@ -1312,18 +1340,32 @@ function buildPText(){
   const a0 = acuAreas[0], a1 = acuAreas[1];
   const m0 = a0 ? ACU_MAP[a0] : null, m1 = a1 ? ACU_MAP[a1] : null;
   const parts = [];
+  // 투자/관절/척추/복강/간접구 등은 두 부위 중 하나만 사용.
+  // 상지부·하지부를 우선으로 하고, 그 부위에 해당 항목이 있으면 그것을, 없으면 다른 부위를 사용.
+  function isLimb(area){ return area && (area.indexOf('상지부')===0 || area.indexOf('하지부')===0); }
+  // key에 해당하는 값이 있는 부위를 우선순위(상지/하지 먼저)로 골라 반환
+  function pickArea(key){
+    // 후보를 우선순위대로 정렬: 상지/하지 먼저
+    const cands = [];
+    if(a0) cands.push({area:a0, m:m0});
+    if(a1) cands.push({area:a1, m:m1});
+    cands.sort((x,y)=> (isLimb(y.area)?1:0) - (isLimb(x.area)?1:0));
+    // 값이 있는 첫 후보
+    for(const cd of cands){ if(cd.m && cd.m[key]) return cd; }
+    return null;
+  }
   if(acuSt.경혈==='경혈2' && m0 && m1) parts.push(`경혈2부위(${m0.경혈} ${m1.경혈})`);
   else if(acuSt.경혈==='경혈1' && m0) parts.push(`경혈1부위(${m0.경혈})`);
-  if(acuSt.투자 && m0 && m0.투자) parts.push(`투자(${m0.투자.join(' ')})`);
-  if(acuSt.관절 && m0 && m0.관절) parts.push(`관절(${m0.관절})`);
-  if(acuSt.척추 && m0 && m0.척추) parts.push(`척추(${m0.척추})`);
-  if(acuSt.복강 && m0 && m0.복강) parts.push(`복강(${m0.복강})`);
+  if(acuSt.투자){ const p=pickArea('투자'); if(p) parts.push(`투자(${p.m.투자.join(' ')})`); }
+  if(acuSt.관절){ const p=pickArea('관절'); if(p) parts.push(`관절(${p.m.관절})`); }
+  if(acuSt.척추){ const p=pickArea('척추'); if(p) parts.push(`척추(${p.m.척추})`); }
+  if(acuSt.복강){ const p=pickArea('복강'); if(p) parts.push(`복강(${p.m.복강})`); }
   if(acuSt.전침) parts.push('침전기자극술');
   if(acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${acuShortName(a0)} ${acuShortName(a1)})`);
   else if(acuSt.습부2 && m0) parts.push(`습부2부위(${acuShortName(a0)})`);
   if(acuSt.습부1 && m0) parts.push(`습부1부위(${acuShortName(a0)})`);
   if(acuSt.건부 && m0) parts.push(`건부(${acuShortName(a0)})`);
-  if(acuSt.간접구 && m0 && m0.간접구) parts.push(`간접구(${m0.간접구})`);
+  if(acuSt.간접구){ const p=pickArea('간접구'); if(p) parts.push(`간접구(${p.m.간접구})`); }
   if(acuSt.핫팩 && a0) parts.push(`핫팩(${acuShortName(a0)})`);
   if(acuSt.ir && a0) parts.push(`IR(${acuShortName(a0)})`);
   if(acuSt.ict && a0) parts.push(`ICT(${acuShortName(a0)})`);
