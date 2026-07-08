@@ -1538,9 +1538,34 @@ document.getElementById('combineBtn').addEventListener('click', ()=>{
   }
 
   soa = lines.join('\n');
+  soa = normalizeSectionBreaks(soa);
   const p = buildPText();
-  document.getElementById('fullOutput').value = `${soa}\n\n${p}`;
+  document.getElementById('fullOutput').value = `${soa}\n\n${p}\n\n${chartFooter()}`;
 });
+
+// S)/O)/A) 등 구역 헤더 앞에 반드시 빈 줄 하나만 있도록 보정
+function normalizeSectionBreaks(text){
+  const lines = text.split('\n');
+  const headers = new Set(['S)','O)','A)','P)']);
+  const out = [];
+  for(let i=0;i<lines.length;i++){
+    const cur = lines[i].trim();
+    if(headers.has(cur) && out.length>0){
+      // 직전 줄들의 끝 빈 줄을 정확히 하나로 맞춤
+      while(out.length && out[out.length-1].trim()===''){ out.pop(); }
+      out.push('');
+    }
+    out.push(lines[i]);
+  }
+  return out.join('\n');
+}
+
+// 차트 맨 끝 날짜 푸터: ----...---- \n* 7/8
+function chartFooter(){
+  const now = new Date();
+  const md = (now.getMonth()+1) + '/' + now.getDate();
+  return '----------------------------------------------------------------------\n* ' + md;
+}
 
 // P) 부분만 차트칸에 생성
 function generatePOnly(){
