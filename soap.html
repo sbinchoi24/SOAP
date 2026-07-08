@@ -57,6 +57,43 @@
   }
   .p-reset-btn:hover{background:#fddfe2;}
   .page-content.active{display:block;}
+  /* 전달 탭 */
+  .deliver-toprow{display:flex;gap:10px;margin-bottom:16px;}
+  .deliver-input{
+    flex:1;border:none;border-radius:12px;padding:12px 14px;
+    font-size:15px;font-family:inherit;background:#f2f4f6;color:var(--text);font-weight:600;
+  }
+  .deliver-input:focus{outline:none;background:#fff;box-shadow:0 0 0 2px var(--primary);}
+  .deliver-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;min-height:4px;}
+  .deliver-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding-top:14px;border-top:1px solid var(--border);}
+  .dv-btn{
+    height:36px;padding:0 14px;border:1px solid var(--border);
+    background:#fff;color:var(--text-secondary);border-radius:8px;
+    font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;
+  }
+  .dv-btn:hover{border-color:var(--dvcolor);color:var(--dvcolor);}
+  .dv-chip{
+    display:flex;align-items:center;height:36px;gap:6px;padding:0 12px;
+    border-radius:8px;font-size:13px;font-weight:600;color:#fff;background:var(--dvcolor);white-space:nowrap;
+  }
+  .dv-chip .dv-del{cursor:pointer;opacity:0.85;font-size:12px;padding:2px 2px;}
+  .dv-chip .dv-del:hover{opacity:1;}
+  .dv-chip-split{
+    display:flex;align-items:stretch;height:36px;padding:0;border-radius:8px;overflow:hidden;
+  }
+  .dv-chip-split .dv-label{background:var(--dvcolor);color:#fff;font-weight:600;font-size:13px;padding:0 10px;display:flex;align-items:center;white-space:nowrap;}
+  .dv-chip-split input{border:none;background:var(--dvcolor);font-size:13px;padding:0 6px;width:56px;color:#fff;font-family:inherit;}
+  .dv-chip-split input::placeholder{color:rgba(255,255,255,0.7);}
+  .dv-chip-split input:focus{outline:none;filter:brightness(1.08);}
+  .dv-chip-split select{border:none;background:var(--dvcolor);font-size:12px;font-weight:500;padding:0 6px;color:#fff;cursor:pointer;font-family:inherit;border-left:1px solid rgba(255,255,255,0.2);}
+  .dv-chip-split .dv-del{background:var(--dvcolor);display:flex;align-items:center;padding:0 10px;cursor:pointer;color:rgba(255,255,255,0.85);font-size:12px;border-left:1px solid rgba(255,255,255,0.2);}
+  .dv-chip-split .dv-del:hover{color:#fff;}
+  .deliver-actions{display:flex;gap:10px;margin-bottom:14px;}
+  .deliver-result{
+    width:100%;min-height:80px;border:none;border-radius:12px;padding:14px;
+    font-size:15px;font-family:inherit;background:#f2f4f6;color:var(--text);resize:vertical;line-height:1.6;font-weight:600;
+  }
+  .deliver-result:focus{outline:none;}
   /* 피부 시술 선택 */
   .skin-layout{
     display:grid;grid-template-columns:1.7fr 1fr;gap:16px;align-items:start;
@@ -429,6 +466,7 @@
   <div class="page-tabs">
     <button class="page-tab active" data-page="근골격계" onclick="switchPage('근골격계',this)">통증</button>
     <button class="page-tab" data-page="피부" onclick="switchPage('피부',this)">피부</button>
+    <button class="page-tab" data-page="전달" onclick="switchPage('전달',this)">전달</button>
   </div>
 
   <div id="page-근골격계" class="page-content active">
@@ -575,6 +613,22 @@
       </div>
     </div>
   </div><!-- /page-피부 -->
+
+  <div id="page-전달" class="page-content">
+    <div class="card" style="max-width:820px;">
+      <div class="deliver-toprow">
+        <input type="text" id="deliver-name" class="deliver-input" placeholder="환자명">
+        <input type="text" id="deliver-region" class="deliver-input" placeholder="부위">
+      </div>
+      <div id="deliver-chips" class="deliver-chips"></div>
+      <div id="deliver-btns" class="deliver-btns"></div>
+      <div class="deliver-actions">
+        <button class="btn-primary" onclick="deliverCopy()" style="flex:1;">복사</button>
+        <button class="p-reset-btn" onclick="deliverReset()" style="padding:15px 20px;font-size:15px;border-radius:14px;">초기화</button>
+      </div>
+      <textarea id="deliver-result" class="deliver-result" placeholder="복사를 누르면 전달 문구가 여기에 나옵니다." readonly></textarea>
+    </div>
+  </div><!-- /page-전달 -->
 </div>
 
 <script>
@@ -1699,6 +1753,226 @@ buildProcUI('skin-p-buttons');
 renderCQResult();
 // 초기엔 접어둠 (헤더만 보이게)
 document.querySelector('.cq-card').classList.add('collapsed');
+
+/* ════════════════════════════════════
+   전달 탭 (치료실 전달 문구 생성)
+════════════════════════════════════ */
+var DV_ORDER = ['충격파','추나','추나(환자복)','BC','간접구','습부2','습부1','건부','침(전)','침','약침','I','핫팩','돔','JB'];
+var DV_COLORS = {
+  'JB':'#7C8FD4','돔':'#5B7C99','핫팩':'#FF6B35','I':'#3B8DCC','약침':'#0052FF',
+  '침':'#00C48C','침(전)':'#00C48C',
+  '건부':'#88BB00','습부1':'#88BB00','습부2':'#88BB00','간접구':'#D4A574',
+  '추나':'#A67C52','추나(환자복)':'#A67C52','충격파':'#1A1D29','BC':'#5B6B81'
+};
+var DV_FORM = { '핫팩':['부위'], 'I':['부위'], '약침':['종류','cc','개수'] };
+var DV_DEFAULT = ['BC','습부2','침(전)','I','핫팩'];
+var DV_CHIM_BASES = ['침','침(전)'];
+var DV_CHIM_POS = ['앞침','엎침','옆침/좌','옆침/우'];
+// 습부1/습부2/건부는 셋 중 하나만
+var DV_EXCLUSIVE = ['습부1','습부2','건부'];
+var DV_EXCLUSIVE2 = ['침','침(전)'];
+// 예비 버튼 표시 순서 (문장 출력 순서와 별개)
+var DV_BTN_ORDER = ['핫팩','돔','JB','I','침','침(전)','약침','간접구','습부2','습부1','건부','BC','추나','추나(환자복)','충격파'];
+
+var dvSeq = 1;
+function dvNewId(){ return 'dv'+(dvSeq++)+'-'+Date.now(); }
+var dvTreatments = [];
+
+function dvInsertSorted(obj){
+  var orderIdx = DV_BTN_ORDER.indexOf(obj.base);
+  var insertAt = dvTreatments.length;
+  for(var i=0;i<dvTreatments.length;i++){
+    if(DV_BTN_ORDER.indexOf(dvTreatments[i].base) > orderIdx){ insertAt = i; break; }
+  }
+  dvTreatments.splice(insertAt, 0, obj);
+}
+function dvAdd(base){
+  // 배타 그룹(습부1/습부2/건부): 기존 것 제거 후 추가(교체)
+  if(DV_EXCLUSIVE.indexOf(base) >= 0){
+    dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE.indexOf(t.base) < 0; });
+  }
+  // 배타 그룹(침/침(전)): 하나만
+  if(DV_EXCLUSIVE2.indexOf(base) >= 0){
+    dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE2.indexOf(t.base) < 0; });
+  }
+  dvInsertSorted({ id:dvNewId(), base:base, extra:{} });
+  dvRender();
+}
+function dvRemove(id){
+  dvTreatments = dvTreatments.filter(function(t){ return t.id !== id; });
+  dvRender();
+}
+function dvInit(){
+  dvTreatments = [];
+  DV_DEFAULT.forEach(function(name){ dvInsertSorted({ id:dvNewId(), base:name, extra:{} }); });
+  dvRender();
+}
+function dvReset(){
+  document.getElementById('deliver-name').value = '';
+  document.getElementById('deliver-region').value = '';
+  document.getElementById('deliver-result').value = '';
+  dvInit();
+}
+function deliverReset(){ dvReset(); }
+
+function dvTreatmentLabel(t){
+  if(DV_CHIM_BASES.indexOf(t.base) >= 0 && t.extra && t.extra['자세']){
+    return t.extra['자세'] + (t.base === '침(전)' ? '(전)' : '');
+  }
+  return t.base;
+}
+
+function dvRender(){
+  var chipsBox = document.getElementById('deliver-chips');
+  var btnsBox = document.getElementById('deliver-btns');
+  if(!chipsBox || !btnsBox) return;
+  chipsBox.innerHTML = '';
+  btnsBox.innerHTML = '';
+
+  dvTreatments.forEach(function(t){
+    var color = DV_COLORS[t.base] || '#0052FF';
+    var fields = DV_FORM[t.base];
+    if(fields){
+      var chip = document.createElement('div');
+      chip.className = 'dv-chip-split';
+      chip.style.setProperty('--dvcolor', color);
+      var label = document.createElement('div');
+      label.className = 'dv-label'; label.textContent = t.base;
+      chip.appendChild(label);
+      fields.forEach(function(f){
+        var inp = document.createElement('input');
+        inp.placeholder = f;
+        inp.value = t.extra[f] || '';
+        inp.addEventListener('input', function(e){ t.extra[f] = e.target.value; });
+        chip.appendChild(inp);
+      });
+      var del = document.createElement('div');
+      del.className = 'dv-del'; del.textContent = '✕';
+      del.addEventListener('click', function(){ dvRemove(t.id); });
+      chip.appendChild(del);
+      chipsBox.appendChild(chip);
+    } else if(DV_CHIM_BASES.indexOf(t.base) >= 0){
+      var chip2 = document.createElement('div');
+      chip2.className = 'dv-chip-split';
+      chip2.style.setProperty('--dvcolor', color);
+      var label2 = document.createElement('div');
+      label2.className = 'dv-label'; label2.textContent = t.base;
+      chip2.appendChild(label2);
+      var sel = document.createElement('select');
+      var optD = document.createElement('option');
+      optD.value = ''; optD.textContent = '자세';
+      sel.appendChild(optD);
+      DV_CHIM_POS.forEach(function(p){
+        var o = document.createElement('option'); o.value = p; o.textContent = p;
+        sel.appendChild(o);
+      });
+      if(!t.extra) t.extra = {};
+      sel.value = t.extra['자세'] || '';
+      sel.addEventListener('change', function(e){ t.extra['자세'] = e.target.value; });
+      chip2.appendChild(sel);
+      var del2 = document.createElement('div');
+      del2.className = 'dv-del'; del2.textContent = '✕';
+      del2.addEventListener('click', function(){ dvRemove(t.id); });
+      chip2.appendChild(del2);
+      chipsBox.appendChild(chip2);
+    } else {
+      var chip3 = document.createElement('div');
+      chip3.className = 'dv-chip';
+      chip3.style.setProperty('--dvcolor', color);
+      var sp = document.createElement('span'); sp.textContent = t.base;
+      chip3.appendChild(sp);
+      var del3 = document.createElement('span');
+      del3.className = 'dv-del'; del3.textContent = '✕';
+      del3.addEventListener('click', function(){ dvRemove(t.id); });
+      chip3.appendChild(del3);
+      chipsBox.appendChild(chip3);
+    }
+  });
+
+  // 아직 추가 안 된 시술 버튼
+  var added = {};
+  dvTreatments.forEach(function(t){ added[t.base] = true; });
+  DV_BTN_ORDER.forEach(function(name){
+    if(added[name]) return;
+    var btn = document.createElement('button');
+    btn.className = 'dv-btn';
+    btn.style.setProperty('--dvcolor', DV_COLORS[name] || '#0052FF');
+    btn.textContent = name;
+    btn.addEventListener('click', function(){ dvAdd(name); });
+    btnsBox.appendChild(btn);
+  });
+}
+
+var DV_OUTPUT_ORDER = DV_ORDER.slice().reverse();  // 핫팩부터
+function dvBuildSummary(){
+  var region = document.getElementById('deliver-region').value.trim();
+  var treatments = dvTreatments.slice().sort(function(a,b){
+    return DV_OUTPUT_ORDER.indexOf(a.base) - DV_OUTPUT_ORDER.indexOf(b.base);
+  });
+  var yakIdx = treatments.findIndex(function(t){ return t.base === '약침'; });
+  var chimIdx = treatments.findIndex(function(t){ return t.base === '침(전)'; });
+  var out = [];
+  for(var i=0;i<treatments.length;i++){
+    if(i === yakIdx && chimIdx > -1) continue;
+    var t = treatments[i];
+    if(i === chimIdx && yakIdx > -1){
+      var yak = treatments[yakIdx];
+      var kind = yak.extra['종류'] || '';
+      var cc = yak.extra['cc'] || '';
+      var count = yak.extra['개수'] || '';
+      var detail = kind;
+      if(cc || count) detail += '('+cc+'cc*'+count+')';
+      out.push(dvTreatmentLabel(t) + '+' + detail);
+      continue;
+    }
+    if(t.base === 'I'){
+      var vI = (t.extra['부위'] && t.extra['부위'].trim()) ? t.extra['부위'].trim() : '';
+      out.push('I' + (vI ? '('+vI+')' : ''));
+      continue;
+    }
+    if(t.base === '핫팩'){
+      var vH = t.extra['부위'] || '';
+      out.push('HP' + (vH ? '('+vH+')' : ''));
+      continue;
+    }
+    var fields = DV_FORM[t.base];
+    if(fields){
+      var vals = fields.map(function(f){ return t.extra[f]; }).filter(function(v){ return v; });
+      out.push(t.base + (vals.length ? '('+vals.join('/')+')' : ''));
+    } else {
+      out.push(dvTreatmentLabel(t));
+    }
+  }
+  return out.map(function(s,i){ return (i+1)+s; }).join(' ');
+}
+
+function deliverCopy(){
+  var name = document.getElementById('deliver-name').value.trim();
+  var region = document.getElementById('deliver-region').value.trim();
+  var summary = dvBuildSummary();
+  var prefix = [name, region].filter(function(v){ return v; }).join(' ');
+  var text = (prefix ? prefix + ' ' : '') + summary;
+  document.getElementById('deliver-result').value = text;
+  var el = document.getElementById('deliver-result');
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(function(){ showToastDv('복사되었습니다'); }).catch(function(){ dvFallbackCopy(el); });
+  } else {
+    dvFallbackCopy(el);
+  }
+}
+function dvFallbackCopy(el){
+  el.removeAttribute('readonly');
+  el.select(); el.setSelectionRange(0,99999);
+  try{ document.execCommand('copy'); showToastDv('복사되었습니다'); }
+  catch(e){ showToastDv('복사 실패 — 직접 선택 후 복사하세요'); }
+  el.setAttribute('readonly','');
+}
+function showToastDv(msg){
+  if(typeof showToast === 'function'){ showToast(msg); return; }
+  alert(msg);
+}
+
+dvInit();
 </script>
 </body>
 </html>
