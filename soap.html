@@ -777,8 +777,8 @@ document.getElementById('analyzeBtn').addEventListener('click', async ()=>{
     const prompt = `당신은 한의원 근골격계 진료 내용을 SOAP 노트로 정리하는 어시스턴트입니다.
 아래는 환자와 한의사 간의 진료 대화입니다 (오디오 또는 텍스트로 제공됨). 반드시 아래 형식과 규칙을 그대로 지켜 작성하세요.
 "S)", "O)", "A)" 는 반드시 그 줄에 단독으로 쓰고(뒤에 다른 내용 붙이지 말 것), "[SCRIPT]" 앞뒤에 다른 설명, 인사말, 마크다운 기호(**, ## 등)를 넣지 마세요.
-문장 끝에 마침표(.)를 쓰지 마세요. "-" 불렛은 "한 문장 = 한 불렛"이 아니라 "한 주제 = 한 불렛"으로 나누세요: 같은 맥락(예: 통증이 언제 심해지고 언제 나아지는지 같은 하나의 패턴 설명)을 이루는 문장들은 쉼표로 자연스럽게 이어서 한 줄로 쓰고, 완전히 다른 주제(통증 위치/양상 → 시간대별 패턴 → 과거 이력 등)로 넘어갈 때만 새 줄을 추가하세요.
-예시: "아침에 일어나면 통증이 심하고, 발바닥까지 아프지만 걷다 보면 통증이 괜찮아짐" 처럼 하나의 패턴을 설명하는 내용은 한 줄로 묶고, "전에도 비슷한 통증이 있었으나 이렇게 오래 가지는 않았음"처럼 완전히 다른 주제(과거 이력)는 별도 줄로 분리하세요. 무리하게 한 줄에 다 몰아넣지도, 같은 맥락을 억지로 쪼개지도 마세요.
+문장 끝에 마침표(.)를 쓰지 마세요. "-" 불렛은 서로 밀접하게 연관된 정보(같은 시간대·같은 동작·같은 상황에 대한 설명)는 쉼표로 이어 한 줄로 묶고, 성격이 다른 정보(예: 시간대별 통증 패턴 / 특정 자세·동작에서의 통증 / 과거 이력 등)로 넘어가면 새 줄로 나누세요. 한 줄이 지나치게 길어져 읽기 어려워질 정도로 여러 상황을 몰아넣지 말고, 구분 가능한 상황·동작 단위로 적절히 줄을 나눠 가독성을 높이세요.
+예시: "야간에 통증이 심하고 낮에는 그나마 괜찮음"은 같은 시간대 패턴이므로 한 줄로 묶되, "밤에 어깨가 눌리게 누울 때 가장 심하게 아픔"(특정 자세)과 "팔을 앞이나 옆으로 들어올릴 때 불편함"(특정 동작)은 서로 성격이 다르므로 각각 별도 줄로 나누세요. 즉 연관된 것은 붙이고, 구분되는 상황·자세·동작은 나눠서 한 줄이 너무 길어지지 않게 하세요. 무리하게 한 줄에 다 몰아넣지도, 밀접히 연관된 내용을 억지로 쪼개지도 마세요.
 줄을 나누는 기준은 글자 수/분량이 아니라 "주제"입니다. 서로 다른 주제(예: 통증 위치·양상 / 시간대별 패턴 / 과거 이력)마다 새 줄을 만드세요. 결과적으로 주제가 하나면 한 줄, 두 개면 두 줄, 세 개면 세 줄이 되는 식입니다. 억지로 줄 수를 맞추려 하지 말고, 실제 언급된 주제 개수에 따라 자연스럽게 줄 수가 정해지게 하세요.
 중복된 표현 없이 간결하게 서술하세요.
 C/C는 대표 통증 부위 하나만 한 줄로 쓰세요. 다른 부위의 통증도 언급되면 새로운 C/C 줄을 만들지 말고 아래 "-" 문장 안에서 함께 서술하세요.
@@ -1038,7 +1038,7 @@ function resetPBody(){
   pSangbiyak = {name:'', perDay:'', totalDays:''};
   pTangyak = {name:'', perDay:'', totalDays:''};
   pTATangyak = {name:'', perDay:'', totalDays:''};
-  pSilbi = {jo:null, umu:null, gen:null};
+  pSilbi = {sel:null, gen:null};
   renderPBody();
 }
 
@@ -1075,35 +1075,36 @@ var TA_ITEMS = [
   {key:'N', label:'N 오심'},
   {key:'V', label:'V 구토'}
 ];
-var taActive = false;      // T/A 환자인지 (하나라도 누르면 활성)
+var taActive = false;      // T/A 환자 여부 (토글 버튼으로 켬)
 var taState = {H:false, D:false, N:false, V:false};
+function toggleTAActive(){
+  taActive = !taActive;
+  renderTA();
+}
 function toggleTA(key){
   taState[key] = !taState[key];
-  taActive = true;         // 버튼을 눌러 상태를 정한 순간부터 출력 대상
   renderTA();
 }
 function renderTA(){
   const body = document.getElementById('taBody');
   if(!body) return;
-  body.innerHTML = TA_ITEMS.map(it =>
+  let h = `<button class="btn-toggle${taActive?' selected':''}" onclick="toggleTAActive()">T/A</button>`;
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  h += TA_ITEMS.map(it =>
     `<button class="btn-toggle${taState[it.key]?' selected':''}" onclick="toggleTA('${it.key}')">${it.label}</button>`
   ).join('');
+  body.innerHTML = h;
 }
 function getTALine(){
   if(!taActive) return '';
-  return 'T/A : ' + TA_ITEMS.map(it => it.key + '(' + (taState[it.key]?'+':'-') + ')').join(' ');
+  return '- ' + TA_ITEMS.map(it => it.key + '(' + (taState[it.key]?'+':'-') + ')').join(' ');
 }
 
-// ── 실비(실손보험) ──
-var pSilbi = {jo:null, umu:null, gen:null};   // jo: 'O'|'X'|'거부'  umu:'유'|'무'  gen:1~4
-function setSilbiJo(v){
-  pSilbi.jo = (pSilbi.jo===v ? null : v);
-  if(pSilbi.jo !== 'O'){ pSilbi.umu = null; pSilbi.gen = null; }
-  renderPBody();
-}
-function setSilbiUmu(v){
-  pSilbi.umu = (pSilbi.umu===v ? null : v);
-  if(pSilbi.umu !== '유') pSilbi.gen = null;
+// ── 실비(실손보험) ── 상태: sel = '유'|'무'|'거부'|null, gen = 1~4
+var pSilbi = {sel:null, gen:null};
+function setSilbiSel(v){
+  pSilbi.sel = (pSilbi.sel===v ? null : v);
+  if(pSilbi.sel !== '유') pSilbi.gen = null;
   renderPBody();
 }
 function setSilbiGen(v){
@@ -1111,16 +1112,13 @@ function setSilbiGen(v){
   renderPBody();
 }
 function getSilbiLine(){
-  if(!pSilbi.jo) return '';
-  if(pSilbi.jo === '거부') return '\u25a0 \uc2e4\ube44 : \uc870\ud68c \uac70\ubd80';
-  if(pSilbi.jo === 'X')   return '\u25a0 \uc2e4\ube44 : \uc870\ud68c X';
-  // 조회 O
-  if(pSilbi.umu === '\uc720'){
+  if(!pSilbi.sel) return '';
+  if(pSilbi.sel === '거부') return '\u25a0 \uc2e4\ube44 : \uc870\ud68c \uac70\ubd80';
+  if(pSilbi.sel === '유'){
     const gen = pSilbi.gen ? ' (' + pSilbi.gen + '\uc138\ub300)' : '';
-    return '\u25a0 \uc2e4\ube44 : \uc870\ud68c O / \uc720' + gen;
+    return '\u25a0 \uc2e4\ube44 : \uc720' + gen;
   }
-  if(pSilbi.umu === '\ubb34') return '\u25a0 \uc2e4\ube44 : \uc870\ud68c O / \ubb34';
-  return '\u25a0 \uc2e4\ube44 : \uc870\ud68c O';
+  return '\u25a0 \uc2e4\ube44 : \ubb34';
 }
 
 function renderPBody(){
@@ -1250,21 +1248,14 @@ function renderPBody(){
 
   // ── 실비(실손보험) ──
   h += '<div class="btn-toggle-row">';
-  h += '<span style="font-size:12px;color:var(--muted);font-weight:600;">실비</span>';
-  ['O','X','거부'].forEach(v=>{
-    h += `<button type="button" class="btn-toggle${pSilbi.jo===v?' selected':''}" onclick="setSilbiJo('${v}')">조회 ${v}</button>`;
+  [['유','실비 유'],['무','실비 무'],['거부','실비 조회 거부']].forEach(pair=>{
+    h += `<button type="button" class="btn-toggle${pSilbi.sel===pair[0]?' selected':''}" onclick="setSilbiSel('${pair[0]}')">${pair[1]}</button>`;
   });
-  if(pSilbi.jo === 'O'){
+  if(pSilbi.sel === '유'){
     h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-    ['유','무'].forEach(v=>{
-      h += `<button type="button" class="btn-toggle tier2${pSilbi.umu===v?' selected':''}" onclick="setSilbiUmu('${v}')">${v}</button>`;
+    [1,2,3,4].forEach(n=>{
+      h += `<button type="button" class="btn-toggle tier2${pSilbi.gen===n?' selected':''}" onclick="setSilbiGen(${n})">${n}세대</button>`;
     });
-    if(pSilbi.umu === '유'){
-      h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-      [1,2,3,4].forEach(n=>{
-        h += `<button type="button" class="btn-toggle tier3${pSilbi.gen===n?' selected':''}" onclick="setSilbiGen(${n})">${n}세대</button>`;
-      });
-    }
   }
   h += '</div>';
 
