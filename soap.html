@@ -473,11 +473,15 @@
 
     <div class="col-right">
       <div class="card">
-        <div class="card-header"><span class="step-badge">A</span>변증</div>
+        <div class="card-header"><span class="step-badge">3</span>변증</div>
         <div id="bijeungBody" class="btn-toggle-row"></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="step-badge">3</span>P</div>
+        <div class="card-header"><span class="step-badge">4</span>T/A</div>
+        <div id="taBody" class="btn-toggle-row"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="step-badge">5</span>P</div>
         <div id="pBody"></div>
         <div class="p-reset-row"><button class="p-reset-btn" onclick="resetPBody()">초기화</button></div>
       </div>
@@ -486,7 +490,7 @@
     <div class="col-cq">
       <div class="card cq-card">
         <div class="card-header cq-toggle-header" onclick="toggleCQ()">
-          <span class="step-badge">6</span>청구
+          <span class="step-badge">7</span>청구
           <span class="cq-chevron" id="cq-chevron"></span>
         </div>
         <div id="cq-body" class="cq-body">
@@ -517,14 +521,14 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="step-badge">4</span>차트</div>
+    <div class="card-header"><span class="step-badge">6</span>차트</div>
     <button class="btn-primary" id="combineBtn" style="margin-bottom:10px;">생성하기</button>
     <textarea id="fullOutput" style="min-height:200px;"></textarea>
     <div class="copy-btn-row"><button class="btn-secondary" data-copy="fullOutput">복사</button></div>
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="step-badge">5</span>스크립트</div>
+    <div class="card-header"><span class="step-badge">8</span>스크립트</div>
     <textarea id="scriptOutput" style="min-height:160px;" placeholder="녹음한 내용이 추출됩니다"></textarea>
     <div class="copy-btn-row"><button class="btn-secondary" data-copy="scriptOutput">복사</button></div>
   </div>
@@ -800,7 +804,7 @@ O/S : ['YY.MM.DD 형식. 정확한 날짜가 언급되면 '26.07.02처럼 정확
 - 치료 : [이번 증상 관련해서 받은 치료만. 없으면 빈칸]
 
 S/H : [직업 또는 주로 취하는 자세/습관. 전혀 언급 없으면 빈칸으로 두고 "S/H : "만 출력]
-P/H : [HTN/DM/HL/Hepa/Tb/Osteoporosis 관련 언급이 하나라도 있으면 "HTN/DM/HL/Hepa/Tb/Osteoporosis (+/-...)" 형식으로 6개 다 표기. 전혀 언급 없으면 빈칸으로 두고 "P/H : "만 출력]
+P/H : [과거력·기저질환 언급이 있으면 병명 뒤에 "(+)"를 붙여 표기하세요 (예: "고혈압(+)", 여러 개면 "고혈압(+), 당뇨(+)"처럼 쉼표로 나열). 전혀 언급 없으면 빈칸으로 두고 "P/H : "만 출력]
 - 기타 : [기타 질환 언급 있으면 내용. 없으면 이 줄 생략]
 - 알러지 : [알러지 언급 있으면 내용. 없으면 이 줄 생략]
 F/H : [가족력 언급 있으면 내용. 전혀 언급 없으면 빈칸으로 두고 "F/H : "만 출력]
@@ -826,7 +830,7 @@ O/S : '26.07 자고 일어난 후 발생 (일주일 전)
 - 치료 : 과거 동일 증상으로 정형외과에서 소염진통제 복용 후 호전
 
 S/H : 교사
-P/H : HTN/DM/HL/Hepa/Tb/Osteoporosis (+/+/-/-/-/-)
+P/H : 고혈압(+)
 - 기타 : 없음
 - 알러지 : 없음
 F/H : 유방암
@@ -1034,6 +1038,7 @@ function resetPBody(){
   pSangbiyak = {name:'', perDay:'', totalDays:''};
   pTangyak = {name:'', perDay:'', totalDays:''};
   pTATangyak = {name:'', perDay:'', totalDays:''};
+  pSilbi = {jo:null, umu:null, gen:null};
   renderPBody();
 }
 
@@ -1060,7 +1065,62 @@ function renderBijeung(){
 function getBijeungLine(){
   if(!bijeungSel) return '';
   const b = BIJEUNG_LIST.find(x => x.name === bijeungSel);
-  return b ? ('■ ' + b.name + ' | ' + b.maek + ' | ' + b.seol) : '';
+  return b ? ('\u25a0 ' + b.name + ' | ' + b.maek + ' | ' + b.seol) : '';
+}
+
+// ── T/A (두통 H / 현훈 D / 오심 N / 구토 V) ──
+var TA_ITEMS = [
+  {key:'H', label:'H 두통'},
+  {key:'D', label:'D 현훈'},
+  {key:'N', label:'N 오심'},
+  {key:'V', label:'V 구토'}
+];
+var taActive = false;      // T/A 환자인지 (하나라도 누르면 활성)
+var taState = {H:false, D:false, N:false, V:false};
+function toggleTA(key){
+  taState[key] = !taState[key];
+  taActive = true;         // 버튼을 눌러 상태를 정한 순간부터 출력 대상
+  renderTA();
+}
+function renderTA(){
+  const body = document.getElementById('taBody');
+  if(!body) return;
+  body.innerHTML = TA_ITEMS.map(it =>
+    `<button class="btn-toggle${taState[it.key]?' selected':''}" onclick="toggleTA('${it.key}')">${it.label}</button>`
+  ).join('');
+}
+function getTALine(){
+  if(!taActive) return '';
+  return 'T/A : ' + TA_ITEMS.map(it => it.key + '(' + (taState[it.key]?'+':'-') + ')').join(' ');
+}
+
+// ── 실비(실손보험) ──
+var pSilbi = {jo:null, umu:null, gen:null};   // jo: 'O'|'X'|'거부'  umu:'유'|'무'  gen:1~4
+function setSilbiJo(v){
+  pSilbi.jo = (pSilbi.jo===v ? null : v);
+  if(pSilbi.jo !== 'O'){ pSilbi.umu = null; pSilbi.gen = null; }
+  renderPBody();
+}
+function setSilbiUmu(v){
+  pSilbi.umu = (pSilbi.umu===v ? null : v);
+  if(pSilbi.umu !== '유') pSilbi.gen = null;
+  renderPBody();
+}
+function setSilbiGen(v){
+  pSilbi.gen = (pSilbi.gen===v ? null : v);
+  renderPBody();
+}
+function getSilbiLine(){
+  if(!pSilbi.jo) return '';
+  if(pSilbi.jo === '거부') return '\u25a0 \uc2e4\ube44 : \uc870\ud68c \uac70\ubd80';
+  if(pSilbi.jo === 'X')   return '\u25a0 \uc2e4\ube44 : \uc870\ud68c X';
+  // 조회 O
+  if(pSilbi.umu === '\uc720'){
+    const gen = pSilbi.gen ? ' (' + pSilbi.gen + '\uc138\ub300)' : '';
+    return '\u25a0 \uc2e4\ube44 : \uc870\ud68c O / \uc720' + gen;
+  }
+  if(pSilbi.umu === '\ubb34') return '\u25a0 \uc2e4\ube44 : \uc870\ud68c O / \ubb34';
+  return '\u25a0 \uc2e4\ube44 : \uc870\ud68c O';
 }
 
 function renderPBody(){
@@ -1187,6 +1247,27 @@ function renderPBody(){
     h += `<button type="button" class="btn-toggle tier2${pShockwave.noFracture?' selected':''}" onclick="toggleShockwaveNoFracture()">골절, 골다공증 없음</button>`;
   }
   h += '</div>';
+
+  // ── 실비(실손보험) ──
+  h += '<div class="btn-toggle-row">';
+  h += '<span style="font-size:12px;color:var(--muted);font-weight:600;">실비</span>';
+  ['O','X','거부'].forEach(v=>{
+    h += `<button type="button" class="btn-toggle${pSilbi.jo===v?' selected':''}" onclick="setSilbiJo('${v}')">조회 ${v}</button>`;
+  });
+  if(pSilbi.jo === 'O'){
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    ['유','무'].forEach(v=>{
+      h += `<button type="button" class="btn-toggle tier2${pSilbi.umu===v?' selected':''}" onclick="setSilbiUmu('${v}')">${v}</button>`;
+    });
+    if(pSilbi.umu === '유'){
+      h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+      [1,2,3,4].forEach(n=>{
+        h += `<button type="button" class="btn-toggle tier3${pSilbi.gen===n?' selected':''}" onclick="setSilbiGen(${n})">${n}세대</button>`;
+      });
+    }
+  }
+  h += '</div>';
+
   h += '</div>';
 
   h += '<div class="p-group"><div class="btn-toggle-row">';
@@ -1275,6 +1356,11 @@ function buildPText(){
     result += `${extGroupStarted?'\n':'\n\n'}■ 충격파 : ${buyiPart}(${pShockwave.ta || ''}타)${pShockwave.noFracture ? ' / 골절, 골다공증 없음' : ''}`;
     extGroupStarted = true;
   }
+  const silbiLine = getSilbiLine();
+  if(silbiLine){
+    result += `${extGroupStarted?'\n':'\n\n'}${silbiLine}`;
+    extGroupStarted = true;
+  }
   let herbGroupStarted = false;
   function herbLine(label, store, unit){
     const dose = (store.perDay || store.totalDays) ? `1일 ${store.perDay||''}${unit} 총 ${store.totalDays||''}일` : '';
@@ -1292,32 +1378,54 @@ function buildPText(){
 
 renderPBody();
 renderBijeung();
+renderTA();
 
 // ---------- Combine ----------
 document.getElementById('combineBtn').addEventListener('click', ()=>{
   let soa = document.getElementById('soaOutput').value;
+  let lines = soa.split('\n');
+
+  // (1) T/A 삽입: S) 블록 안에서, O/S 가 시작되기 직전(C/C 항목들 맨 밑)에 넣음
+  const taLine = getTALine();
+  if(taLine){
+    let sIdx = -1, insertAt = -1;
+    for(let i=0;i<lines.length;i++){
+      if(lines[i].trim() === 'S)'){ sIdx = i; continue; }
+      if(sIdx >= 0){
+        const t = lines[i].trim();
+        // O/S, S/H, P/H, O) 등 다음 항목이 시작되면 그 직전에 삽입
+        if(/^(O\/S|S\/H|P\/H|F\/H)/.test(t) || t === 'O)'){ insertAt = i; break; }
+      }
+    }
+    if(sIdx >= 0){
+      if(insertAt === -1) insertAt = lines.length;
+      // 삽입 지점 바로 앞의 빈 줄들은 건너뛰어 C/C 내용 바로 밑에 붙임
+      let at = insertAt;
+      while(at-1 > sIdx && lines[at-1].trim() === '') at--;
+      lines.splice(at, 0, taLine);
+    }
+  }
+
+  // (2) 변증 삽입: A) 블록 맨 아래
   const bijeungLine = getBijeungLine();
   if(bijeungLine){
-    const lines = soa.split('\n');
-    // "A)" 로 시작하는(단독) 줄 바로 아래에 변증 삽입
     let aIdx = -1;
     for(let i=0;i<lines.length;i++){
       if(lines[i].trim() === 'A)'){ aIdx = i; break; }
     }
     if(aIdx >= 0){
-      // A) 블록의 맨 끝(빈 줄 또는 다음 섹션 직전)에 삽입
       let insertAt = lines.length;
       for(let i=aIdx+1;i<lines.length;i++){
         const t = lines[i].trim();
         if(t === '' || /^[SOAP]\)/.test(t) || t.startsWith('[SCRIPT]')){ insertAt = i; break; }
       }
       lines.splice(insertAt, 0, bijeungLine);
-      soa = lines.join('\n');
     } else {
-      // A) 를 못 찾으면 맨 뒤에 A) 블록으로 추가
-      soa = soa + '\n\nA)\n' + bijeungLine;
+      lines.push('', 'A)', bijeungLine);
     }
   }
+
+  soa = lines.join('\n');
   const p = buildPText();
   document.getElementById('fullOutput').value = `${soa}\n\n${p}`;
 });
@@ -1512,7 +1620,7 @@ function skinTodayMD(){var d=new Date();return (d.getMonth()+1)+'/'+d.getDate();
 function skinGenerate(){
   var date=skinTodayMD();
   var lines=[];
-  Object.keys(PROC_GROUPS).forEach(function(g){if(skinSelection[g])lines.push('* '+date+' '+g+' '+skinSelection[g]+' 결제');});
+  Object.keys(PROC_GROUPS).forEach(function(g){if(skinSelection[g])lines.push('* '+date+' '+skinSelection[g]+' 결제');});
   document.getElementById('skin-result-area').value=lines.join('\n');
 }
 buildProcUI('skin-p-buttons');
