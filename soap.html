@@ -1902,6 +1902,10 @@ function dvAttachDrag(chip, id){
           var rect = targetChip.getBoundingClientRect();
           var insertBefore = (ev.clientX - rect.left) < rect.width/2;
           dvReorder(dvDrag.id, targetChip.dataset.id, insertBefore);
+        } else if(!targetChip){
+          // 다른 칩이 아니라 빈 공간(줄 끝 등)에 놓으면 맨 뒤로 이동
+          var container = el && el.closest('#deliver-chips');
+          if(container) dvReorderToEnd(dvDrag.id);
         }
       }
       dvDrag = null;
@@ -1917,6 +1921,13 @@ function dvReorder(draggedId, targetId, insertBefore){
   var targetIdx = dvTreatments.findIndex(function(t){ return t.id === targetId; });
   var insertAt = insertBefore ? targetIdx : targetIdx + 1;
   dvTreatments.splice(Math.max(0, insertAt), 0, obj);
+  dvRender();
+}
+function dvReorderToEnd(draggedId){
+  var idx = dvTreatments.findIndex(function(t){ return t.id === draggedId; });
+  if(idx === -1) return;
+  var obj = dvTreatments.splice(idx, 1)[0];
+  dvTreatments.push(obj);
   dvRender();
 }
 
