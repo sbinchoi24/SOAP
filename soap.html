@@ -96,6 +96,9 @@
   .skin-btn.suffix:hover{background:#d3f5f0;}
   .skin-btn.suffix.selected{background:var(--accent);color:#fff;}
   .skin-btn.direct.selected{background:var(--primary);color:#fff;}
+  .skin-btn.rf-amts-btn{background:#f1edff;color:#7c5cfc;height:34px;margin-left:auto;}
+  .skin-btn.rf-amts-btn:hover{background:#e5dcff;}
+  .skin-btn.rf-amts-btn.selected{background:#7c5cfc;color:#fff;}
   h1{
     font-size:21px;
     color:var(--text);
@@ -564,8 +567,9 @@
         <div id="skin-p-buttons"></div>
       </div>
       <div class="card skin-output-card">
-        <div class="card-header">
-          <button class="btn-primary skin-gen-btn" onclick="skinGenerate()">생성</button>
+        <div class="card-header" style="display:flex;gap:8px;">
+          <button class="btn-primary skin-gen-btn" onclick="skinGenerate()" style="flex:1;">생성</button>
+          <button class="p-reset-btn" onclick="skinReset()" style="flex:0 0 auto;">초기화</button>
         </div>
         <textarea id="skin-result-area" style="min-height:400px;" placeholder="시술을 선택하고 생성 버튼을 눌러주세요."></textarea>
         <div class="copy-btn-row"><button class="btn-secondary" data-copy="skin-result-area">복사</button></div>
@@ -1176,8 +1180,13 @@ function renderPBody(){
   h += '<div class="p-group"><div class="btn-toggle-row">';
   h += `<button type="button" class="btn-toggle${pYakchim.active?' selected':''}" onclick="toggleYakchim()">약침</button>`;
   if(pYakchim.active){
-    ['어혈','죽염','자하거','봉독','심부','초음파','밸런스','신경통'].forEach(k=>{
-      h += `<button type="button" class="btn-toggle tier2${pYakchim.kind===k?' selected':''}" onclick="setYakchimKind('${k}')">${k}</button>`;
+    // 그룹: 태반 | 어혈 죽염 신경통 | 봉독 뇌순환 | 심부 | 코어강화
+    var yakGroups = [['태반'],['어혈','죽염','신경통'],['봉독','뇌순환'],['심부'],['코어강화']];
+    yakGroups.forEach((grp,gi)=>{
+      if(gi>0) h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+      grp.forEach(k=>{
+        h += `<button type="button" class="btn-toggle tier2${pYakchim.kind===k?' selected':''}" onclick="setYakchimKind('${k}')">${k}</button>`;
+      });
     });
   }
   h += '</div>';
@@ -1553,34 +1562,37 @@ function switchPage(name, btn){
    피부 시술 선택 (포털에서 이식)
 ════════════════════════════════════ */
 var PROC_GROUPS={
-  '토닝':['제네시스 체험','제네시스 1회','제네시스 10회','듀얼 체험','듀얼 1회','듀얼 10회'],
-  '슈링크':['100샷 체험','100샷 1회','100샷 3회','300샷 체험','300샷 1회','300샷 3회'],
-  '볼뉴머':['300샷 체험','300샷 1회','300샷 패키지','600샷 체험','600샷 1회','600샷 패키지'],
-  '볼링크':['Light (300+100) 체험','Light (300+100) 1회','Light (300+100) 3회','Standard (300+300) 체험','Standard (300+300) 1회','Standard (300+300) 3회','Premium (300+600) 체험','Premium (300+600) 1회','Premium (300+600) 3회'],
-  'RF 시크릿':['RF+ASCE 체험','RF+ASCE 1회','RF+ASCE 3회','RF+엑소좀 체험','RF+엑소좀 1회','RF+엑소좀 3회'],
-  'AMTS':['AMTS 풀페이스 체험','AMTS 풀페이스 1회','AMTS 풀페이스 3회','AMTS+PLAA 체험','AMTS+PLAA 1회','AMTS+PLAA 3회','AMTS+라디쥬 체험','AMTS+라디쥬 1회','AMTS+라디쥬 3회'],
-  '스킨부스터':['ASCE','엑소좀','미주안','라디쥬','GFC CELL','PLAA'],
-  '여드름':['압출 체험','압출 1회','압출 4회','압출 8회','압출 12회','베이직 체험','베이직 1회','베이직 4회','베이직 8회','베이직 12회','프리미엄 체험','프리미엄 1회','프리미엄 4회','프리미엄 6회','프리미엄 8회'],
-  '바디관리':['베이직 체험','베이직 1회','베이직 5회','베이직 10회','플러스 체험','플러스 1회','플러스 5회','플러스 10회']
+  '슈링크':{'100샷':['1회 체험','1회 이벤트','3회'],'300샷':['1회 체험','1회 이벤트','3회'],'600샷':['1회 체험','1회 이벤트','3회']},
+  '볼뉴머':{'300샷':['1회 체험','1회 이벤트','3회'],'600샷':['1회 체험','1회 이벤트','3회']},
+  '볼링크':{'Light':['1회 체험','1회 이벤트','3회'],'Standard':['1회 체험','1회 이벤트'],'Premium':['1회 체험','1회 이벤트']},
+  'RF 시크릿':{'PDRN 1cc':['1회 체험','1회 이벤트','3회'],'PDRN 2cc':['1회 체험','1회 이벤트','3회'],'라디쥬 3cc':['1회 체험','1회 이벤트','3회'],'PLLA':['1회 체험','1회 이벤트','3회'],'엑소좀':['1회 체험','1회 이벤트','3회']},
+  '바이오셀':{'바이오셀':['1회','4회','8+1회']},
+  '토닝':{'제네시스':['1회 체험','1회 이벤트','10회'],'듀얼':['1회 체험','1회 이벤트','10회']},
+  '여드름':{'기본관리':['1회 체험','1회 이벤트','4회','8회','12회'],'스케일링':['1회 체험','1회 이벤트','4회','8회','12회'],'맞춤필링':['1회 체험','1회 이벤트','4회','8회','12회'],'골드PTT':['1회 체험','1회 이벤트','3회']},
+  '바디':{'BASIC':['1회 체험','1회 이벤트','5회','10회'],'PLUS':['1회 체험','1회 이벤트','5회','10회']},
+  '흉터':{'새살침 1부위':['1회 체험','1회 이벤트']},
+  '실리프팅':{'매선 1부위':['1회 체험','1회 이벤트']}
 };
+// RF 시크릿 → AMTS 변경 토글
+var rfAmtsChange=false;
+function toggleRfAmts(btn){
+  rfAmtsChange=!rfAmtsChange;
+  btn.classList.toggle('selected',rfAmtsChange);
+}
 var skinSelection={};
-var PROC_COL1=['토닝','슈링크','볼뉴머','RF 시크릿'];
-var PROC_COL2=['볼링크','AMTS','여드름','바디관리','스킨부스터'];
+var PROC_COL1=['슈링크','볼뉴머','볼링크','RF 시크릿','바이오셀'];
+var PROC_COL2=['토닝','여드름','바디','흉터','실리프팅'];
 function buildProcGroupHTML(containerId,g){
-  var items=PROC_GROUPS[g];
-  var html='<div class="skin-group"><div class="skin-group-title">'+g+'</div>';
-  if(g==='스킨부스터'){
-    html+='<div class="skin-btn-row">';
-    items.forEach(function(it){html+='<button class="skin-btn suffix'+(skinSelection[g]===it?' selected':'')+'" data-group="'+g+'" data-label="'+it+'" onclick="procToggleSuffix(this)">'+it+'</button>';});
-    html+='</div>';
-  } else {
-    var map={};
-    items.forEach(function(it){var p=it.split(' ');var suf=p.pop();var pre=p.join(' ');if(!map[pre])map[pre]=[];map[pre].push(suf);});
-    html+='<div class="skin-btn-row" id="'+containerId+'-'+encodeURIComponent(g)+'-row">';
-    Object.keys(map).forEach(function(pre){html+='<button class="skin-btn direct" onclick="procSelectPrefix(\''+containerId+'\',\''+g+'\',\''+pre+'\',this)">'+pre+'</button>';});
-    html+='</div>';
-    html+='<div id="'+containerId+'-'+encodeURIComponent(g)+'-suffix" class="skin-suffix-row"></div>';
+  var map=PROC_GROUPS[g];
+  var titleExtra='';
+  if(g==='RF 시크릿'){
+    titleExtra='<button class="skin-btn suffix rf-amts-btn'+(rfAmtsChange?' selected':'')+'" onclick="toggleRfAmts(this)">AMTS로 변경</button>';
   }
+  var html='<div class="skin-group"><div class="skin-group-title" style="display:flex;align-items:center;justify-content:space-between;">'+'<span>'+g+'</span>'+titleExtra+'</div>';
+  html+='<div class="skin-btn-row" id="'+containerId+'-'+encodeURIComponent(g)+'-row">';
+  Object.keys(map).forEach(function(pre){html+='<button class="skin-btn direct" data-prefix="'+pre+'" onclick="procSelectPrefix(\''+containerId+'\',\''+g+'\',\''+pre.replace(/'/g,"\\'")+'\',this)">'+pre+'</button>';});
+  html+='</div>';
+  html+='<div id="'+containerId+'-'+encodeURIComponent(g)+'-suffix" class="skin-suffix-row"></div>';
   html+='</div>';
   return html;
 }
@@ -1590,10 +1602,16 @@ function buildProcUI(containerId){
   document.getElementById(containerId).innerHTML='<div class="skin-grid">'+h+'</div>';
 }
 function procSelectPrefix(containerId,g,pre,btn){
+  var sufWrap=document.getElementById(containerId+'-'+encodeURIComponent(g)+'-suffix');
+  // 이미 펼쳐진 대분류를 다시 누르면 닫기
+  if(btn.classList.contains('viewing')){
+    btn.classList.remove('viewing');
+    sufWrap.innerHTML='';
+    return;
+  }
   Array.prototype.forEach.call(btn.parentNode.querySelectorAll('button.skin-btn'),function(b){b.classList.remove('viewing');});
   btn.classList.add('viewing');
-  var sufWrap=document.getElementById(containerId+'-'+encodeURIComponent(g)+'-suffix');
-  var suffixes=PROC_GROUPS[g].filter(function(it){return it.indexOf(pre+' ')===0;}).map(function(it){return it.slice(pre.length+1);});
+  var suffixes=PROC_GROUPS[g][pre]||[];
   var h='';
   suffixes.forEach(function(suf){
     var label=pre+' '+suf;
@@ -1609,11 +1627,21 @@ function procToggleSuffix(btn){
   if(nowActive){btn.classList.add('selected');skinSelection[group]=label;}
   else{skinSelection[group]=null;}
 }
+function skinReset(){
+  skinSelection={};
+  rfAmtsChange=false;
+  buildProcUI('skin-p-buttons');
+  document.getElementById('skin-result-area').value='';
+}
 function skinTodayMD(){var d=new Date();return (d.getMonth()+1)+'/'+d.getDate();}
 function skinGenerate(){
   var date=skinTodayMD();
   var lines=[];
-  Object.keys(PROC_GROUPS).forEach(function(g){if(skinSelection[g])lines.push('* '+date+' '+skinSelection[g]+' 결제');});
+  Object.keys(PROC_GROUPS).forEach(function(g){
+    if(!skinSelection[g]) return;
+    var amts=(g==='RF 시크릿' && rfAmtsChange) ? ' (AMTS로 변경)' : '';
+    lines.push('* '+date+' '+skinSelection[g]+amts+' 결제');
+  });
   document.getElementById('skin-result-area').value=lines.join('\n');
 }
 buildProcUI('skin-p-buttons');
