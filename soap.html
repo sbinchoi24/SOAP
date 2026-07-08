@@ -63,7 +63,7 @@
     flex:1;border:none;border-radius:12px;padding:12px 14px;
     font-size:15px;font-family:inherit;background:#f2f4f6;color:var(--text);font-weight:600;
   }
-  .deliver-input:focus{outline:none;background:#fff;box-shadow:0 0 0 2px var(--primary);}
+  .deliver-input:focus{outline:none;background:#f2f4f6;box-shadow:none;}
   .deliver-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;min-height:4px;}
   .deliver-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding-top:14px;border-top:1px solid var(--border);}
   .dv-btn{
@@ -84,8 +84,9 @@
   .dv-chip-split .dv-label{background:var(--dvcolor);color:#fff;font-weight:600;font-size:13px;padding:0 10px;display:flex;align-items:center;white-space:nowrap;}
   .dv-chip-split input{border:none;background:var(--dvcolor);font-size:13px;padding:0 6px;width:56px;color:#fff;font-family:inherit;}
   .dv-chip-split input::placeholder{color:rgba(255,255,255,0.7);}
-  .dv-chip-split input:focus{outline:none;filter:brightness(1.08);}
+  .dv-chip-split input:focus{outline:none;background:var(--dvcolor) !important;box-shadow:none !important;filter:none !important;}
   .dv-chip-split select{border:none;background:var(--dvcolor);font-size:12px;font-weight:500;padding:0 6px;color:#fff;cursor:pointer;font-family:inherit;border-left:1px solid rgba(255,255,255,0.2);}
+  .dv-chip-split select:focus{outline:none;background:var(--dvcolor) !important;filter:none !important;}
   .dv-chip-split .dv-del{background:var(--dvcolor);display:flex;align-items:center;padding:0 10px;cursor:pointer;color:rgba(255,255,255,0.85);font-size:12px;border-left:1px solid rgba(255,255,255,0.2);}
   .dv-chip-split .dv-del:hover{color:#fff;}
   .deliver-actions{display:flex;gap:10px;margin-bottom:14px;}
@@ -466,7 +467,6 @@
   <div class="page-tabs">
     <button class="page-tab active" data-page="근골격계" onclick="switchPage('근골격계',this)">통증</button>
     <button class="page-tab" data-page="피부" onclick="switchPage('피부',this)">피부</button>
-    <button class="page-tab" data-page="전달" onclick="switchPage('전달',this)">전달</button>
   </div>
 
   <div id="page-근골격계" class="page-content active">
@@ -525,9 +525,12 @@
         <div id="taBody" class="btn-toggle-row"></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="step-badge">5</span>P</div>
+        <div class="card-header" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;"><span class="step-badge">5</span>P</span>
+          <button class="p-reset-btn" onclick="resetPBody()" style="padding:6px 14px;">초기화</button>
+        </div>
         <div id="pBody"></div>
-        <div class="p-reset-row"><button class="p-reset-btn" onclick="resetPBody()">초기화</button></div>
+        <div class="p-reset-row"><button class="btn-primary" onclick="generatePOnly()" style="width:100%;margin-top:0;">생성</button></div>
       </div>
     </div>
 
@@ -559,6 +562,26 @@
             <button class="btn-outline cq-reset" onclick="resetCQ()">초기화</button>
           </div>
           <div id="cq-result-page"></div>
+        </div>
+      </div>
+
+      <div class="card cq-card" id="deliver-card" style="margin-top:12px;">
+        <div class="card-header cq-toggle-header" onclick="toggleDeliver()">
+          <span class="step-badge">8</span>전달
+          <span class="cq-chevron" id="deliver-chevron"></span>
+        </div>
+        <div id="deliver-body" class="cq-body">
+          <div class="deliver-toprow">
+            <input type="text" id="deliver-name" class="deliver-input" placeholder="환자명">
+            <input type="text" id="deliver-region" class="deliver-input" placeholder="부위">
+          </div>
+          <div id="deliver-chips" class="deliver-chips"></div>
+          <div id="deliver-btns" class="deliver-btns"></div>
+          <div class="deliver-actions" style="align-items:stretch;">
+            <button class="btn-primary" onclick="deliverCopy()" style="flex:1;height:48px;margin-top:0;padding:0;">복사</button>
+            <button class="p-reset-btn" onclick="deliverReset()" style="height:48px;padding:0 20px;font-size:15px;border-radius:14px;">초기화</button>
+          </div>
+          <textarea id="deliver-result" class="deliver-result" placeholder="복사를 누르면 전달 문구가 여기에 나옵니다." readonly></textarea>
         </div>
       </div>
     </div>
@@ -614,21 +637,6 @@
     </div>
   </div><!-- /page-피부 -->
 
-  <div id="page-전달" class="page-content">
-    <div class="card" style="max-width:820px;">
-      <div class="deliver-toprow">
-        <input type="text" id="deliver-name" class="deliver-input" placeholder="환자명">
-        <input type="text" id="deliver-region" class="deliver-input" placeholder="부위">
-      </div>
-      <div id="deliver-chips" class="deliver-chips"></div>
-      <div id="deliver-btns" class="deliver-btns"></div>
-      <div class="deliver-actions">
-        <button class="btn-primary" onclick="deliverCopy()" style="flex:1;">복사</button>
-        <button class="p-reset-btn" onclick="deliverReset()" style="padding:15px 20px;font-size:15px;border-radius:14px;">초기화</button>
-      </div>
-      <textarea id="deliver-result" class="deliver-result" placeholder="복사를 누르면 전달 문구가 여기에 나옵니다." readonly></textarea>
-    </div>
-  </div><!-- /page-전달 -->
 </div>
 
 <script>
@@ -1534,6 +1542,17 @@ document.getElementById('combineBtn').addEventListener('click', ()=>{
   document.getElementById('fullOutput').value = `${soa}\n\n${p}`;
 });
 
+// P) 부분만 차트칸에 생성
+function generatePOnly(){
+  const p = buildPText();
+  document.getElementById('fullOutput').value = p;
+}
+
+// 전달 토글 접기/펴기
+function toggleDeliver(){
+  document.getElementById('deliver-card').classList.toggle('collapsed');
+}
+
 // ---------- Copy buttons ----------
 document.querySelectorAll('[data-copy]').forEach(btn=>{
   const orig = btn.textContent;
@@ -1771,6 +1790,7 @@ var DV_CHIM_POS = ['앞침','엎침','옆침/좌','옆침/우'];
 // 습부1/습부2/건부는 셋 중 하나만
 var DV_EXCLUSIVE = ['습부1','습부2','건부'];
 var DV_EXCLUSIVE2 = ['침','침(전)'];
+var DV_EXCLUSIVE3 = ['추나','추나(환자복)'];
 // 예비 버튼 표시 순서 (문장 출력 순서와 별개)
 var DV_BTN_ORDER = ['핫팩','돔','JB','I','침','침(전)','약침','간접구','습부2','습부1','건부','BC','추나','추나(환자복)','충격파'];
 
@@ -1794,6 +1814,10 @@ function dvAdd(base){
   // 배타 그룹(침/침(전)): 하나만
   if(DV_EXCLUSIVE2.indexOf(base) >= 0){
     dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE2.indexOf(t.base) < 0; });
+  }
+  // 배타 그룹(추나/추나(환자복)): 하나만
+  if(DV_EXCLUSIVE3.indexOf(base) >= 0){
+    dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
   }
   dvInsertSorted({ id:dvNewId(), base:base, extra:{} });
   dvRender();
@@ -1893,6 +1917,12 @@ function dvRender(){
   var added = {};
   dvTreatments.forEach(function(t){ added[t.base] = true; });
   DV_BTN_ORDER.forEach(function(name){
+    if(name === '습부1'){
+      var brk = document.createElement('div');
+      brk.style.flexBasis = '100%';
+      brk.style.height = '0';
+      btnsBox.appendChild(brk);
+    }
     if(added[name]) return;
     var btn = document.createElement('button');
     btn.className = 'dv-btn';
@@ -1973,6 +2003,8 @@ function showToastDv(msg){
 }
 
 dvInit();
+var _dvCard = document.getElementById('deliver-card');
+if(_dvCard) _dvCard.classList.add('collapsed');
 </script>
 </body>
 </html>
