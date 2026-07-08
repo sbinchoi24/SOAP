@@ -89,12 +89,16 @@
   .dv-chip-split select:focus{outline:none;background:var(--dvcolor) !important;filter:none !important;}
   .dv-chip-split .dv-del{background:var(--dvcolor);display:flex;align-items:center;padding:0 10px;cursor:pointer;color:rgba(255,255,255,0.85);font-size:12px;border-left:1px solid rgba(255,255,255,0.2);}
   .dv-chip-split .dv-del:hover{color:#fff;}
+  .dv-chip.dv-dragging, .dv-chip-split.dv-dragging{opacity:0.4;}
+  .dv-chip, .dv-chip-split{cursor:grab;}
+  .dv-chip:active, .dv-chip-split:active{cursor:grabbing;}
   .deliver-actions{display:flex;gap:10px;margin-bottom:14px;}
   .deliver-result{
     width:100%;min-height:80px;border:none;border-radius:12px;padding:14px;
     font-size:15px;font-family:inherit;background:#f2f4f6;color:var(--text);resize:vertical;line-height:1.6;font-weight:600;
   }
   .deliver-result:focus{outline:none;}
+  .deliver-result::placeholder{font-weight:400;font-size:12.5px;color:var(--muted);}
   /* 피부 시술 선택 */
   .skin-layout{
     display:grid;grid-template-columns:1.7fr 1fr;gap:16px;align-items:start;
@@ -527,7 +531,7 @@
       <div class="card">
         <div class="card-header" style="justify-content:space-between;">
           <span style="display:flex;align-items:center;"><span class="step-badge">5</span>P</span>
-          <button class="p-reset-btn" onclick="resetPBody()" style="padding:6px 14px;">초기화</button>
+          <button class="p-reset-btn" onclick="resetPBody()" style="height:34px;padding:0 14px;border-radius:17px;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;">초기화</button>
         </div>
         <div id="pBody"></div>
         <div class="p-reset-row"><button class="btn-primary" onclick="generatePOnly()" style="width:100%;margin-top:0;">생성</button></div>
@@ -1871,6 +1875,51 @@ function dvTreatmentLabel(t){
   return t.base;
 }
 
+// 칩 드래그로 순서 변경
+var dvDrag = null;
+function dvAttachDrag(chip, id){
+  chip.dataset.id = id;
+  chip.style.touchAction = 'none';
+  chip.addEventListener('pointerdown', function(e){
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.closest('.dv-del')) return;
+    e.preventDefault();
+    var startX = e.clientX, startY = e.clientY, started = false;
+    function onMove(ev){
+      if(!started && (Math.abs(ev.clientX-startX)>6 || Math.abs(ev.clientY-startY)>6)){
+        started = true;
+        dvDrag = { id: id };
+        chip.classList.add('dv-dragging');
+      }
+    }
+    function onUp(ev){
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      chip.classList.remove('dv-dragging');
+      if(started && dvDrag){
+        var el = document.elementFromPoint(ev.clientX, ev.clientY);
+        var targetChip = el && el.closest('#deliver-chips [data-id]');
+        if(targetChip && targetChip.dataset.id !== dvDrag.id){
+          var rect = targetChip.getBoundingClientRect();
+          var insertBefore = (ev.clientX - rect.left) < rect.width/2;
+          dvReorder(dvDrag.id, targetChip.dataset.id, insertBefore);
+        }
+      }
+      dvDrag = null;
+    }
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+}
+function dvReorder(draggedId, targetId, insertBefore){
+  var idx = dvTreatments.findIndex(function(t){ return t.id === draggedId; });
+  if(idx === -1) return;
+  var obj = dvTreatments.splice(idx, 1)[0];
+  var targetIdx = dvTreatments.findIndex(function(t){ return t.id === targetId; });
+  var insertAt = insertBefore ? targetIdx : targetIdx + 1;
+  dvTreatments.splice(Math.max(0, insertAt), 0, obj);
+  dvRender();
+}
+
 function dvRender(){
   var chipsBox = document.getElementById('deliver-chips');
   var btnsBox = document.getElementById('deliver-btns');
@@ -1899,6 +1948,7 @@ function dvRender(){
       del.className = 'dv-del'; del.textContent = '✕';
       del.addEventListener('click', function(){ dvRemove(t.id); });
       chip.appendChild(del);
+      dvAttachDrag(chip, t.id);
       chipsBox.appendChild(chip);
     } else if(DV_CHIM_BASES.indexOf(t.base) >= 0){
       var chip2 = document.createElement('div');
@@ -1923,6 +1973,7 @@ function dvRender(){
       del2.className = 'dv-del'; del2.textContent = '✕';
       del2.addEventListener('click', function(){ dvRemove(t.id); });
       chip2.appendChild(del2);
+      dvAttachDrag(chip2, t.id);
       chipsBox.appendChild(chip2);
     } else {
       var chip3 = document.createElement('div');
@@ -1934,6 +1985,7 @@ function dvRender(){
       del3.className = 'dv-del'; del3.textContent = '✕';
       del3.addEventListener('click', function(){ dvRemove(t.id); });
       chip3.appendChild(del3);
+      dvAttachDrag(chip3, t.id);
       chipsBox.appendChild(chip3);
     }
   });
@@ -1961,9 +2013,8 @@ function dvRender(){
 var DV_OUTPUT_ORDER = DV_ORDER.slice().reverse();  // 핫팩부터
 function dvBuildSummary(){
   var region = document.getElementById('deliver-region').value.trim();
-  var treatments = dvTreatments.slice().sort(function(a,b){
-    return DV_OUTPUT_ORDER.indexOf(a.base) - DV_OUTPUT_ORDER.indexOf(b.base);
-  });
+  // 드래그로 바꾼 순서(dvTreatments 배열 순서)를 그대로 사용
+  var treatments = dvTreatments.slice();
   var yakIdx = treatments.findIndex(function(t){ return t.base === '약침'; });
   var chimIdx = treatments.findIndex(function(t){ return t.base === '침(전)'; });
   var out = [];
