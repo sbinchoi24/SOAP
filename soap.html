@@ -477,7 +477,10 @@
         <div id="bijeungBody" class="btn-toggle-row"></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="step-badge">4</span>T/A</div>
+        <div class="card-header" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;"><span class="step-badge">4</span>T/A</span>
+          <button id="taActiveBtn" class="btn-toggle tier2" onclick="toggleTAActive()">T/A</button>
+        </div>
         <div id="taBody" class="btn-toggle-row"></div>
       </div>
       <div class="card">
@@ -1086,14 +1089,13 @@ function toggleTA(key){
   renderTA();
 }
 function renderTA(){
+  const btn = document.getElementById('taActiveBtn');
+  if(btn) btn.classList.toggle('selected', taActive);
   const body = document.getElementById('taBody');
   if(!body) return;
-  let h = `<button class="btn-toggle${taActive?' selected':''}" onclick="toggleTAActive()">T/A</button>`;
-  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-  h += TA_ITEMS.map(it =>
+  body.innerHTML = TA_ITEMS.map(it =>
     `<button class="btn-toggle${taState[it.key]?' selected':''}" onclick="toggleTA('${it.key}')">${it.label}</button>`
   ).join('');
-  body.innerHTML = h;
 }
 function getTALine(){
   if(!taActive) return '';
@@ -1349,7 +1351,7 @@ function buildPText(){
   }
   const silbiLine = getSilbiLine();
   if(silbiLine){
-    result += `${extGroupStarted?'\n':'\n\n'}${silbiLine}`;
+    result += `\n\n${silbiLine}`;
     extGroupStarted = true;
   }
   let herbGroupStarted = false;
