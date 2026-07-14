@@ -511,14 +511,7 @@
       </div>
       <div class="card">
         <div class="card-header" style="justify-content:space-between;">
-          <span style="display:flex;align-items:center;"><span class="step-badge">3</span>T/A</span>
-          <button id="main-taActiveBtn" class="btn-toggle tier2" onclick="toggleTAActive('main')">T/A</button>
-        </div>
-        <div id="main-taBody" class="btn-toggle-row"></div>
-      </div>
-      <div class="card">
-        <div class="card-header" style="justify-content:space-between;">
-          <span style="display:flex;align-items:center;"><span class="step-badge">4</span>P</span>
+          <span style="display:flex;align-items:center;"><span class="step-badge">3</span>P</span>
           <button class="p-reset-btn" onclick="resetPBody('main')" style="height:34px;padding:0 14px;border-radius:17px;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;">초기화</button>
         </div>
         <div id="main-pBody"></div>
@@ -528,7 +521,7 @@
     <div class="col-cq">
       <div class="card cq-card">
         <div class="card-header cq-toggle-header" onclick="toggleCQ()">
-          <span class="step-badge">5</span>청구
+          <span class="step-badge">4</span>청구
           <span class="cq-chevron" id="cq-chevron"></span>
         </div>
         <div id="cq-body" class="cq-body">
@@ -556,23 +549,23 @@
         </div>
       </div>
 
-      <div class="card cq-card" id="deliver-card" style="margin-top:12px;">
-        <div class="card-header cq-toggle-header" onclick="toggleDeliver()">
-          <span class="step-badge">6</span>전달
-          <span class="cq-chevron" id="deliver-chevron"></span>
+      <div class="card cq-card" id="main-deliver-card" style="margin-top:12px;">
+        <div class="card-header cq-toggle-header" onclick="toggleDeliverCard('main')">
+          <span class="step-badge">5</span>전달
+          <span class="cq-chevron" id="main-deliver-chevron"></span>
         </div>
-        <div id="deliver-body" class="cq-body">
+        <div id="main-deliver-body" class="cq-body">
           <div class="deliver-toprow">
-            <input type="text" id="deliver-name" class="deliver-input" placeholder="환자명">
-            <input type="text" id="deliver-region" class="deliver-input" placeholder="부위">
+            <input type="text" id="main-deliver-name" class="deliver-input" placeholder="환자명">
+            <input type="text" id="main-deliver-region" class="deliver-input" placeholder="부위">
           </div>
-          <div id="deliver-chips" class="deliver-chips"></div>
-          <div id="deliver-btns" class="deliver-btns"></div>
+          <div id="main-deliver-chips" class="deliver-chips"></div>
+          <div id="main-deliver-btns" class="deliver-btns"></div>
           <div class="deliver-actions" style="align-items:stretch;">
-            <button class="btn-primary" onclick="deliverCopy()" style="flex:1;height:48px;margin-top:0;padding:0;">복사</button>
-            <button class="p-reset-btn" onclick="deliverReset()" style="height:48px;padding:0 20px;font-size:15px;border-radius:14px;">초기화</button>
+            <button class="btn-primary" onclick="deliverCopy('main')" style="flex:1;height:48px;margin-top:0;padding:0;">복사</button>
+            <button class="p-reset-btn" onclick="deliverReset('main')" style="height:48px;padding:0 20px;font-size:15px;border-radius:14px;">초기화</button>
           </div>
-          <textarea id="deliver-result" class="deliver-result" placeholder="복사를 누르면 전달 문구가 여기에 나옵니다." readonly></textarea>
+          <textarea id="main-deliver-result" class="deliver-result" placeholder="복사를 누르면 전달 문구가 여기에 나옵니다." readonly></textarea>
         </div>
       </div>
     </div>
@@ -580,7 +573,7 @@
 
   <div class="card">
     <div class="card-header" style="justify-content:space-between;">
-      <span style="display:flex;align-items:center;"><span class="step-badge">7</span>차트</span>
+      <span style="display:flex;align-items:center;"><span class="step-badge">6</span>차트</span>
       <span class="chart-warn-inline" id="main-chartWarn"></span>
     </div>
     <button class="btn-primary" id="main-combineBtn">생성하기</button>
@@ -590,7 +583,7 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="step-badge">8</span>스크립트</div>
+    <div class="card-header"><span class="step-badge">7</span>스크립트</div>
     <textarea id="main-scriptOutput" style="min-height:160px;" placeholder="녹음한 내용이 추출됩니다"></textarea>
     <div class="copy-btn-row"><button class="btn-secondary" data-copy="main-scriptOutput">복사</button></div>
   </div>
@@ -675,12 +668,22 @@
 
     <div class="col-cq">
       <div class="card cq-card" id="ta-deliver-card">
-        <div class="card-header cq-toggle-header" onclick="toggleDeliverTA()">
+        <div class="card-header cq-toggle-header" onclick="toggleDeliverCard('ta')">
           <span class="step-badge">6</span>전달
           <span class="cq-chevron" id="ta-deliver-chevron"></span>
         </div>
         <div id="ta-deliver-body" class="cq-body">
-          <small class="hint">전달 문구는 통증 탭의 전달 기능을 사용해주세요.</small>
+          <div class="deliver-toprow">
+            <input type="text" id="ta-deliver-name" class="deliver-input" placeholder="환자명">
+            <input type="text" id="ta-deliver-region" class="deliver-input" placeholder="부위">
+          </div>
+          <div id="ta-deliver-chips" class="deliver-chips"></div>
+          <div id="ta-deliver-btns" class="deliver-btns"></div>
+          <div class="deliver-actions" style="align-items:stretch;">
+            <button class="btn-primary" onclick="deliverCopy('ta')" style="flex:1;height:48px;margin-top:0;padding:0;">복사</button>
+            <button class="p-reset-btn" onclick="deliverReset('ta')" style="height:48px;padding:0 20px;font-size:15px;border-radius:14px;">초기화</button>
+          </div>
+          <textarea id="ta-deliver-result" class="deliver-result" placeholder="복사를 누르면 전달 문구가 여기에 나옵니다." readonly></textarea>
         </div>
       </div>
     </div>
@@ -1157,24 +1160,15 @@ const TA_ITEMS = [
   {key:'V', label:'V 구토'}
 ];
 const TASTATE = {
-  main: {active:false, H:false, D:false, N:false, V:false},
-  ta:   {active:true,  H:false, D:false, N:false, V:false}
+  ta: {H:false, D:false, N:false, V:false}
 };
 const TAFAC = {facility:null, 침:false, 추나:false, 한약:false, hanyakDur:null, hanyakCustom:'', hanyakUnknown:false};
 
-function toggleTAActive(ns){
-  TASTATE[ns].active = !TASTATE[ns].active;
-  renderTA(ns);
-}
 function toggleTA(ns, key){
   TASTATE[ns][key] = !TASTATE[ns][key];
   renderTA(ns);
 }
 function renderTA(ns){
-  if(ns === 'main'){
-    const btn = $('main-taActiveBtn');
-    if(btn) btn.classList.toggle('selected', TASTATE.main.active);
-  }
   const body = $(elId(ns,'taBody'));
   if(body){
     body.innerHTML = TA_ITEMS.map(it =>
@@ -1235,10 +1229,7 @@ function taFacilitySentence(){
   return `- 이번 사고로 인한 ${fac} 치료(+) / 침(${TAFAC.침?'+':'-'}) 추나(${TAFAC.추나?'+':'-'}) ${hanyakText}`;
 }
 function getTABlock(ns){
-  if(ns === 'main'){
-    if(!TASTATE.main.active) return '';
-    return '- ' + TA_ITEMS.map(it => it.key + '(' + (TASTATE.main[it.key]?'+':'-') + ')').join(' ');
-  }
+  if(ns !== 'ta') return '';
   const chk = '- ' + TA_ITEMS.map(it => it.key + '(' + (TASTATE.ta[it.key]?'+':'-') + ')').join(' ');
   return [chk, '- 검사 : ', '- 치료 : ', taFacilitySentence()].join('\n');
 }
@@ -1274,7 +1265,7 @@ function newPState(ns){
     return {
       acuAreas: [],
       acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:false, ir:true, ict:true},
-      pYakchim: {active:true, kind:'어혈', buyi:'', cc:'', gae:''},
+      pYakchim: {active:true, kind:'어혈', buyi:'', cc:'0.5cc', gae:'1'},
       pChunaActive: {단순추나:true, 복잡추나:false},
       pChunaSpine: null,
       chunaSelected: {COX:true, 'drop':true, 'Lumbar roll':true, JS123:true},
@@ -1298,8 +1289,8 @@ function newPState(ns){
     pTaping: {active:false, buyi:'', gae:'4', allergy:false},
     pShockwave: {active:false, buyi:'', ta:'', noFracture:false},
     pSilbi: {sel:null, gen:null},
-    pHerbActive: {'보험약':false, '상비약':false, '탕약':false, 'TA탕약':false},
-    herb: {'보험약':{name:'',perDay:'',totalDays:''}, '상비약':{name:'',perDay:'',totalDays:''}, '탕약':{name:'',perDay:'',totalDays:''}, 'TA탕약':{name:'',perDay:'',totalDays:''}},
+    pHerbActive: {'보험약':false, '상비약':false, '탕약':false},
+    herb: {'보험약':{name:'',perDay:'',totalDays:''}, '상비약':{name:'',perDay:'',totalDays:''}, '탕약':{name:'',perDay:'',totalDays:''}},
     taJcheop: {active:false, name:'', days:'7', gagam:''}
   };
 }
@@ -1516,7 +1507,6 @@ function renderPBody(ns){
     h += `<button type="button" class="btn-toggle${st.pHerbActive['보험약']?' selected':''}" onclick="toggleHerb('${ns}','보험약')">보험약</button>`;
     h += `<button type="button" class="btn-toggle${st.pHerbActive['상비약']?' selected':''}" onclick="toggleHerb('${ns}','상비약')">상비약</button>`;
     h += `<button type="button" class="btn-toggle${st.pHerbActive['탕약']?' selected':''}" onclick="toggleHerb('${ns}','탕약')">탕약</button>`;
-    h += `<button type="button" class="btn-toggle${st.pHerbActive['TA탕약']?' selected':''}" onclick="toggleHerb('${ns}','TA탕약')">TA 탕약</button>`;
     h += '</div>';
     function herbRow(label, key, unit){
       const store = st.herb[key];
@@ -1536,7 +1526,6 @@ function renderPBody(ns){
     if(st.pHerbActive['보험약']) h += herbRow('보험약', '보험약', '회');
     if(st.pHerbActive['상비약']) h += herbRow('상비약', '상비약', '회');
     if(st.pHerbActive['탕약']) h += herbRow('탕약', '탕약', '첩');
-    if(st.pHerbActive['TA탕약']) h += herbRow('TA 탕약', 'TA탕약', '첩');
     h += '</div>';
   } else {
     /* TA 탭: 테이핑/충격파/실비/기존 한약군 대신 TA 첩약만 */
@@ -1651,7 +1640,7 @@ function buildPText(ns){
     if(st.pHerbActive['보험약']) result += herbLine('보험약', st.herb['보험약'], '회');
     if(st.pHerbActive['상비약']) result += herbLine('상비약', st.herb['상비약'], '회');
     if(st.pHerbActive['탕약']) result += herbLine('탕약', st.herb['탕약'], '첩');
-    if(st.pHerbActive['TA탕약']) result += herbLine('TA 탕약', st.herb['TA탕약'], '첩');
+
   } else if(st.taJcheop.active){
     const jc = st.taJcheop;
     const days = jc.days || '7';
@@ -1791,8 +1780,7 @@ $('ta-combineBtn').addEventListener('click', ()=>runGenerate('ta'));
 });
 
 /* 전달 카드 접기/펴기 */
-function toggleDeliver(){ $('deliver-card').classList.toggle('collapsed'); }
-function toggleDeliverTA(){ $('ta-deliver-card').classList.toggle('collapsed'); }
+function toggleDeliverCard(ns){ $(elId(ns,'deliver-card')).classList.toggle('collapsed'); }
 
 /* ==================== 복사 버튼 ==================== */
 document.querySelectorAll('[data-copy]').forEach(btn=>{
@@ -2007,52 +1995,55 @@ var DV_EXCLUSIVE2 = ['침','침(전)'];
 var DV_EXCLUSIVE3 = ['추나','추나(환자복)'];
 var DV_BTN_ORDER = ['핫팩','돔','JB','I','침','침(전)','약침','간접구','습부2','습부1','건부','BC','추나','추나(환자복)','충격파'];
 
-var dvSeq = 1;
-function dvNewId(){ return 'dv'+(dvSeq++)+'-'+Date.now(); }
-var dvTreatments = [];
+var DVSTATE = {
+  main: {treatments:[], seq:1},
+  ta:   {treatments:[], seq:1}
+};
+function dvNewId(ns){ return 'dv-'+ns+'-'+(DVSTATE[ns].seq++)+'-'+Date.now(); }
 
-function dvInsertSorted(obj){
+function dvInsertSorted(ns, obj){
+  var list = DVSTATE[ns].treatments;
   var orderIdx = DV_BTN_ORDER.indexOf(obj.base);
-  var insertAt = dvTreatments.length;
-  for(var i=0;i<dvTreatments.length;i++){
-    if(DV_BTN_ORDER.indexOf(dvTreatments[i].base) > orderIdx){ insertAt = i; break; }
+  var insertAt = list.length;
+  for(var i=0;i<list.length;i++){
+    if(DV_BTN_ORDER.indexOf(list[i].base) > orderIdx){ insertAt = i; break; }
   }
-  dvTreatments.splice(insertAt, 0, obj);
+  list.splice(insertAt, 0, obj);
 }
-function dvAdd(base){
+function dvAdd(ns, base){
+  var list = DVSTATE[ns].treatments;
   if(DV_EXCLUSIVE.indexOf(base) >= 0){
-    dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE.indexOf(t.base) < 0; });
+    list = list.filter(function(t){ return DV_EXCLUSIVE.indexOf(t.base) < 0; });
   }
   if(DV_EXCLUSIVE2.indexOf(base) >= 0){
-    dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE2.indexOf(t.base) < 0; });
+    list = list.filter(function(t){ return DV_EXCLUSIVE2.indexOf(t.base) < 0; });
   }
   if(DV_EXCLUSIVE3.indexOf(base) >= 0){
-    dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
-  }
-  if(DV_EXCLUSIVE3.indexOf(base) >= 0){
-    dvTreatments = dvTreatments.filter(function(t){ return t.base !== 'BC'; });
+    list = list.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
+    list = list.filter(function(t){ return t.base !== 'BC'; });
   } else if(base === 'BC'){
-    dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
+    list = list.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
   }
-  dvInsertSorted({ id:dvNewId(), base:base, extra:{} });
-  dvRender();
+  DVSTATE[ns].treatments = list;
+  dvInsertSorted(ns, { id:dvNewId(ns), base:base, extra:{} });
+  dvRender(ns);
 }
-function dvRemove(id){
-  dvTreatments = dvTreatments.filter(function(t){ return t.id !== id; });
-  dvRender();
+function dvRemove(ns, id){
+  DVSTATE[ns].treatments = DVSTATE[ns].treatments.filter(function(t){ return t.id !== id; });
+  dvRender(ns);
 }
-function dvInit(){
-  dvTreatments = [];
-  DV_DEFAULT.forEach(function(name){ dvInsertSorted({ id:dvNewId(), base:name, extra:{} }); });
-  dvRender();
+function dvInit(ns){
+  DVSTATE[ns].treatments = [];
+  DV_DEFAULT.forEach(function(name){ dvInsertSorted(ns, { id:dvNewId(ns), base:name, extra:{} }); });
+  dvRender(ns);
 }
-function dvReset(){
-  document.getElementById('deliver-name').value = '';
-  document.getElementById('deliver-region').value = '';
-  document.getElementById('deliver-result').value = '';
-  dvInit();
+function dvReset(ns){
+  $(elId(ns,'deliver-name')).value = '';
+  $(elId(ns,'deliver-region')).value = '';
+  $(elId(ns,'deliver-result')).value = '';
+  dvInit(ns);
 }
-function deliverReset(){ dvReset(); }
+function deliverReset(ns){ dvReset(ns); }
 
 function dvTreatmentLabel(t){
   if(DV_CHIM_BASES.indexOf(t.base) >= 0 && t.extra && t.extra['자세']){
@@ -2062,7 +2053,7 @@ function dvTreatmentLabel(t){
 }
 
 var dvDrag = null;
-function dvAttachDrag(chip, id){
+function dvAttachDrag(chip, id, ns){
   chip.dataset.id = id;
   chip.style.touchAction = 'none';
   chip.addEventListener('pointerdown', function(e){
@@ -2072,7 +2063,7 @@ function dvAttachDrag(chip, id){
     function onMove(ev){
       if(!started && (Math.abs(ev.clientX-startX)>6 || Math.abs(ev.clientY-startY)>6)){
         started = true;
-        dvDrag = { id: id };
+        dvDrag = { id: id, ns: ns };
         chip.classList.add('dv-dragging');
       }
     }
@@ -2082,14 +2073,14 @@ function dvAttachDrag(chip, id){
       chip.classList.remove('dv-dragging');
       if(started && dvDrag){
         var el = document.elementFromPoint(ev.clientX, ev.clientY);
-        var targetChip = el && el.closest('#deliver-chips [data-id]');
+        var targetChip = el && el.closest('#'+elId(ns,'deliver-chips')+' [data-id]');
         if(targetChip && targetChip.dataset.id !== dvDrag.id){
           var rect = targetChip.getBoundingClientRect();
           var insertBefore = (ev.clientX - rect.left) < rect.width/2;
-          dvReorder(dvDrag.id, targetChip.dataset.id, insertBefore);
+          dvReorder(ns, dvDrag.id, targetChip.dataset.id, insertBefore);
         } else if(!targetChip){
-          var container = el && el.closest('#deliver-chips');
-          if(container) dvReorderToEnd(dvDrag.id);
+          var container = el && el.closest('#'+elId(ns,'deliver-chips'));
+          if(container) dvReorderToEnd(ns, dvDrag.id);
         }
       }
       dvDrag = null;
@@ -2098,31 +2089,34 @@ function dvAttachDrag(chip, id){
     document.addEventListener('pointerup', onUp);
   });
 }
-function dvReorder(draggedId, targetId, insertBefore){
-  var idx = dvTreatments.findIndex(function(t){ return t.id === draggedId; });
+function dvReorder(ns, draggedId, targetId, insertBefore){
+  var list = DVSTATE[ns].treatments;
+  var idx = list.findIndex(function(t){ return t.id === draggedId; });
   if(idx === -1) return;
-  var obj = dvTreatments.splice(idx, 1)[0];
-  var targetIdx = dvTreatments.findIndex(function(t){ return t.id === targetId; });
+  var obj = list.splice(idx, 1)[0];
+  var targetIdx = list.findIndex(function(t){ return t.id === targetId; });
   var insertAt = insertBefore ? targetIdx : targetIdx + 1;
-  dvTreatments.splice(Math.max(0, insertAt), 0, obj);
-  dvRender();
+  list.splice(Math.max(0, insertAt), 0, obj);
+  dvRender(ns);
 }
-function dvReorderToEnd(draggedId){
-  var idx = dvTreatments.findIndex(function(t){ return t.id === draggedId; });
+function dvReorderToEnd(ns, draggedId){
+  var list = DVSTATE[ns].treatments;
+  var idx = list.findIndex(function(t){ return t.id === draggedId; });
   if(idx === -1) return;
-  var obj = dvTreatments.splice(idx, 1)[0];
-  dvTreatments.push(obj);
-  dvRender();
+  var obj = list.splice(idx, 1)[0];
+  list.push(obj);
+  dvRender(ns);
 }
 
-function dvRender(){
-  var chipsBox = document.getElementById('deliver-chips');
-  var btnsBox = document.getElementById('deliver-btns');
+function dvRender(ns){
+  var chipsBox = $(elId(ns,'deliver-chips'));
+  var btnsBox = $(elId(ns,'deliver-btns'));
   if(!chipsBox || !btnsBox) return;
   chipsBox.innerHTML = '';
   btnsBox.innerHTML = '';
+  var treatments = DVSTATE[ns].treatments;
 
-  dvTreatments.forEach(function(t){
+  treatments.forEach(function(t){
     var color = DV_COLORS[t.base] || '#0052FF';
     var fields = DV_FORM[t.base];
     if(fields){
@@ -2141,9 +2135,9 @@ function dvRender(){
       });
       var del = document.createElement('div');
       del.className = 'dv-del'; del.textContent = '✕';
-      del.addEventListener('click', function(){ dvRemove(t.id); });
+      del.addEventListener('click', function(){ dvRemove(ns, t.id); });
       chip.appendChild(del);
-      dvAttachDrag(chip, t.id);
+      dvAttachDrag(chip, t.id, ns);
       chipsBox.appendChild(chip);
     } else if(DV_CHIM_BASES.indexOf(t.base) >= 0){
       var chip2 = document.createElement('div');
@@ -2166,9 +2160,9 @@ function dvRender(){
       chip2.appendChild(sel);
       var del2 = document.createElement('div');
       del2.className = 'dv-del'; del2.textContent = '✕';
-      del2.addEventListener('click', function(){ dvRemove(t.id); });
+      del2.addEventListener('click', function(){ dvRemove(ns, t.id); });
       chip2.appendChild(del2);
-      dvAttachDrag(chip2, t.id);
+      dvAttachDrag(chip2, t.id, ns);
       chipsBox.appendChild(chip2);
     } else {
       var chip3 = document.createElement('div');
@@ -2178,15 +2172,15 @@ function dvRender(){
       chip3.appendChild(sp);
       var del3 = document.createElement('span');
       del3.className = 'dv-del'; del3.textContent = '✕';
-      del3.addEventListener('click', function(){ dvRemove(t.id); });
+      del3.addEventListener('click', function(){ dvRemove(ns, t.id); });
       chip3.appendChild(del3);
-      dvAttachDrag(chip3, t.id);
+      dvAttachDrag(chip3, t.id, ns);
       chipsBox.appendChild(chip3);
     }
   });
 
   var added = {};
-  dvTreatments.forEach(function(t){ added[t.base] = true; });
+  treatments.forEach(function(t){ added[t.base] = true; });
   DV_BTN_ORDER.forEach(function(name){
     if(name === '습부1'){
       var brk = document.createElement('div');
@@ -2199,13 +2193,13 @@ function dvRender(){
     btn.className = 'dv-btn';
     btn.style.setProperty('--dvcolor', DV_COLORS[name] || '#0052FF');
     btn.textContent = name;
-    btn.addEventListener('click', function(){ dvAdd(name); });
+    btn.addEventListener('click', function(){ dvAdd(ns, name); });
     btnsBox.appendChild(btn);
   });
 }
 
-function dvBuildSummary(){
-  var treatments = dvTreatments.slice();
+function dvBuildSummary(ns){
+  var treatments = DVSTATE[ns].treatments.slice();
   var yakIdx = treatments.findIndex(function(t){ return t.base === '약침'; });
   var chimIdx = treatments.findIndex(function(t){ return t.base === '침(전)'; });
   var out = [];
@@ -2243,14 +2237,14 @@ function dvBuildSummary(){
   return out.map(function(s,i){ return (i+1)+s; }).join(' ');
 }
 
-function deliverCopy(){
-  var name = document.getElementById('deliver-name').value.trim();
-  var region = document.getElementById('deliver-region').value.trim();
-  var summary = dvBuildSummary();
+function deliverCopy(ns){
+  var name = $(elId(ns,'deliver-name')).value.trim();
+  var region = $(elId(ns,'deliver-region')).value.trim();
+  var summary = dvBuildSummary(ns);
   var prefix = [name, region].filter(function(v){ return v; }).join(' ');
   var text = (prefix ? prefix + ' ' : '') + summary;
-  document.getElementById('deliver-result').value = text;
-  var el = document.getElementById('deliver-result');
+  var el = $(elId(ns,'deliver-result'));
+  el.value = text;
   if(navigator.clipboard && window.isSecureContext){
     navigator.clipboard.writeText(text).then(function(){ showToastDv('복사되었습니다'); }).catch(function(){ dvFallbackCopy(el); });
   } else {
@@ -2274,15 +2268,15 @@ renderPBody('main');
 renderPBody('ta');
 renderBijeung('main');
 renderBijeung('ta');
-renderTA('main');
 renderTA('ta');
 buildProcUI('skin-p-buttons');
 renderCQResult();
 document.querySelector('.cq-card').classList.add('collapsed');
-dvInit();
-var _dvCard = document.getElementById('deliver-card');
+dvInit('main');
+dvInit('ta');
+var _dvCard = $('main-deliver-card');
 if(_dvCard) _dvCard.classList.add('collapsed');
-var _taDvCard = document.getElementById('ta-deliver-card');
+var _taDvCard = $('ta-deliver-card');
 if(_taDvCard) _taDvCard.classList.add('collapsed');
 
 </script>
