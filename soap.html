@@ -124,10 +124,12 @@
   }
   .skin-group-title{
     font-size:15.5px;font-weight:800;color:var(--primary-dark);
-    margin:0 0 26px;padding-bottom:12px;
+    padding-bottom:12px;
     border-bottom:2px solid var(--primary-light);
     letter-spacing:-0.01em;
   }
+  .skin-group-collapsible .skin-group-title{margin:0 0 36px;}
+  .skin-group-flat .skin-group-title{margin:0 0 10px;padding-bottom:8px;}
   .skin-group.collapsed .skin-group-title{margin-bottom:0;border-bottom:none;padding-bottom:0;}
   .skin-group.collapsed .skin-group-body{display:none;}
   .skin-group.collapsed .cq-chevron::before{content:'+';}
@@ -2085,35 +2087,42 @@ var SKIN_CATALOG = {
 
 /* ==================== 비급여·패키지 ==================== */
 var NC_CATALOG = {
-  '소아·청소년': [
-    {name:'성장 한약', tiers:{'2주':250000,'4주':450000,'8주':630000}},
-    {name:'성장 약침', tiers:{'12회':120000}},
-    {name:'성장 추나', tiers:{'12회':300000}},
-    {name:'소아 성장 패키지', tiers:{'12주':990000}},
-    {name:'성장 골든타임 패키지', tiers:{'12주':1390000}},
-    {name:'입맛·면역·성장 워터젤리', tiers:{'1박스':45000,'3박스':120000}}
+  '태반 추나 패키지': [
+    {name:'스타트 프로그램 (10% 할인)', tiers:{'5회':259000}},
+    {name:'집중 관리 프로그램 (20% 할인)', tiers:{'10회':459000}},
+    {name:'회복 프로그램 (30% 할인)', tiers:{'20회':819000}}
   ],
-  '한약': [
-    {name:'일반 한약', tiers:{'2주':300000,'4주':540000,'8주':972000,'12주':1377000}},
-    {name:'녹용 한약', tiers:{'2주':430000,'4주':774000,'8주':1393200,'12주':1973700}}
-  ],
-  '공진단': [
+  '공진단·경옥고': [
     {name:'사향공진단', tiers:{'1환':70000,'10환':630000,'30환':1750000}},
     {name:'사향총명공진단', tiers:{'10환':450000,'30환':1080000}},
-    {name:'목향공진단', tiers:{'10환':120000,'30환':300000}}
-  ],
-  '경옥고': [
+    {name:'목향공진단', tiers:{'10환':120000,'30환':300000}},
     {name:'경옥고', tiers:{'1박스':100000}},
     {name:'관절고', tiers:{'1박스':80000}},
     {name:'총명경옥고', tiers:{'1박스':120000}},
     {name:'녹용보아고', tiers:{'1박스':140000}}
+  ],
+  '소아·청소년': [
+    {name:'성장 한약', tiers:{'2주':250000,'4주':450000,'8주':630000}},
+    {name:'성장 약침 12회', tiers:{'시술':120000}},
+    {name:'성장 추나 12회', tiers:{'시술':300000}},
+    {name:'소아 성장 패키지', tiers:{'12주':990000}},
+    {name:'성장 골든타임 패키지', tiers:{'12주':1390000}},
+    {name:'입맛 워터젤리', tiers:{'1박스':45000,'3박스':120000}},
+    {name:'면역 워터젤리', tiers:{'1박스':45000,'3박스':120000}},
+    {name:'성장 워터젤리', tiers:{'1박스':45000,'3박스':120000}}
+  ],
+  '한약': [
+    {name:'일반 한약', tiers:{'2주':300000,'4주':540000,'8주':972000,'12주':1377000}},
+    {name:'녹용 한약', tiers:{'2주':430000,'4주':774000,'8주':1393200,'12주':1973700}}
   ]
 };
 
 /* ==================== 다이어트 ==================== */
 var DIET_CATALOG = {
   '쏙 이지': [
-    {name:'스타터·베이직·플러스', tiers:{'1박스':69000,'3박스':207000}}
+    {name:'스타터', tiers:{'1박스':69000,'2+1박스':138000,'3박스':207000}},
+    {name:'베이직', tiers:{'1박스':69000,'2+1박스':138000,'3박스':207000}},
+    {name:'플러스', tiers:{'1박스':69000,'2+1박스':138000,'3박스':207000}}
   ],
   '쏙 프리미엄': [
     {name:'1 + 3개월', tiers:{'시술':414000}},
@@ -2187,10 +2196,24 @@ function catToggleItemOpen(tabns, cat, name, btn){
   if(sufWrap) sufWrap.innerHTML = h;
 }
 
+var CAT_EXCLUSIVE_CATEGORIES = {'쏙 프리미엄': true};
 function catToggleSingleTier(tabns, cat, name, tier, btn){
   var sel = CATSEL[tabns];
   var key = catKey(cat, name);
   var nowActive = !btn.classList.contains('selected');
+  if(nowActive && CAT_EXCLUSIVE_CATEGORIES[cat]){
+    var items = (CAT_CONFIG[tabns].catalog[cat]||[]);
+    items.forEach(function(it){
+      if(it.name === name) return;
+      delete sel[catKey(cat, it.name)];
+    });
+    var group = btn.closest('.skin-group');
+    if(group){
+      Array.prototype.forEach.call(group.querySelectorAll('.skin-btn.direct.selected'), function(b){
+        if(b !== btn) b.classList.remove('selected');
+      });
+    }
+  }
   if(nowActive){
     btn.classList.add('selected');
     sel[key] = tier;
@@ -2223,11 +2246,12 @@ function toggleCatGroup(headerEl){
 function buildCatGroupHTML(tabns, cat){
   var cfg = CAT_CONFIG[tabns];
   var items = cfg.catalog[cat];
+  var modeClass = cfg.collapsible ? ' skin-group-collapsible' : ' skin-group-flat';
   var collapsibleClass = cfg.collapsible ? ' collapsed' : '';
   var titleHTML = cfg.collapsible
     ? '<div class="skin-group-title cq-toggle-header" onclick="toggleCatGroup(this)"><span>'+cat+'</span><span class="cq-chevron"></span></div>'
     : '<div class="skin-group-title">'+cat+'</div>';
-  var html = '<div class="skin-group'+collapsibleClass+'">'+titleHTML+'<div class="skin-group-body">';
+  var html = '<div class="skin-group'+collapsibleClass+modeClass+'">'+titleHTML+'<div class="skin-group-body">';
   items.forEach(function(item){ html += buildCatItemHTML(tabns, cat, item); });
   html += '</div></div>';
   return html;
