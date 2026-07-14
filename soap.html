@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>차트 | 경희라피엘한의원</title>
+<title>차트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -124,10 +124,14 @@
   }
   .skin-group-title{
     font-size:15.5px;font-weight:800;color:var(--primary-dark);
-    margin:0 0 14px;padding-bottom:10px;
+    margin:0 0 20px;padding-bottom:12px;
     border-bottom:2px solid var(--primary-light);
     letter-spacing:-0.01em;
   }
+  .skin-group.collapsed .skin-group-title{margin-bottom:0;border-bottom:none;padding-bottom:0;}
+  .skin-group.collapsed .skin-group-body{display:none;}
+  .skin-group.collapsed .cq-chevron::before{content:'+';}
+  .skin-group-body{padding-top:2px;}
   .skin-btn-row{display:flex;flex-wrap:wrap;gap:6px;}
   .skin-item-row{
     display:flex;flex-wrap:wrap;align-items:center;gap:8px;
@@ -477,6 +481,8 @@
   <div class="page-tabs">
     <button class="page-tab active" data-page="근골격계" onclick="switchPage('근골격계',this)">통증</button>
     <button class="page-tab" data-page="TA" onclick="switchPage('TA',this)">TA</button>
+    <button class="page-tab" data-page="비급여" onclick="switchPage('비급여',this)">비급여·패키지</button>
+    <button class="page-tab" data-page="다이어트" onclick="switchPage('다이어트',this)">다이어트</button>
     <button class="page-tab" data-page="피부" onclick="switchPage('피부',this)">피부</button>
   </div>
 
@@ -724,6 +730,66 @@
   </div>
   </div><!-- /page-TA -->
 
+  <!-- ========================= 비급여·패키지 탭 ========================= -->
+  <div id="page-비급여" class="page-content">
+    <div class="skin-layout">
+      <div class="card skin-input-card">
+        <div id="nc-p-buttons"></div>
+      </div>
+      <div class="card skin-output-card">
+        <div class="card-header" style="display:block;">
+          <div class="skin-dc-row" id="nc-dc-row">
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('nc',10,this)">10% DC</button>
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('nc',20,this)">20% DC</button>
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('nc',30,this)">30% DC</button>
+          </div>
+          <button class="btn-primary skin-gen-btn" onclick="catGenerate('nc','nc-result-area')">생성</button>
+        </div>
+        <textarea id="nc-result-area" style="min-height:400px;" placeholder="항목을 선택하고 생성 버튼을 눌러주세요."></textarea>
+        <div class="copy-btn-row" style="justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn-secondary" onclick="catShowTotal('nc','nc-total-display')">합계</button>
+            <span id="nc-total-display" style="font-size:12.5px;font-weight:700;color:var(--primary-dark);"></span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" onclick="catReset('nc','nc-p-buttons','nc-result-area','nc-total-display')">초기화</button>
+            <button class="btn-secondary" data-copy="nc-result-area">복사</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /page-비급여 -->
+
+  <!-- ========================= 다이어트 탭 ========================= -->
+  <div id="page-다이어트" class="page-content">
+    <div class="skin-layout">
+      <div class="card skin-input-card">
+        <div id="diet-p-buttons"></div>
+      </div>
+      <div class="card skin-output-card">
+        <div class="card-header" style="display:block;">
+          <div class="skin-dc-row" id="diet-dc-row">
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('diet',10,this)">10% DC</button>
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('diet',20,this)">20% DC</button>
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('diet',30,this)">30% DC</button>
+          </div>
+          <button class="btn-primary skin-gen-btn" onclick="catGenerate('diet','diet-result-area')">생성</button>
+        </div>
+        <textarea id="diet-result-area" style="min-height:400px;" placeholder="항목을 선택하고 생성 버튼을 눌러주세요."></textarea>
+        <div class="copy-btn-row" style="justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn-secondary" onclick="catShowTotal('diet','diet-total-display')">합계</button>
+            <span id="diet-total-display" style="font-size:12.5px;font-weight:700;color:var(--primary-dark);"></span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" onclick="catReset('diet','diet-p-buttons','diet-result-area','diet-total-display')">초기화</button>
+            <button class="btn-secondary" data-copy="diet-result-area">복사</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /page-다이어트 -->
+
   <!-- ========================= 피부 탭 ========================= -->
   <div id="page-피부" class="page-content">
     <div class="skin-layout">
@@ -733,20 +799,20 @@
       <div class="card skin-output-card">
         <div class="card-header" style="display:block;">
           <div class="skin-dc-row" id="skin-dc-row">
-            <button type="button" class="skin-dc-btn" id="skin-dc-10" onclick="setSkinDiscount(10,this)">10% DC</button>
-            <button type="button" class="skin-dc-btn" id="skin-dc-20" onclick="setSkinDiscount(20,this)">20% DC</button>
-            <button type="button" class="skin-dc-btn" id="skin-dc-30" onclick="setSkinDiscount(30,this)">30% DC</button>
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('skin',10,this)">10% DC</button>
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('skin',20,this)">20% DC</button>
+            <button type="button" class="skin-dc-btn" onclick="catSetDiscount('skin',30,this)">30% DC</button>
           </div>
-          <button class="btn-primary skin-gen-btn" onclick="skinGenerate()">생성</button>
+          <button class="btn-primary skin-gen-btn" onclick="catGenerate('skin','skin-result-area')">생성</button>
         </div>
         <textarea id="skin-result-area" style="min-height:400px;" placeholder="시술을 선택하고 생성 버튼을 눌러주세요."></textarea>
         <div class="copy-btn-row" style="justify-content:space-between;gap:8px;">
           <div style="display:flex;align-items:center;gap:10px;">
-            <button class="btn-secondary" onclick="skinShowTotal()">합계</button>
+            <button class="btn-secondary" onclick="catShowTotal('skin','skin-total-display')">합계</button>
             <span id="skin-total-display" style="font-size:12.5px;font-weight:700;color:var(--primary-dark);"></span>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn-secondary" onclick="skinReset()">초기화</button>
+            <button class="btn-secondary" onclick="catReset('skin','skin-p-buttons','skin-result-area','skin-total-display')">초기화</button>
             <button class="btn-secondary" data-copy="skin-result-area">복사</button>
           </div>
         </div>
@@ -1605,8 +1671,9 @@ function buildPText(ns){
     for(const cd of cands){ if(cd.m && cd.m[key]) return cd; }
     return null;
   }
-  if(st.acuSt.경혈==='경혈2' && m0 && m1) parts.push(`경혈2부위(${m0.경혈} ${m1.경혈})`);
-  else if(st.acuSt.경혈==='경혈1' && m0) parts.push(`경혈1부위(${m0.경혈})`);
+  let acuPointsStr = '';
+  if(st.acuSt.경혈==='경혈2' && m0 && m1){ acuPointsStr = `${m0.경혈} ${m1.경혈}`; parts.push(`경혈2부위(${acuPointsStr})`); }
+  else if(st.acuSt.경혈==='경혈1' && m0){ acuPointsStr = m0.경혈; parts.push(`경혈1부위(${acuPointsStr})`); }
   if(st.acuSt.투자){ const p=pickArea('투자'); if(p) parts.push(`투자(${p.m.투자.join(' ')})`); }
   if(st.acuSt.관절){ const p=pickArea('관절'); if(p) parts.push(`관절(${p.m.관절})`); }
   if(st.acuSt.척추){ const p=pickArea('척추'); if(p) parts.push(`척추(${p.m.척추})`); }
@@ -1621,11 +1688,13 @@ function buildPText(ns){
   if(st.acuSt.ir && a0) parts.push(`IR(${acuShortName(a0)})`);
   if(st.acuSt.ict && a0) parts.push(`${ictLabel}(${acuShortName(a0)})`);
 
-  let result = 'P) \n' + parts.join(', ');
+  let result = 'P) \n' + parts.join(', ') + ' * 등, 어깨 부위는 0.3cm 이하로 천자함';
 
   if(st.pYakchim.active){
     const main = (st.pYakchim.kind||'') + (st.pYakchim.cc ? ' '+st.pYakchim.cc : '') + (st.pYakchim.gae ? '*'+st.pYakchim.gae : '');
-    const detail = main + (st.pYakchim.buyi ? ` (${st.pYakchim.buyi})` : '');
+    let buyi = st.pYakchim.buyi;
+    if(isTA && !buyi && acuPointsStr){ buyi = acuPointsStr; }
+    const detail = main + (buyi ? ` (${buyi})` : '');
     result += `\n■ 약침 : ${detail}`;
   }
   const chunaType = st.pChunaActive['단순추나'] ? '단순추나' : (st.pChunaActive['복잡추나'] ? '복잡추나' : '');
@@ -1755,7 +1824,7 @@ function normalizeSectionBreaks(text){
 function chartFooter(){
   const now = new Date();
   const md = (now.getMonth()+1) + '/' + now.getDate();
-  return '----------------------------------------------------------------------\n* 등, 어깨 부위는 0.3cm 이하로 천자함\n* ' + md;
+  return '----------------------------------------------------------------------\n* ' + md;
 }
 function combineChart(ns){
   let soa = $(elId(ns,'soaOutput')).value;
@@ -1994,13 +2063,60 @@ var SKIN_CATALOG = {
     {name:'바디 쏠라테라피 재생 관리', tiers:{'체험':119000,'1회':239000,'5회':990000,'10회':1779000}}
   ]
 };
-function fmtWon(n){ return Number(n).toLocaleString() + '원'; }
-function skinItemKey(cat, name){ return cat + '__' + name; }
 
-var skinSelection = {}; // key(cat__name) -> tierLabel
+/* ==================== 비급여·패키지 ==================== */
+var NC_CATALOG = {
+  '소아·청소년': [
+    {name:'성장 한약', tiers:{'2주':250000,'4주':450000,'8주':630000}},
+    {name:'성장 약침', tiers:{'12회':120000}},
+    {name:'성장 추나', tiers:{'12회':300000}},
+    {name:'소아 성장 패키지', tiers:{'12주':990000}},
+    {name:'성장 골든타임 패키지', tiers:{'12주':1390000}},
+    {name:'입맛·면역·성장 워터젤리', tiers:{'1박스':45000,'3박스':120000}}
+  ],
+  '공진단': [
+    {name:'사향공진단', tiers:{'1환':70000,'10환':630000,'30환':1750000}},
+    {name:'사향총명공진단', tiers:{'10환':450000,'30환':1080000}},
+    {name:'목향공진단', tiers:{'10환':120000,'30환':300000}}
+  ],
+  '경옥고': [
+    {name:'경옥고', tiers:{'1박스':100000}},
+    {name:'관절고', tiers:{'1박스':80000}},
+    {name:'총명경옥고', tiers:{'1박스':120000}},
+    {name:'녹용보아고', tiers:{'1박스':140000}}
+  ],
+  '한약': [
+    {name:'일반 한약', tiers:{'2주':300000,'4주':540000,'8주':972000,'12주':1377000}},
+    {name:'녹용 한약', tiers:{'2주':430000,'4주':774000,'8주':1393200,'12주':1973700}}
+  ]
+};
 
-function skinToggleTier(cat, name, tier, btn){
-  var key = skinItemKey(cat, name);
+/* ==================== 다이어트 ==================== */
+var DIET_CATALOG = {
+  '쏙 이지': [
+    {name:'스타터·베이직·플러스', tiers:{'1박스':69000}}
+  ],
+  '쏙 프리미엄': [
+    {name:'1 + 3개월', tiers:{'시술':414000}},
+    {name:'2 + 6개월 (10% 할인)', tiers:{'시술':745200}},
+    {name:'3 + 9개월 (15% 할인)', tiers:{'시술':1055700}}
+  ]
+};
+
+function fmtWon(n){ return Number(n).toLocaleString() + '\uc6d0'; }
+function catKey(cat, name){ return cat + '__' + name; }
+
+var CAT_CONFIG = {
+  skin: { catalog: SKIN_CATALOG, collapsible: true },
+  nc:   { catalog: NC_CATALOG,   collapsible: true },
+  diet: { catalog: DIET_CATALOG, collapsible: false }
+};
+var CATSEL = { skin:{}, nc:{}, diet:{} };
+var CATDC  = { skin:0, nc:0, diet:0 };
+
+function catToggleTier(tabns, cat, name, tier, btn){
+  var sel = CATSEL[tabns];
+  var key = catKey(cat, name);
   var nowActive = !btn.classList.contains('selected');
   var sufRow = btn.closest('.skin-suffix-row');
   if(sufRow){
@@ -2008,155 +2124,174 @@ function skinToggleTier(cat, name, tier, btn){
   }
   if(nowActive){
     btn.classList.add('selected');
-    skinSelection[key] = tier;
+    sel[key] = tier;
   } else {
-    delete skinSelection[key];
+    delete sel[key];
   }
   var itemBtn = sufRow && sufRow.parentNode ? sufRow.parentNode.querySelector('.skin-btn.direct') : null;
   if(itemBtn){
-    itemBtn.classList.toggle('selected', !!skinSelection[key]);
-    itemBtn.textContent = name + (skinSelection[key] ? ' · ' + skinSelection[key] : '');
+    itemBtn.classList.toggle('selected', !!sel[key]);
   }
 }
-function skinBolnewmerBaseSelected(){
-  return !!(skinSelection[skinItemKey('리프팅','볼뉴머 300샷')] || skinSelection[skinItemKey('리프팅','볼뉴머 600샷')]);
+function catBolnewmerBaseSelected(){
+  var sel = CATSEL.skin;
+  return !!(sel[catKey('\ub9ac\ud504\ud305','\ubcfc\ub274\uba38 300\uc0f7')] || sel[catKey('\ub9ac\ud504\ud305','\ubcfc\ub274\uba38 600\uc0f7')]);
 }
-function skinToggleItemOpen(cat, name, btn){
-  if(name.indexOf('볼뉴머 + ') === 0 && !skinBolnewmerBaseSelected()){
-    alert('볼뉴머 300샷 또는 600샷을 먼저 선택해주세요.');
+function catToggleItemOpen(tabns, cat, name, btn){
+  if(tabns === 'skin' && name.indexOf('\ubcfc\ub274\uba38 + ') === 0 && !catBolnewmerBaseSelected()){
+    alert('\ubcfc\ub274\uba38 300\uc0f7 \ub610\ub294 600\uc0f7\uc744 \uba3c\uc800 \uc120\ud0dd\ud574\uc8fc\uc138\uc694.');
     return;
   }
-  var group = btn.closest('.skin-group');
+  var sel = CATSEL[tabns];
+  var row = btn.closest('.skin-item-row');
+  var sufWrap = row ? row.querySelector('.skin-suffix-row') : null;
   var wasOpen = btn.classList.contains('viewing');
-  if(group){
-    Array.prototype.forEach.call(group.querySelectorAll('.skin-item-row'), function(row){
-      var b = row.querySelector('.skin-btn.direct');
-      var suf = row.querySelector('.skin-suffix-row');
-      if(b) b.classList.remove('viewing');
-      if(suf) suf.innerHTML = '';
-    });
-  }
   if(wasOpen){
-    var key = skinItemKey(cat, name);
-    delete skinSelection[key];
+    btn.classList.remove('viewing');
     btn.classList.remove('selected');
-    btn.textContent = name;
+    var key = catKey(cat, name);
+    delete sel[key];
+    if(sufWrap) sufWrap.innerHTML = '';
     return;
   }
   btn.classList.add('viewing');
-  var key = skinItemKey(cat, name);
-  var selTier = skinSelection[key];
-  var item = (SKIN_CATALOG[cat]||[]).find(function(it){ return it.name === name; });
+  var key2 = catKey(cat, name);
+  var selTier = sel[key2];
+  var item = (CAT_CONFIG[tabns].catalog[cat]||[]).find(function(it){ return it.name === name; });
   if(!item) return;
-  var sufWrap = btn.parentNode.querySelector('.skin-suffix-row');
   var h = '';
   Object.keys(item.tiers).forEach(function(tier){
     var price = item.tiers[tier];
-    var label = (tier === '시술') ? '선택' : tier;
-    h += '<button type="button" class="skin-btn suffix'+(selTier===tier?' selected':'')+'" title="'+fmtWon(price)+'" onclick="skinToggleTier(\''+cat+'\',\''+name.replace(/'/g,"\\'")+'\',\''+tier+'\',this)">'+label+'</button>';
+    var label = (tier === '\uc2dc\uc220') ? '\uc120\ud0dd' : tier;
+    h += '<button type="button" class="skin-btn suffix'+(selTier===tier?' selected':'')+'" title="'+fmtWon(price)+'" onclick="catToggleTier(\''+tabns+'\',\''+cat+'\',\''+name.replace(/'/g,"\\'")+'\',\''+tier+'\',this)">'+label+'</button>';
   });
   if(sufWrap) sufWrap.innerHTML = h;
 }
 
-function buildSkinItemHTML(cat, item){
-  var key = skinItemKey(cat, item.name);
-  var selTier = skinSelection[key];
-  var label = item.name + (selTier ? ' · ' + selTier : '');
+function buildCatItemHTML(tabns, cat, item){
+  var sel = CATSEL[tabns];
+  var key = catKey(cat, item.name);
+  var selTier = sel[key];
   var h = '<div class="skin-item-row">';
-  h += '<button type="button" class="skin-btn direct'+(selTier?' selected':'')+'" onclick="skinToggleItemOpen(\''+cat+'\',\''+item.name.replace(/'/g,"\\'")+'\',this)">'+label+'</button>';
+  h += '<button type="button" class="skin-btn direct'+(selTier?' selected':'')+'" onclick="catToggleItemOpen(\''+tabns+'\',\''+cat+'\',\''+item.name.replace(/'/g,"\\'")+'\',this)">'+item.name+'</button>';
   h += '<div class="skin-suffix-row"></div>';
   h += '</div>';
   return h;
 }
-function buildSkinGroupHTML(cat){
-  var items = SKIN_CATALOG[cat];
-  var html = '<div class="skin-group"><div class="skin-group-title">'+cat+'</div>';
-  items.forEach(function(item){ html += buildSkinItemHTML(cat, item); });
-  html += '</div>';
+function toggleCatGroup(headerEl){
+  var group = headerEl.closest('.skin-group');
+  if(group) group.classList.toggle('collapsed');
+}
+function buildCatGroupHTML(tabns, cat){
+  var cfg = CAT_CONFIG[tabns];
+  var items = cfg.catalog[cat];
+  var collapsibleClass = cfg.collapsible ? ' collapsed' : '';
+  var titleHTML = cfg.collapsible
+    ? '<div class="skin-group-title cq-toggle-header" onclick="toggleCatGroup(this)"><span>'+cat+'</span><span class="cq-chevron"></span></div>'
+    : '<div class="skin-group-title">'+cat+'</div>';
+  var html = '<div class="skin-group'+collapsibleClass+'">'+titleHTML+'<div class="skin-group-body">';
+  items.forEach(function(item){ html += buildCatItemHTML(tabns, cat, item); });
+  html += '</div></div>';
   return html;
 }
-function buildProcUI(containerId){
+function buildCatUI(tabns, containerId){
+  var cfg = CAT_CONFIG[tabns];
   var h = '';
-  Object.keys(SKIN_CATALOG).forEach(function(cat){ h += buildSkinGroupHTML(cat); });
+  Object.keys(cfg.catalog).forEach(function(cat){ h += buildCatGroupHTML(tabns, cat); });
   document.getElementById(containerId).innerHTML = '<div class="skin-grid">'+h+'</div>';
 }
-function skinReset(){
-  skinSelection = {};
-  skinDiscount = 0;
-  document.querySelectorAll('.skin-dc-btn').forEach(function(b){ b.classList.remove('selected'); });
-  buildProcUI('skin-p-buttons');
-  document.getElementById('skin-result-area').value = '';
-  var totalEl = document.getElementById('skin-total-display');
-  if(totalEl) totalEl.textContent = '';
-}
-var skinDiscount = 0;
-function setSkinDiscount(pct, btn){
-  if(skinDiscount === pct){
-    skinDiscount = 0;
+
+function catSetDiscount(tabns, pct, btn){
+  if(CATDC[tabns] === pct){
+    CATDC[tabns] = 0;
     btn.classList.remove('selected');
   } else {
-    skinDiscount = pct;
-    document.querySelectorAll('.skin-dc-btn').forEach(function(b){ b.classList.remove('selected'); });
+    CATDC[tabns] = pct;
+    var row = document.getElementById(tabns+'-dc-row');
+    if(row){
+      Array.prototype.forEach.call(row.querySelectorAll('.skin-dc-btn'), function(b){ b.classList.remove('selected'); });
+    }
     btn.classList.add('selected');
   }
 }
-function skinDiscountedPrice(price){
-  if(!skinDiscount) return price;
-  return Math.round(price * (100 - skinDiscount) / 100);
+function catDiscountedPrice(tabns, price){
+  var pct = CATDC[tabns];
+  if(!pct) return price;
+  return Math.round(price * (100 - pct) / 100);
 }
-function skinShowTotal(){
+function catShowTotal(tabns, totalId){
+  var cfg = CAT_CONFIG[tabns];
+  var sel = CATSEL[tabns];
   var total = 0;
-  Object.keys(SKIN_CATALOG).forEach(function(cat){
-    SKIN_CATALOG[cat].forEach(function(item){
-      var key = skinItemKey(cat, item.name);
-      var tier = skinSelection[key];
+  Object.keys(cfg.catalog).forEach(function(cat){
+    cfg.catalog[cat].forEach(function(item){
+      var key = catKey(cat, item.name);
+      var tier = sel[key];
       if(!tier) return;
-      total += skinDiscountedPrice(item.tiers[tier]);
+      total += catDiscountedPrice(tabns, item.tiers[tier]);
     });
   });
-  var el = document.getElementById('skin-total-display');
+  var el = document.getElementById(totalId);
   if(el) el.textContent = fmtWon(total);
 }
-function skinTodayMD(){ var d = new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
-function skinGenerate(){
-  var date = skinTodayMD();
+function catTodayMD(){ var d = new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
+
+function catGenerate(tabns, resultId){
+  var cfg = CAT_CONFIG[tabns];
+  var sel = CATSEL[tabns];
+  var date = catTodayMD();
   var lines = [];
   var handledKeys = {};
-  var dcNote = skinDiscount ? (' ('+skinDiscount+'% DC)') : '';
+  var dcNote = CATDC[tabns] ? (' ('+CATDC[tabns]+'% DC)') : '';
 
-  var liftItems = SKIN_CATALOG['리프팅'] || [];
-  ['볼뉴머 300샷','볼뉴머 600샷'].forEach(function(baseName){
-    var baseKey = skinItemKey('리프팅', baseName);
-    var baseTier = skinSelection[baseKey];
-    if(!baseTier) return;
-    var addonItem = liftItems.find(function(it){
-      return it.name.indexOf('볼뉴머 + ') === 0 && !!skinSelection[skinItemKey('리프팅', it.name)];
+  if(tabns === 'skin'){
+    var liftItems = cfg.catalog['\ub9ac\ud504\ud305'] || [];
+    ['\ubcfc\ub274\uba38 300\uc0f7','\ubcfc\ub274\uba38 600\uc0f7'].forEach(function(baseName){
+      var baseKey = catKey('\ub9ac\ud504\ud305', baseName);
+      var baseTier = sel[baseKey];
+      if(!baseTier) return;
+      var addonItem = liftItems.find(function(it){
+        return it.name.indexOf('\ubcfc\ub274\uba38 + ') === 0 && !!sel[catKey('\ub9ac\ud504\ud305', it.name)];
+      });
+      if(!addonItem) return;
+      var addonKey = catKey('\ub9ac\ud504\ud305', addonItem.name);
+      var addonTier = sel[addonKey];
+      var baseItem = liftItems.find(function(it){ return it.name === baseName; });
+      var basePrice = catDiscountedPrice(tabns, baseItem.tiers[baseTier]);
+      var addonPrice = catDiscountedPrice(tabns, addonItem.tiers[addonTier]);
+      var sum = basePrice + addonPrice;
+      var addonShortName = addonItem.name.replace('\ubcfc\ub274\uba38 + ', '');
+      lines.push('* '+date+' '+baseName+' + '+addonShortName+' | '+fmtWon(basePrice)+' + '+fmtWon(addonPrice)+' = '+fmtWon(sum)+' \uacb0\uc81c'+dcNote);
+      handledKeys[baseKey] = true;
+      handledKeys[addonKey] = true;
     });
-    if(!addonItem) return;
-    var addonKey = skinItemKey('리프팅', addonItem.name);
-    var addonTier = skinSelection[addonKey];
-    var baseItem = liftItems.find(function(it){ return it.name === baseName; });
-    var basePrice = skinDiscountedPrice(baseItem.tiers[baseTier]);
-    var addonPrice = skinDiscountedPrice(addonItem.tiers[addonTier]);
-    var sum = basePrice + addonPrice;
-    var addonShortName = addonItem.name.replace('볼뉴머 + ', '');
-    lines.push('* '+date+' '+baseName+' + '+addonShortName+' | '+fmtWon(basePrice)+' + '+fmtWon(addonPrice)+' = '+fmtWon(sum)+' 결제'+dcNote);
-    handledKeys[baseKey] = true;
-    handledKeys[addonKey] = true;
-  });
+  }
 
-  Object.keys(SKIN_CATALOG).forEach(function(cat){
-    SKIN_CATALOG[cat].forEach(function(item){
-      var key = skinItemKey(cat, item.name);
+  Object.keys(cfg.catalog).forEach(function(cat){
+    cfg.catalog[cat].forEach(function(item){
+      var key = catKey(cat, item.name);
       if(handledKeys[key]) return;
-      var tier = skinSelection[key];
+      var tier = sel[key];
       if(!tier) return;
-      var price = skinDiscountedPrice(item.tiers[tier]);
-      var tierText = (tier === '시술') ? '' : (' '+tier);
-      lines.push('* '+date+' '+item.name+tierText+' | '+fmtWon(price)+' 결제'+dcNote);
+      var price = catDiscountedPrice(tabns, item.tiers[tier]);
+      var tierText = (tier === '\uc2dc\uc220') ? '' : (' '+tier);
+      lines.push('* '+date+' '+item.name+tierText+' | '+fmtWon(price)+' \uacb0\uc81c'+dcNote);
     });
   });
-  document.getElementById('skin-result-area').value = lines.join('\n');
+  document.getElementById(resultId).value = lines.join('\n');
+}
+
+function catReset(tabns, containerId, resultId, totalId){
+  CATSEL[tabns] = {};
+  CATDC[tabns] = 0;
+  var row = document.getElementById(tabns+'-dc-row');
+  if(row){
+    Array.prototype.forEach.call(row.querySelectorAll('.skin-dc-btn'), function(b){ b.classList.remove('selected'); });
+  }
+  buildCatUI(tabns, containerId);
+  document.getElementById(resultId).value = '';
+  var totalEl = document.getElementById(totalId);
+  if(totalEl) totalEl.textContent = '';
 }
 
 /* ==================== 전달 탭 (통증 탭 전용) ==================== */
@@ -2456,7 +2591,9 @@ renderPBody('ta');
 renderBijeung('main');
 renderBijeung('ta');
 renderTA('ta');
-buildProcUI('skin-p-buttons');
+buildCatUI('skin', 'skin-p-buttons');
+buildCatUI('nc', 'nc-p-buttons');
+buildCatUI('diet', 'diet-p-buttons');
 renderCQResult();
 document.querySelector('.cq-card').classList.add('collapsed');
 dvInit('main');
