@@ -32,7 +32,6 @@
     -webkit-font-smoothing:antialiased;
   }
   .container{max-width:1680px;margin:0 auto;}
-  /* 상단 페이지 탭 */
   .page-tabs{
     display:flex;gap:6px;margin:0 0 20px;
     border-bottom:2px solid var(--border);
@@ -57,7 +56,6 @@
   }
   .p-reset-btn:hover{background:#fddfe2;}
   .page-content.active{display:block;}
-  /* 전달 탭 */
   .deliver-toprow{display:flex;gap:10px;margin-bottom:16px;}
   .deliver-input{
     flex:1;border:none;border-radius:12px;padding:12px 14px;
@@ -99,7 +97,6 @@
   }
   .deliver-result:focus{outline:none;}
   .deliver-result::placeholder{font-weight:400;font-size:12.5px;color:var(--muted);}
-  /* 피부 시술 선택 */
   .skin-layout{
     display:grid;grid-template-columns:1.7fr 1fr;gap:16px;align-items:start;
   }
@@ -121,7 +118,6 @@
     margin-bottom:10px;
   }
   .skin-btn-row{display:flex;flex-wrap:wrap;gap:6px;}
-  /* 세부 버튼: 그룹 안에서만 딱 펼쳐짐 */
   .skin-suffix-row{display:flex;flex-wrap:wrap;gap:6px;}
   .skin-suffix-row:not(:empty){
     margin-top:8px;padding-top:8px;
@@ -189,6 +185,7 @@
     vertical-align:middle;
     flex:0 0 auto;
   }
+  .chart-warn-inline{font-size:12px;color:var(--danger);font-weight:700;margin-left:auto;text-align:right;}
   label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600;}
   input[type="password"], input[type="text"], input[type="number"], textarea{
     width:100%;
@@ -271,7 +268,7 @@
   .tab-btn.active{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(25,31,40,0.08);}
   .tab-content{display:none;}
   .tab-content.active{display:block;}
-  #recordBtn{
+  #recordBtn, .rec-btn{
     background:var(--primary-light);
     color:var(--primary);
     border:none;
@@ -281,11 +278,11 @@
     font-size:15px;
     font-weight:700;
   }
-  #recordBtn:hover{background:#dce9ff;}
-  #recordBtn.recording{background:var(--danger);color:#fff;}
-  #recordTimer{display:block;text-align:center;margin-top:8px;font-size:13px;color:var(--muted);font-weight:600;}
+  #recordBtn:hover, .rec-btn:hover{background:#dce9ff;}
+  #recordBtn.recording, .rec-btn.recording{background:var(--danger);color:#fff;}
+  #recordTimer, .rec-timer{display:block;text-align:center;margin-top:8px;font-size:13px;color:var(--muted);font-weight:600;}
   audio{width:100%;margin-top:10px;}
-  #statusMsg{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px;}
+  .status-msg{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px;}
 
   .two-col{
     display:grid;
@@ -301,10 +298,8 @@
     .two-col{grid-template-columns:1fr;}
     .col-cq{grid-column:auto;}
   }
-  /* 청구 열: 스크롤 따라오도록 고정 + 좁은 폭 대응 */
   .col-cq{position:sticky;top:16px;}
   .cq-card{padding:16px;}
-  /* 청구 토글 */
   .cq-toggle-header{
     cursor:pointer;user-select:none;display:flex;align-items:center;
     margin-bottom:0;
@@ -323,7 +318,6 @@
   .cq-card.collapsed .cq-body{display:none;}
   .cq-card.collapsed{padding-bottom:16px;}
 
-  /* ── 청구 수가 조회 ── */
   .cq-filters{
     display:flex;flex-wrap:wrap;gap:14px;align-items:center;
     margin-bottom:16px;
@@ -366,7 +360,6 @@
   .cq-combo-num{color:var(--muted);font-size:11px;margin-right:6px;}
   .cq-combo-sep{color:var(--border);margin:0 1px;}
   .cq-empty{text-align:center;color:var(--muted);font-size:13px;padding:20px;}
-  /* 좁은 청구 열 컴팩트 대응 */
   .cq-card .cq-row-head{padding:9px 12px;}
   .cq-card .cq-row-label{font-size:12.5px;}
   .cq-card .cq-combos{padding:6px 12px;}
@@ -402,7 +395,6 @@
     background:var(--accent);
     color:#fff;
   }
-  /* 위계 2단계: 상위 토글 안에 속한 세부 옵션 (예: 약침 종류/용량/개수, 추나 루틴 프리셋) */
   .btn-toggle.tier2{
     background:var(--accent-light);
     color:var(--accent);
@@ -412,7 +404,6 @@
     background:var(--accent);
     color:#fff;
   }
-  /* 위계 3단계: 세부 옵션 안의 더 상세한 항목 (예: 추나 개별 기법) */
   .btn-toggle.tier3{
     background:#f1edff;
     color:#7c5cfc;
@@ -445,6 +436,7 @@
   }
   .ch-inline[type="number"]{ -moz-appearance:textfield; text-align:center; padding:0 4px; }
   .ch-inline:focus{background:#fff;box-shadow:0 0 0 2px var(--primary);}
+  .ch-inline[readonly]{color:var(--muted);}
   .warn-box{
     background:var(--danger-light);
     border:none;
@@ -464,84 +456,79 @@
     margin-top:20px;
     line-height:1.7;
   }
+  .chart-textarea{min-height:340px;height:auto;overflow-y:hidden;}
+  .ta-fac-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="page-tabs">
     <button class="page-tab active" data-page="근골격계" onclick="switchPage('근골격계',this)">통증</button>
+    <button class="page-tab" data-page="TA" onclick="switchPage('TA',this)">TA</button>
     <button class="page-tab" data-page="피부" onclick="switchPage('피부',this)">피부</button>
   </div>
 
+  <!-- ========================= 통증 탭 (main) ========================= -->
   <div id="page-근골격계" class="page-content active">
   <div class="two-col">
     <div class="col-left">
       <div class="card">
         <div class="card-header"><span class="step-badge">1</span>녹음</div>
         <div class="tabs">
-          <button class="tab-btn active" data-tab="text">직접 입력</button>
-          <button class="tab-btn" data-tab="record">직접 녹음</button>
-          <button class="tab-btn" data-tab="upload">녹음 파일 업로드</button>
+          <button class="tab-btn active" data-tab="text" data-ns="main">직접 입력</button>
+          <button class="tab-btn" data-tab="record" data-ns="main">직접 녹음</button>
+          <button class="tab-btn" data-tab="upload" data-ns="main">녹음 파일 업로드</button>
         </div>
 
-        <div class="tab-content active" id="textTab">
-          <textarea id="directTextInput" style="min-height:140px;" placeholder="진료한 내용을 텍스트로 입력해주세요"></textarea>
+        <div class="tab-content active" id="main-textTab">
+          <textarea id="main-directTextInput" style="min-height:240px;" placeholder="진료한 내용을 텍스트로 입력해주세요"></textarea>
         </div>
 
-        <div class="tab-content" id="recordTab">
-          <button id="recordBtn">● 녹음 시작</button>
-          <span id="recordTimer">00:00</span>
-          <audio id="recordedPlayback" controls style="display:none"></audio>
-          <button class="btn-secondary" id="downloadRecordBtn" style="display:none;width:100%;margin-top:8px;">녹음 파일 다운로드 (백업)</button>
+        <div class="tab-content" id="main-recordTab">
+          <button class="rec-btn" id="main-recordBtn">● 녹음 시작</button>
+          <span class="rec-timer" id="main-recordTimer">00:00</span>
+          <audio id="main-recordedPlayback" controls style="display:none"></audio>
+          <button class="btn-secondary" id="main-downloadRecordBtn" style="display:none;width:100%;margin-top:8px;">녹음 파일 다운로드 (백업)</button>
         </div>
 
-        <div class="tab-content" id="uploadTab">
-          <label for="audioFileInput" class="btn-outline" id="fileSelectLabel" style="cursor:pointer;text-align:center;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">파일 선택</label>
-          <input type="file" id="audioFileInput" accept="audio/*,video/webm,.webm,.ogg,.m4a,.mp4,.wav,.mp3,.aac,.aiff,.flac" style="display:none;">
+        <div class="tab-content" id="main-uploadTab">
+          <label for="main-audioFileInput" class="btn-outline" id="main-fileSelectLabel" style="cursor:pointer;text-align:center;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">파일 선택</label>
+          <input type="file" id="main-audioFileInput" accept="audio/*,video/webm,.webm,.ogg,.m4a,.mp4,.wav,.mp3,.aac,.aiff,.flac" style="display:none;">
         </div>
 
-        <div id="extraNotesWrap" style="display:none;margin-top:10px;">
-          <textarea id="extraNotesInput" style="min-height:70px;" placeholder="녹음에 없는 내용을 추가로 적어주세요 (선택)"></textarea>
+        <div id="main-extraNotesWrap" style="display:none;margin-top:10px;">
+          <textarea id="main-extraNotesInput" style="min-height:70px;" placeholder="녹음에 없는 내용을 추가로 적어주세요 (선택)"></textarea>
         </div>
-
-        <button class="btn-primary" id="analyzeBtn">생성하기</button>
-        <div id="statusMsg"></div>
       </div>
 
-      <div class="card">
-        <div class="card-header"><span class="step-badge">2</span>S O A</div>
-        <div id="warnBox" class="warn-box" style="display:none;"></div>
-        <textarea id="soaOutput" style="min-height:280px;" placeholder="분석하여 출력되는 곳입니다"></textarea>
-        <div class="copy-btn-row"><button class="btn-secondary" data-copy="soaOutput">복사</button></div>
-      </div>
+      <textarea id="main-soaOutput" style="display:none;"></textarea>
     </div>
 
     <div class="col-right">
       <div class="card">
-        <div class="card-header"><span class="step-badge">3</span>변증</div>
-        <div id="bijeungBody" class="btn-toggle-row"></div>
+        <div class="card-header"><span class="step-badge">2</span>변증</div>
+        <div id="main-bijeungBody" class="btn-toggle-row"></div>
       </div>
       <div class="card">
         <div class="card-header" style="justify-content:space-between;">
-          <span style="display:flex;align-items:center;"><span class="step-badge">4</span>T/A</span>
-          <button id="taActiveBtn" class="btn-toggle tier2" onclick="toggleTAActive()">T/A</button>
+          <span style="display:flex;align-items:center;"><span class="step-badge">3</span>T/A</span>
+          <button id="main-taActiveBtn" class="btn-toggle tier2" onclick="toggleTAActive('main')">T/A</button>
         </div>
-        <div id="taBody" class="btn-toggle-row"></div>
+        <div id="main-taBody" class="btn-toggle-row"></div>
       </div>
       <div class="card">
         <div class="card-header" style="justify-content:space-between;">
-          <span style="display:flex;align-items:center;"><span class="step-badge">5</span>P</span>
-          <button class="p-reset-btn" onclick="resetPBody()" style="height:34px;padding:0 14px;border-radius:17px;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;">초기화</button>
+          <span style="display:flex;align-items:center;"><span class="step-badge">4</span>P</span>
+          <button class="p-reset-btn" onclick="resetPBody('main')" style="height:34px;padding:0 14px;border-radius:17px;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;">초기화</button>
         </div>
-        <div id="pBody"></div>
-        <div class="p-reset-row"><button class="btn-primary" onclick="generatePOnly()" style="width:100%;margin-top:0;">생성</button></div>
+        <div id="main-pBody"></div>
       </div>
     </div>
 
     <div class="col-cq">
       <div class="card cq-card">
         <div class="card-header cq-toggle-header" onclick="toggleCQ()">
-          <span class="step-badge">7</span>청구
+          <span class="step-badge">5</span>청구
           <span class="cq-chevron" id="cq-chevron"></span>
         </div>
         <div id="cq-body" class="cq-body">
@@ -571,7 +558,7 @@
 
       <div class="card cq-card" id="deliver-card" style="margin-top:12px;">
         <div class="card-header cq-toggle-header" onclick="toggleDeliver()">
-          <span class="step-badge">8</span>전달
+          <span class="step-badge">6</span>전달
           <span class="cq-chevron" id="deliver-chevron"></span>
         </div>
         <div id="deliver-body" class="cq-body">
@@ -592,16 +579,20 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="step-badge">6</span>차트</div>
-    <button class="btn-primary" id="combineBtn" style="margin-bottom:10px;">생성하기</button>
-    <textarea id="fullOutput" style="min-height:200px;"></textarea>
-    <div class="copy-btn-row"><button class="btn-secondary" data-copy="fullOutput">복사</button></div>
+    <div class="card-header" style="justify-content:space-between;">
+      <span style="display:flex;align-items:center;"><span class="step-badge">7</span>차트</span>
+      <span class="chart-warn-inline" id="main-chartWarn"></span>
+    </div>
+    <button class="btn-primary" id="main-combineBtn">생성하기</button>
+    <div class="status-msg" id="main-statusMsg"></div>
+    <textarea id="main-fullOutput" class="chart-textarea"></textarea>
+    <div class="copy-btn-row"><button class="btn-secondary" data-copy="main-fullOutput">복사</button></div>
   </div>
 
   <div class="card">
     <div class="card-header"><span class="step-badge">8</span>스크립트</div>
-    <textarea id="scriptOutput" style="min-height:160px;" placeholder="녹음한 내용이 추출됩니다"></textarea>
-    <div class="copy-btn-row"><button class="btn-secondary" data-copy="scriptOutput">복사</button></div>
+    <textarea id="main-scriptOutput" style="min-height:160px;" placeholder="녹음한 내용이 추출됩니다"></textarea>
+    <div class="copy-btn-row"><button class="btn-secondary" data-copy="main-scriptOutput">복사</button></div>
   </div>
 
   <div class="card card-muted">
@@ -626,6 +617,99 @@
   </div>
   </div><!-- /page-근골격계 -->
 
+  <!-- ========================= TA 탭 ========================= -->
+  <div id="page-TA" class="page-content">
+  <div class="two-col">
+    <div class="col-left">
+      <div class="card">
+        <div class="card-header"><span class="step-badge">1</span>녹음</div>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="text" data-ns="ta">직접 입력</button>
+          <button class="tab-btn" data-tab="record" data-ns="ta">직접 녹음</button>
+          <button class="tab-btn" data-tab="upload" data-ns="ta">녹음 파일 업로드</button>
+        </div>
+
+        <div class="tab-content active" id="ta-textTab">
+          <textarea id="ta-directTextInput" style="min-height:240px;" placeholder="진료한 내용을 텍스트로 입력해주세요"></textarea>
+        </div>
+
+        <div class="tab-content" id="ta-recordTab">
+          <button class="rec-btn" id="ta-recordBtn">● 녹음 시작</button>
+          <span class="rec-timer" id="ta-recordTimer">00:00</span>
+          <audio id="ta-recordedPlayback" controls style="display:none"></audio>
+          <button class="btn-secondary" id="ta-downloadRecordBtn" style="display:none;width:100%;margin-top:8px;">녹음 파일 다운로드 (백업)</button>
+        </div>
+
+        <div class="tab-content" id="ta-uploadTab">
+          <label for="ta-audioFileInput" class="btn-outline" id="ta-fileSelectLabel" style="cursor:pointer;text-align:center;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">파일 선택</label>
+          <input type="file" id="ta-audioFileInput" accept="audio/*,video/webm,.webm,.ogg,.m4a,.mp4,.wav,.mp3,.aac,.aiff,.flac" style="display:none;">
+        </div>
+
+        <div id="ta-extraNotesWrap" style="display:none;margin-top:10px;">
+          <textarea id="ta-extraNotesInput" style="min-height:70px;" placeholder="녹음에 없는 내용을 추가로 적어주세요 (선택)"></textarea>
+        </div>
+      </div>
+
+      <textarea id="ta-soaOutput" style="display:none;"></textarea>
+
+      <div class="card">
+        <div class="card-header"><span class="step-badge">3</span>T/A</div>
+        <div id="ta-taBody" class="btn-toggle-row"></div>
+        <div class="ta-fac-row" id="ta-facRow"></div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="card">
+        <div class="card-header"><span class="step-badge">4</span>변증</div>
+        <div id="ta-bijeungBody" class="btn-toggle-row"></div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;"><span class="step-badge">5</span>P</span>
+          <button class="p-reset-btn" onclick="resetPBody('ta')" style="height:34px;padding:0 14px;border-radius:17px;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;">초기화</button>
+        </div>
+        <div id="ta-pBody"></div>
+      </div>
+    </div>
+
+    <div class="col-cq">
+      <div class="card cq-card" id="ta-deliver-card">
+        <div class="card-header cq-toggle-header" onclick="toggleDeliverTA()">
+          <span class="step-badge">6</span>전달
+          <span class="cq-chevron" id="ta-deliver-chevron"></span>
+        </div>
+        <div id="ta-deliver-body" class="cq-body">
+          <small class="hint">전달 문구는 통증 탭의 전달 기능을 사용해주세요.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" style="justify-content:space-between;">
+      <span style="display:flex;align-items:center;"><span class="step-badge">6</span>차트</span>
+      <span class="chart-warn-inline" id="ta-chartWarn"></span>
+    </div>
+    <button class="btn-primary" id="ta-combineBtn">생성하기</button>
+    <div class="status-msg" id="ta-statusMsg"></div>
+    <textarea id="ta-fullOutput" class="chart-textarea"></textarea>
+    <div class="copy-btn-row"><button class="btn-secondary" data-copy="ta-fullOutput">복사</button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="step-badge">8</span>스크립트</div>
+    <textarea id="ta-scriptOutput" style="min-height:160px;" placeholder="녹음한 내용이 추출됩니다"></textarea>
+    <div class="copy-btn-row"><button class="btn-secondary" data-copy="ta-scriptOutput">복사</button></div>
+  </div>
+
+  <div class="disclaimer">
+    녹음은 약 20분 이내 권장<br>
+    AI가 생성한 S/O/A 내용은 반드시 검수 후 사용
+  </div>
+  </div><!-- /page-TA -->
+
+  <!-- ========================= 피부 탭 ========================= -->
   <div id="page-피부" class="page-content">
     <div class="skin-layout">
       <div class="card skin-input-card">
@@ -644,28 +728,62 @@
 </div>
 
 <script>
-// ---------- Tabs ----------
+/* ==================== 공통 유틸 ==================== */
+function $(id){ return document.getElementById(id); }
+function elId(ns, name){ return ns + '-' + name; }
+function escAttr(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); }
+function inputWidthFor(val, min, max){
+  const len = (val||'').length;
+  return Math.min(max||220, Math.max(min||80, len*8+24));
+}
+function autoGrow(el){
+  if(!el) return;
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight + 4) + 'px';
+}
+function uppercaseEnglish(text){
+  return String(text||'').replace(/[a-z]/g, c => c.toUpperCase());
+}
+
+/* ==================== 페이지 전환 ==================== */
+function switchPage(name, btn){
+  document.querySelectorAll('.page-content').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ==================== 녹음/입력 탭 전환 (ns별) ==================== */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    const ns = btn.dataset.ns;
+    document.querySelectorAll(`.tab-btn[data-ns="${ns}"]`).forEach(b=>b.classList.remove('active'));
+    ['text','record','upload'].forEach(t=>{
+      const el = $(elId(ns, t+'Tab'));
+      if(el) el.classList.remove('active');
+    });
     btn.classList.add('active');
-    document.getElementById(btn.dataset.tab+'Tab').classList.add('active');
-    document.getElementById('extraNotesWrap').style.display = (btn.dataset.tab === 'text') ? 'none' : 'block';
+    $(elId(ns, btn.dataset.tab+'Tab')).classList.add('active');
+    const wrap = $(elId(ns,'extraNotesWrap'));
+    if(wrap) wrap.style.display = (btn.dataset.tab==='text') ? 'none' : 'block';
   });
 });
 
-// ---------- File select label ----------
-document.getElementById('audioFileInput').addEventListener('change', (e)=>{
-  const label = document.getElementById('fileSelectLabel');
-  label.textContent = e.target.files[0] ? e.target.files[0].name : '파일 선택';
+/* 파일 선택 라벨 (ns별) */
+['main','ta'].forEach(ns=>{
+  const input = $(elId(ns,'audioFileInput'));
+  if(!input) return;
+  input.addEventListener('change', (e)=>{
+    const label = $(elId(ns,'fileSelectLabel'));
+    label.textContent = e.target.files[0] ? e.target.files[0].name : '파일 선택';
+  });
 });
 
-// ---------- API KEY ----------
-const apiKeyInput = document.getElementById('apiKeyInput');
-const keyStatus = document.getElementById('keyStatus');
-const apiKeyBody = document.getElementById('apiKeyBody');
-const apiKeyHeaderEl = document.getElementById('apiKeyHeader');
+/* ==================== API KEY (공용) ==================== */
+const apiKeyInput = $('apiKeyInput');
+const keyStatus = $('keyStatus');
+const apiKeyBody = $('apiKeyBody');
+const apiKeyHeaderEl = $('apiKeyHeader');
 const apiKeyCard = apiKeyHeaderEl.parentElement;
 function collapseApiKey(){
   apiKeyBody.style.display = 'none';
@@ -677,14 +795,10 @@ function expandApiKey(){
   apiKeyHeaderEl.style.marginBottom = '';
   apiKeyCard.style.padding = '';
 }
-document.getElementById('apiKeyHeader').addEventListener('click', ()=>{
+apiKeyHeaderEl.addEventListener('click', ()=>{
   if(apiKeyBody.style.display === 'none'){ expandApiKey(); } else { collapseApiKey(); }
 });
-
-// 이 파일 자체에 키를 고정하고 싶으면 아래 따옴표 안에 본인의 Gemini API 키를 붙여넣으세요.
-// (이 파일을 다른 사람과 공유하지 않는 경우에만 이렇게 하세요 — 파일을 열어보면 키가 그대로 보입니다)
 const DEFAULT_API_KEY = '';
-
 const savedKey = localStorage.getItem('gemini_api_key') || DEFAULT_API_KEY;
 if(savedKey){
   apiKeyInput.value = savedKey;
@@ -692,73 +806,81 @@ if(savedKey){
   keyStatus.textContent = '저장된 키를 불러왔습니다.';
   collapseApiKey();
 }
-document.getElementById('saveKeyBtn').addEventListener('click', ()=>{
+$('saveKeyBtn').addEventListener('click', ()=>{
   localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
   keyStatus.textContent = '저장되었습니다.';
   collapseApiKey();
 });
 
-// ---------- Recording ----------
-let mediaRecorder, recordedChunks = [], recordedBlob = null, recordTimerInterval, recordSeconds = 0;
-const recordBtn = document.getElementById('recordBtn');
-const recordTimer = document.getElementById('recordTimer');
-const recordedPlayback = document.getElementById('recordedPlayback');
-
-recordBtn.addEventListener('click', async ()=>{
-  if(mediaRecorder && mediaRecorder.state === 'recording'){
-    mediaRecorder.stop();
-    return;
-  }
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    recordedChunks = [];
-    let mimeType = '';
-    for(const t of ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg']){
-      if(MediaRecorder.isTypeSupported(t)){ mimeType = t; break; }
+/* ==================== 녹음 (ns별) ==================== */
+const RECSTATE = {
+  main: {mediaRecorder:null, chunks:[], blob:null, timerInterval:null, seconds:0},
+  ta:   {mediaRecorder:null, chunks:[], blob:null, timerInterval:null, seconds:0}
+};
+function setupRecording(ns){
+  const recordBtn = $(elId(ns,'recordBtn'));
+  const recordTimer = $(elId(ns,'recordTimer'));
+  const recordedPlayback = $(elId(ns,'recordedPlayback'));
+  if(!recordBtn) return;
+  recordBtn.addEventListener('click', async ()=>{
+    const st = RECSTATE[ns];
+    if(st.mediaRecorder && st.mediaRecorder.state === 'recording'){
+      st.mediaRecorder.stop();
+      return;
     }
-    mediaRecorder = mimeType ? new MediaRecorder(stream,{mimeType}) : new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = ()=>{
-      recordedBlob = new Blob(recordedChunks, {type: mediaRecorder.mimeType || 'audio/webm'});
-      recordedPlayback.src = URL.createObjectURL(recordedBlob);
-      recordedPlayback.style.display = 'block';
-      document.getElementById('downloadRecordBtn').style.display = 'block';
-      stream.getTracks().forEach(t=>t.stop());
-      clearInterval(recordTimerInterval);
-      recordBtn.textContent = '● 녹음 시작';
-      recordBtn.classList.remove('recording');
-    };
-    mediaRecorder.start();
-    recordSeconds = 0;
-    recordTimer.textContent = '00:00';
-    recordTimerInterval = setInterval(()=>{
-      recordSeconds++;
-      const m = String(Math.floor(recordSeconds/60)).padStart(2,'0');
-      const s = String(recordSeconds%60).padStart(2,'0');
-      recordTimer.textContent = `${m}:${s}`;
-    },1000);
-    recordBtn.textContent = '■ 녹음 종료';
-    recordBtn.classList.add('recording');
-  }catch(err){
-    alert('마이크 접근 권한이 필요합니다: ' + err.message);
-  }
-});
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      st.chunks = [];
+      let mimeType = '';
+      for(const t of ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg']){
+        if(MediaRecorder.isTypeSupported(t)){ mimeType = t; break; }
+      }
+      st.mediaRecorder = mimeType ? new MediaRecorder(stream,{mimeType}) : new MediaRecorder(stream);
+      st.mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) st.chunks.push(e.data); };
+      st.mediaRecorder.onstop = ()=>{
+        st.blob = new Blob(st.chunks, {type: st.mediaRecorder.mimeType || 'audio/webm'});
+        recordedPlayback.src = URL.createObjectURL(st.blob);
+        recordedPlayback.style.display = 'block';
+        $(elId(ns,'downloadRecordBtn')).style.display = 'block';
+        stream.getTracks().forEach(t=>t.stop());
+        clearInterval(st.timerInterval);
+        recordBtn.textContent = '● 녹음 시작';
+        recordBtn.classList.remove('recording');
+      };
+      st.mediaRecorder.start();
+      st.seconds = 0;
+      recordTimer.textContent = '00:00';
+      st.timerInterval = setInterval(()=>{
+        st.seconds++;
+        const m = String(Math.floor(st.seconds/60)).padStart(2,'0');
+        const s = String(st.seconds%60).padStart(2,'0');
+        recordTimer.textContent = `${m}:${s}`;
+      },1000);
+      recordBtn.textContent = '■ 녹음 종료';
+      recordBtn.classList.add('recording');
+    }catch(err){
+      alert('마이크 접근 권한이 필요합니다: ' + err.message);
+    }
+  });
+  $(elId(ns,'downloadRecordBtn')).addEventListener('click', ()=>{
+    const st = RECSTATE[ns];
+    if(!st.blob) return;
+    const ext = st.blob.type.includes('mp4') ? 'm4a' : st.blob.type.includes('ogg') ? 'ogg' : 'webm';
+    const ts = new Date().toISOString().replace(/[:.]/g,'-');
+    const url = URL.createObjectURL(st.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recording_${ts}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+setupRecording('main');
+setupRecording('ta');
 
-document.getElementById('downloadRecordBtn').addEventListener('click', ()=>{
-  if(!recordedBlob) return;
-  const ext = recordedBlob.type.includes('mp4') ? 'm4a' : recordedBlob.type.includes('ogg') ? 'ogg' : 'webm';
-  const ts = new Date().toISOString().replace(/[:.]/g,'-');
-  const url = URL.createObjectURL(recordedBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `recording_${ts}.${ext}`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
-
-// ---------- Convert any audio blob to 16kHz mono WAV (음성인식 표준 품질) ----------
+/* ==================== 오디오 변환 ==================== */
 async function convertToWav(blob){
   const arrayBuf = await blob.arrayBuffer();
   const tempCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -802,51 +924,8 @@ function blobToBase64(blob){
   });
 }
 
-// ---------- Analyze (call Gemini) ----------
-const statusMsg = document.getElementById('statusMsg');
-document.getElementById('analyzeBtn').addEventListener('click', async ()=>{
-  const apiKey = apiKeyInput.value.trim();
-  if(!apiKey){ alert('Gemini API 키를 먼저 입력하고 저장해주세요.'); return; }
-
-  const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
-  let sourceBlob = null;
-  let directText = '';
-  if(activeTab === 'text'){
-    directText = document.getElementById('directTextInput').value.trim();
-    if(!directText){ alert('진료 내용을 입력해주세요.'); return; }
-  } else if(activeTab === 'upload'){
-    const f = document.getElementById('audioFileInput').files[0];
-    if(!f){ alert('오디오 파일을 선택해주세요.'); return; }
-    sourceBlob = f;
-  } else {
-    if(!recordedBlob){ alert('먼저 녹음을 해주세요.'); return; }
-    sourceBlob = recordedBlob;
-  }
-
-  const btn = document.getElementById('analyzeBtn');
-  btn.disabled = true;
-
-  try{
-    let base64Audio = null;
-    if(activeTab !== 'text'){
-      statusMsg.textContent = '오디오 변환 중...';
-      let wavBlob;
-      try{
-        wavBlob = await convertToWav(sourceBlob);
-      }catch(convErr){
-        throw new Error('오디오 파일을 읽을 수 없습니다. 다른 형식(m4a, mp3, wav 등)으로 다시 시도해주세요. (' + convErr.message + ')');
-      }
-      if(wavBlob.size > 19*1024*1024){
-        statusMsg.textContent = '';
-        alert('녹음이 너무 깁니다 (약 10분 이상). 더 짧게 나눠서 시도해주세요.');
-        btn.disabled = false;
-        return;
-      }
-      base64Audio = await blobToBase64(wavBlob);
-    }
-    statusMsg.textContent = 'Gemini로 분석 중... (일반적으로 1~2분 정도 걸리고, 녹음이 길수록 더 걸릴 수 있습니다)';
-
-    const prompt = `당신은 한의원 근골격계 진료 내용을 SOAP 노트로 정리하는 어시스턴트입니다.
+/* ==================== Gemini 프롬프트 (공용) ==================== */
+const SOAP_PROMPT = `당신은 한의원 근골격계 진료 내용을 SOAP 노트로 정리하는 어시스턴트입니다.
 
 **가장 중요한 규칙**: 반드시 제공된 실제 오디오(또는 텍스트) 내용만을 근거로 작성하세요. 이 지시문에 포함된 예시(어깨, 허리 등)는 오직 '출력 형식'을 보여주기 위한 것이며, 그 안의 신체 부위·증상·진단명 등 구체적 내용은 절대 결과에 가져오지 마세요. 실제 녹음에서 환자가 무릎을 말했으면 무릎으로, 목을 말했으면 목으로 써야 합니다. 오디오가 잘 안 들리거나 특정 항목을 알 수 없으면, 예시를 베끼지 말고 해당 부분을 빈칸이나 #으로 두세요.
 
@@ -854,121 +933,112 @@ document.getElementById('analyzeBtn').addEventListener('click', async ()=>{
 "S)", "O)", "A)" 는 반드시 그 줄에 단독으로 쓰고(뒤에 다른 내용 붙이지 말 것), "[SCRIPT]" 앞뒤에 다른 설명, 인사말, 마크다운 기호(**, ## 등)를 넣지 마세요.
 문장 끝에 마침표(.)를 쓰지 마세요.
 
-**"-" 불렛 작성은 반드시 아래 "카테고리(주제) 축"을 기준으로 재구성하세요. 환자가 말한 순서(발화 순서)를 그대로 따라 적지 마세요. 환자는 시간 관련, 동작 관련, 부위 관련 얘기를 섞어서 말할 수 있지만, 당신은 그 내용을 아래 카테고리별로 다시 묶어서 정리해야 합니다.**
+**"-" 불렛 작성은 반드시 아래 "카테고리(주제) 축"을 기준으로 재구성하세요. 환자가 말한 순서(발화 순서)를 그대로 따라 적지 마세요.**
 카테고리(해당하는 것만 사용, 없는 카테고리는 만들지 않음):
-  1) 시간대·상황 패턴 (예: 야간에 심함, 아침에 뻣뻣함, 특정 시간에 심해지고 특정 시간에 괜찮음 등)
-  2) 특정 자세·동작에서의 통증 (예: 앉았다 일어날 때, 누울 때, 팔을 들 때, 걸을 때, 계단 오를 때 등)
-  3) 유발 장소·상황 (예: 운전할 때, 컴퓨터 할 때 등 — 위 1)·2)와 겹치지 않는 경우만 별도로)
+  1) 시간대·상황 패턴
+  2) 특정 자세·동작에서의 통증
+  3) 유발 장소·상황
   4) 다른 부위로의 방사통·동반 부위 통증
-  5) 과거 이력·과거 치료 경과 (O/S 쪽 "치료" 항목과 중복되면 여기서는 생략)
-같은 카테고리에 속하는 내용은 발화 순서와 상관없이 한 줄로 모아 쉼표로 이어 쓰고, 서로 다른 카테고리는 반드시 별도 줄로 나누세요. 예를 들어 환자가 "아침에 뻣뻣하고, 어깨를 들 때 아프고, 그리고 밤에도 심해요"처럼 시간 얘기를 나눠서 말했더라도, 결과에서는 "아침에 뻣뻣하고 밤에 심함"(시간대 패턴, 한 줄)과 "팔을 들 때 통증"(동작, 별도 줄)으로 재배열해서 합치세요. 한 줄이 지나치게 길어지지 않도록 카테고리당 한 줄을 유지하세요.
-줄 개수는 실제 언급된 카테고리 개수에 따라 자연스럽게 정해집니다 (카테고리 1개면 한 줄, 3개면 세 줄). 억지로 줄 수를 맞추지 마세요.
+  5) 과거 이력·과거 치료 경과
+같은 카테고리에 속하는 내용은 발화 순서와 상관없이 한 줄로 모아 쉼표로 이어 쓰고, 서로 다른 카테고리는 반드시 별도 줄로 나누세요.
 중복된 표현 없이 간결하게 서술하세요.
-C/C는 대표 통증 부위 하나만 한 줄로 쓰세요. 다른 부위의 통증도 언급되면 새로운 C/C 줄을 만들지 말고 아래 "-" 문장 안에서 함께 서술하세요.
+C/C는 대표 통증 부위 하나만 한 줄로 쓰세요.
 "치료 :" 줄과 "S/H :" 줄 사이에는 반드시 빈 줄을 하나 넣으세요.
 
 S)
-C/C : [Lt./Rt./양측 등 방향, 좌우 구분이 필요 없는 부위면 생략] [부위 표기] pain (NRS [숫자, 언급 없으면 "#"])
-  * 부위 표기 규칙 (아래에 없는 부위는 해당 부위를 영어 단어로 표기, 예: shoulder pain):
-    - 허리 통증 → LBP
-    - 등 통증 → UBP
-    - 목 뒤쪽 통증 → posterior neck pain
-    - 목 앞쪽 통증 → anterior neck pain
-    - 무릎 통증 → knee pain
-    - 손목 통증 → wrist pain
-    - 고관절 통증 → hip pain
-    - 엉덩이 통증 → buttock pain
-    - 팔꿈치 통증은 안쪽/바깥쪽을 구분해서 "[Lt./Rt.] elbow pain - medial" 또는 "[Lt./Rt.] elbow pain - lateral" 형태로 쓰고 NRS는 그 뒤에 괄호로 추가 (예: "Lt. elbow pain - medial (NRS #)")
-- [환자가 말한 표현을 살려서 어디가 어떻게 아픈지. 다른 부위 통증이나 같은 맥락의 시간대별 패턴(언제 심하고 언제 괜찮은지 등)이 함께 언급되면 쉼표로 자연스럽게 이어서 이 줄 안에 포함]
-- [과거 이력처럼 위와 완전히 다른 주제가 언급되면 새 줄로 분리. 더 없으면 줄 추가 안 함]
+C/C : [Lt./Rt./양측 등 방향] [부위 표기] pain (NRS [숫자, 언급 없으면 "#"])
+- [환자가 말한 표현을 살려서 어디가 어떻게 아픈지]
+- [과거 이력 등 완전히 다른 주제. 없으면 줄 추가 안 함]
 
-O/S : ['YY.MM.DD 형식. 정확한 날짜가 언급되면 '26.07.02처럼 정확히 쓰고 괄호는 붙이지 마세요. "일주일 전", "며칠 전", "한두 달 전"처럼 근사치로 언급되면 '26.07이나 '26.04처럼 월까지만 쓰고, "일 년 전"처럼 막연하면 '25처럼 연도만 쓰세요. 날짜를 근사치로 추정한 경우에는 "발생" 뒤에 환자가 말한 원래 표현을 그대로 괄호로 덧붙이세요 (예: "발생 (일주일 전)", "발생 (한두 달 전)")] [증상이 시작된 계기나 상황을 짧게. 예: "발목 삔 후", "자고 일어난 후", "무거운 물건 들다가" 등. 계기 언급이 전혀 없으면 이 부분은 생략] 발생[근사치로 추정한 경우에만 위 규칙대로 괄호 표현 추가]
-- 검사 : [이번 증상 관련해서 받은 검사만. 검사 결과나 소견이 언급되면 "→"로 구분해서 뒤에 자연스러운 표현으로 이어 쓰세요 (예: "정형외과에서 MRI 또는 X-ray 검사 → L4/L5 디스크 부어있다 또는 튀어나와있다 소견"). 결과 언급이 없으면 검사명까지만. 검사 자체가 없으면 빈칸]
-- 치료 : [이번 증상 관련해서 받은 치료만. 없으면 빈칸]
+O/S : ['YY.MM.DD 형식. 근사치면 월/연도까지만, 근사 표현은 괄호로 원문 병기] [계기] 발생
+- 검사 : [검사명 → 결과. 없으면 빈칸]
+- 치료 : [치료 내용. 없으면 빈칸]
 
-S/H : [직업 또는 주로 취하는 자세/습관. 전혀 언급 없으면 빈칸으로 두고 "S/H : "만 출력]
-P/H : [과거력·기저질환 언급이 있으면 병명 뒤에 "(+)"를 붙여 표기하세요 (예: "고혈압(+)", 여러 개면 "고혈압(+), 당뇨(+)"처럼 쉼표로 나열). 전혀 언급 없으면 빈칸으로 두고 "P/H : "만 출력]
-- 기타 : [기타 질환 언급 있으면 내용. 없으면 이 줄 생략]
-- 알러지 : [알러지 언급 있으면 내용. 없으면 이 줄 생략]
-F/H : [가족력 언급 있으면 내용. 전혀 언급 없으면 빈칸으로 두고 "F/H : "만 출력]
+S/H : [직업/자세/습관. 없으면 빈칸]
+P/H : [과거력/기저질환(+) 표기. 없으면 빈칸]
+- 기타 : [있으면. 없으면 줄 생략]
+- 알러지 : [있으면. 없으면 줄 생략]
+F/H : [가족력. 없으면 빈칸]
 
 O)
-TD : [의사가 압통 소견을 실제로 확인/언급한 근육·부위만 반영. 압통이 확인된 부위는 뒤에 "(+)"를 붙이세요 (예: "요방형근(+)"). 좌우가 언급되면 반드시 "좌측"/"우측"이라는 한글 표현을 근육명 앞에 붙이세요 ("Rt."/"Lt." 같은 영문 약어는 절대 쓰지 마세요). 같은 쪽에서 근육이 여러 개 확인되면 각 근육 앞에 좌측/우측을 각각 반복해서 붙이고 쉼표로 나열하세요 (예: "좌측 비복근(+), 좌측 가자미근(+)"). 좌우를 비교해서 한쪽은 있고 한쪽은 없다고 말하면 "우측 요방형근(+), 좌측 요방형근(-)"처럼 표기하세요. 단순히 눌러보는 검사 동작 설명("~눌러볼게요", "여기 한 번 봅시다" 등)은 소견이 아니므로 절대 반영하지 말 것. 압통 소견 언급이 없으면 빈칸으로 두고 "TD : "만 출력]
-ROM : [통증 있는 방향만: 굴곡 시 통증, 신전 시 통증, 좌측굴 시 통증, 우측굴 시 통증, 좌회전 시 통증, 우회전 시 통증 중 해당하는 것만 쉼표로 나열. 각도 언급 있으면 방향 뒤에 괄호로 각도 추가. ROM 검사를 아예 하지 않았거나 전혀 언급이 없으면 "ROM :" 줄 자체를 통째로 생략하세요 (빈칸으로 남기지 말고 줄을 아예 쓰지 마세요)]
+TD : [압통 확인된 근육만 (+), 좌우는 "좌측/우측" 한글로 표기. 없으면 빈칸]
+ROM : [통증 있는 방향만. 전혀 없으면 줄 자체 생략]
 
 A)
-[가능한 한 실제 의학적 진단명을 구체적으로 사용 (예: 요추 추간판 탈출증, 극상근건염, 회전근개 파열, 외측 상과염 등). "디스크로 인한", "근육 문제로 인한" 같은 모호한 표현 대신 정식 진단명을 쓰세요]으로 추정됨을 환자에게 설명함
+[구체적 진단명]으로 추정됨을 환자에게 설명함
 
 [SCRIPT]
-[대화 내용을 화자 구분 없이 최대한 그대로 옮겨 적은 텍스트. 입력이 이미 텍스트로 제공된 경우 그 내용을 거의 그대로 반복해서 쓰세요]
-
---- 아래는 '형식(줄바꿈·기호·항목 구조)'만 보여주는 예시입니다. 예시 속 신체 부위(어깨/허리 등)와 증상 내용은 절대 실제 결과에 복사하지 마세요. 오직 줄바꿈과 기호 배치 방식만 참고하세요 (예시 1) ---
-S)
-C/C : Lt. shoulder pain (NRS #)
-- 가만히 있을 때는 괜찮다가 팔을 들려고 하면 아프고, 밤에 잘 땐 괜찮음
-- 예전에도 비슷한 적 있었으나 이번에는 오래 감
-
-O/S : '26.07 자고 일어난 후 발생 (일주일 전)
-- 검사 : 없음
-- 치료 : 과거 동일 증상으로 정형외과에서 소염진통제 복용 후 호전
-
-S/H : 교사
-P/H : 고혈압(+)
-- 기타 : 없음
-- 알러지 : 없음
-F/H : 유방암
-
-O)
-TD : 좌측 극상근(+), 좌측 삼각근(+)
-
-A)
-극상근 건염으로 추정됨을 환자에게 설명함
-
-[SCRIPT]
-(실제 대화 전문)
---- (예시 2: 항목이 확인되지 않은 경우, 좌우 비교 TD 예시) ---
-S)
-C/C : Rt. LBP (NRS #)
-- 오른쪽 허리부터 엉덩이까지 아픔
-- 과거에도 종종 있었으나 이번에는 통증이 더 심함
-
-O/S : '26.07.02 자고 일어난 후 발생
-- 검사 : 정형외과에서 MRI 또는 X-ray 검사 → L4/L5 디스크 부어있다 또는 튀어나와있다 소견
-- 치료 :
-
-S/H :
-P/H :
-F/H :
-
-O)
-TD : 우측 요방형근(+), 좌측 요방형근(-)
-ROM : 굴곡 시 통증, 신전 시 통증
-
-A)
-요추 추간판 탈출증으로 인한 허리 통증으로 추정됨을 환자에게 설명함
-
-[SCRIPT]
-(실제 대화 전문)
---- 예시 끝 ---
+[대화 내용을 화자 구분 없이 최대한 그대로 옮겨 적은 텍스트]
 
 실제 대화에 없는 내용은 지어내지 말고, 규칙에 따라 빈칸 또는 #으로 채우세요. A) 아래에는 진단 설명 한 줄만 쓰고 다른 문구는 추가하지 마세요.`;
 
+/* ==================== 생성 (분석+결합 통합) ==================== */
+function activeTabOf(ns){
+  const b = document.querySelector(`.tab-btn.active[data-ns="${ns}"]`);
+  return b ? b.dataset.tab : 'text';
+}
+
+async function runGenerate(ns){
+  const apiKey = apiKeyInput.value.trim();
+  if(!apiKey){ alert('Gemini API 키를 먼저 입력하고 저장해주세요.'); return; }
+
+  const activeTab = activeTabOf(ns);
+  let sourceBlob = null;
+  let directText = '';
+  if(activeTab === 'text'){
+    directText = $(elId(ns,'directTextInput')).value.trim();
+    if(!directText){ alert('진료 내용을 입력해주세요.'); return; }
+  } else if(activeTab === 'upload'){
+    const f = $(elId(ns,'audioFileInput')).files[0];
+    if(!f){ alert('오디오 파일을 선택해주세요.'); return; }
+    sourceBlob = f;
+  } else {
+    const rec = RECSTATE[ns];
+    if(!rec.blob){ alert('먼저 녹음을 해주세요.'); return; }
+    sourceBlob = rec.blob;
+  }
+
+  const btn = $(elId(ns,'combineBtn'));
+  const statusEl = $(elId(ns,'statusMsg'));
+  const warnEl = $(elId(ns,'chartWarn'));
+  btn.disabled = true;
+  warnEl.textContent = '';
+
+  try{
+    let base64Audio = null;
+    if(activeTab !== 'text'){
+      statusEl.textContent = '오디오 변환 중...';
+      let wavBlob;
+      try{
+        wavBlob = await convertToWav(sourceBlob);
+      }catch(convErr){
+        throw new Error('오디오 파일을 읽을 수 없습니다. 다른 형식(m4a, mp3, wav 등)으로 다시 시도해주세요. (' + convErr.message + ')');
+      }
+      if(wavBlob.size > 19*1024*1024){
+        statusEl.textContent = '';
+        alert('녹음이 너무 깁니다 (약 10분 이상). 더 짧게 나눠서 시도해주세요.');
+        btn.disabled = false;
+        return;
+      }
+      base64Audio = await blobToBase64(wavBlob);
+    }
+    statusEl.textContent = 'Gemini로 분석 중... (일반적으로 1~2분 정도 걸리고, 녹음이 길수록 더 걸릴 수 있습니다)';
+
     const contentParts = [];
     if(activeTab === 'text'){
-      contentParts.push({text: prompt});
+      contentParts.push({text: SOAP_PROMPT});
       contentParts.push({text: '\n\n아래는 이번 진료의 실제 내용입니다. 반드시 이 내용만을 근거로 작성하세요:\n' + directText});
     } else {
-      // 오디오를 먼저 제시해 모델이 실제 음성을 최우선으로 처리하도록 함
       contentParts.push({text: '아래 오디오는 이번 진료의 실제 녹음입니다. 반드시 이 녹음 내용만을 근거로 작성하세요:'});
       contentParts.push({inline_data: {mime_type:'audio/wav', data: base64Audio}});
-      const extraNotes = document.getElementById('extraNotesInput').value.trim();
+      const extraNotesEl = $(elId(ns,'extraNotesInput'));
+      const extraNotes = extraNotesEl ? extraNotesEl.value.trim() : '';
       if(extraNotes){
         contentParts.push({text: '아래는 녹음에 추가로 의사가 직접 적은 메모입니다. 녹음 내용과 함께 반영하세요:\n' + extraNotes});
       }
-      contentParts.push({text: prompt});
+      contentParts.push({text: SOAP_PROMPT});
     }
 
-    // 과부하/일시적 오류 시 자동 재시도 (최대 4회, 대기시간 점점 늘림)
     const MAX_TRIES = 4;
     let data = null;
     for(let attempt = 1; attempt <= MAX_TRIES; attempt++){
@@ -983,9 +1053,8 @@ A)
           })
         });
       }catch(netErr){
-        // 네트워크 자체 실패도 재시도 대상
         if(attempt < MAX_TRIES){
-          statusMsg.textContent = `연결이 불안정합니다. 잠시 후 자동으로 다시 시도합니다... (${attempt}/${MAX_TRIES-1})`;
+          statusEl.textContent = `연결이 불안정합니다. 잠시 후 자동으로 다시 시도합니다... (${attempt}/${MAX_TRIES-1})`;
           await new Promise(r => setTimeout(r, attempt * 2500));
           continue;
         }
@@ -995,16 +1064,14 @@ A)
       data = await resp.json();
       if(resp.ok) break;
 
-      // 과부하(503) / 요청 제한(429) / 일시적 서버 오류(500,502,504)는 재시도
       const retryable = [429, 500, 502, 503, 504].includes(resp.status);
       const isLast = attempt >= MAX_TRIES;
       if(retryable && !isLast){
-        const waitSec = attempt * 3;   // 3초 → 6초 → 9초
-        statusMsg.textContent = `AI 서버가 잠시 혼잡합니다. ${waitSec}초 후 자동으로 다시 시도합니다... (${attempt}/${MAX_TRIES-1})`;
+        const waitSec = attempt * 3;
+        statusEl.textContent = `AI 서버가 잠시 혼잡합니다. ${waitSec}초 후 자동으로 다시 시도합니다... (${attempt}/${MAX_TRIES-1})`;
         await new Promise(r => setTimeout(r, waitSec * 1000));
         continue;
       }
-      // 재시도 불가 오류이거나 마지막 시도 실패
       const msg = data.error?.message || '알 수 없는 오류';
       if(retryable){
         throw new Error('AI 서버 혼잡이 계속되고 있습니다. 잠시 후 다시 생성하기를 눌러주세요.\n(원문: ' + msg + ')');
@@ -1023,17 +1090,15 @@ A)
     const fixedAExplanation = '- 초기 통증 증가 가능성 및 경과에 따라서 추가 검사 필요성 설명함\n- 추정 진단, 치료 계획, 치료에 따른 효과 및 예상되는 부작용에 대해서 설명함';
     aMatch = aMatch ? `${aMatch}\n${fixedAExplanation}` : fixedAExplanation;
 
-    document.getElementById('soaOutput').value = `${sMatch}\n\nO)\n${oMatch}\n\nA)\n${aMatch}`;
-    document.getElementById('scriptOutput').value = scriptMatch;
+    $(elId(ns,'soaOutput')).value = `${sMatch}\n\nO)\n${oMatch}\n\nA)\n${aMatch}`;
+    $(elId(ns,'scriptOutput')).value = scriptMatch;
 
-    function fieldBlank(text, label){
-      const lines = text.split('\n');
+    function fieldBlank(t, label){
+      const lines = t.split('\n');
       for(const line of lines){
         const marker = label + ' :';
         const idx = line.indexOf(marker);
-        if(idx !== -1){
-          return line.slice(idx + marker.length).trim() === '';
-        }
+        if(idx !== -1) return line.slice(idx + marker.length).trim() === '';
       }
       return false;
     }
@@ -1043,23 +1108,142 @@ A)
     if(fieldBlank(sMatch, 'F/H')) blankFields.push('F/H');
 
     const warnings = [];
-    if(/NRS\s*#/.test(sMatch)) warnings.push('⚠️ NRS 점수가 확인되지 않았습니다');
-    if(blankFields.length) warnings.push(`⚠️ ${blankFields.join(', ')}이 확인되지 않았습니다`);
+    if(/NRS\s*#/.test(sMatch)) warnings.push('NRS 미확인');
+    if(blankFields.length) warnings.push(blankFields.join('/') + ' 미확인');
+    warnEl.textContent = warnings.length ? ('⚠️ ' + warnings.join(' · ')) : '';
 
-    const warnBox = document.getElementById('warnBox');
-    warnBox.innerHTML = warnings.map(w=>`<div>${w}</div>`).join('');
-    warnBox.style.display = warnings.length ? 'block' : 'none';
-
-    statusMsg.textContent = '완료. 내용을 검수해주세요.';
+    statusEl.textContent = '완료. 내용을 검수해주세요.';
+    combineChart(ns);
   }catch(err){
-    statusMsg.textContent = '';
+    statusEl.textContent = '';
     alert('오류가 발생했습니다: ' + err.message);
   }finally{
-    document.getElementById('analyzeBtn').disabled = false;
+    btn.disabled = false;
   }
-});
+}
 
-// ---------- P section (ported from clinic portal charting logic) ----------
+/* ==================== 변증 (ns별) ==================== */
+const BIJEUNG_LIST = [
+  {name:'寒凝血瘀', maek:'脈沈', seol:'舌暗苔白'},
+  {name:'氣滯血瘀', maek:'脈澀', seol:'舌暗苔白'},
+  {name:'脾胃濕熱', maek:'脈滑', seol:'舌黃苔膩'},
+  {name:'脾胃虛弱', maek:'脈弱', seol:'舌淡苔白'},
+  {name:'氣血兩虛', maek:'脈弱', seol:'舌淡苔白'},
+  {name:'腎氣不足', maek:'脈細', seol:'舌淡苔白'}
+];
+const BIJEUNG_SEL = {main:null, ta:null};
+function selectBijeung(ns, name){
+  BIJEUNG_SEL[ns] = (BIJEUNG_SEL[ns] === name) ? null : name;
+  renderBijeung(ns);
+}
+function renderBijeung(ns){
+  const body = $(elId(ns,'bijeungBody'));
+  if(!body) return;
+  body.innerHTML = BIJEUNG_LIST.map(b =>
+    `<button class="btn-toggle${BIJEUNG_SEL[ns]===b.name?' selected':''}" onclick="selectBijeung('${ns}','${b.name}')">${b.name}</button>`
+  ).join('');
+}
+function getBijeungLine(ns){
+  if(!BIJEUNG_SEL[ns]) return '';
+  const b = BIJEUNG_LIST.find(x => x.name === BIJEUNG_SEL[ns]);
+  return b ? ('\u25a0 ' + b.name + ' | ' + b.maek + ' | ' + b.seol) : '';
+}
+
+/* ==================== T/A (두통 H / 현훈 D / 오심 N / 구토 V) ==================== */
+const TA_ITEMS = [
+  {key:'H', label:'H 두통'},
+  {key:'D', label:'D 현훈'},
+  {key:'N', label:'N 오심'},
+  {key:'V', label:'V 구토'}
+];
+const TASTATE = {
+  main: {active:false, H:false, D:false, N:false, V:false},
+  ta:   {active:true,  H:false, D:false, N:false, V:false}
+};
+const TAFAC = {facility:null, 침:false, 추나:false, 한약:false, hanyakDur:null, hanyakCustom:'', hanyakUnknown:false};
+
+function toggleTAActive(ns){
+  TASTATE[ns].active = !TASTATE[ns].active;
+  renderTA(ns);
+}
+function toggleTA(ns, key){
+  TASTATE[ns][key] = !TASTATE[ns][key];
+  renderTA(ns);
+}
+function renderTA(ns){
+  if(ns === 'main'){
+    const btn = $('main-taActiveBtn');
+    if(btn) btn.classList.toggle('selected', TASTATE.main.active);
+  }
+  const body = $(elId(ns,'taBody'));
+  if(body){
+    body.innerHTML = TA_ITEMS.map(it =>
+      `<button class="btn-toggle${TASTATE[ns][it.key]?' selected':''}" onclick="toggleTA('${ns}','${it.key}')">${it.label}</button>`
+    ).join('');
+  }
+  if(ns === 'ta') renderTAFac();
+}
+function setTAFac(v){ TAFAC.facility = (TAFAC.facility===v?null:v); renderTAFac(); }
+function toggleTAFacTx(k){ TAFAC[k] = !TAFAC[k]; renderTAFac(); }
+function setTAFacDur(d){
+  TAFAC.hanyakDur = (TAFAC.hanyakDur===String(d)?null:String(d));
+  TAFAC.hanyakUnknown = false;
+  renderTAFac();
+}
+function toggleTAFacUnknown(){
+  TAFAC.hanyakUnknown = !TAFAC.hanyakUnknown;
+  if(TAFAC.hanyakUnknown){ TAFAC.hanyakDur = null; TAFAC.hanyakCustom = ''; }
+  renderTAFac();
+}
+function setTAFacCustom(v){
+  TAFAC.hanyakCustom = v;
+  TAFAC.hanyakDur = 'custom';
+  TAFAC.hanyakUnknown = false;
+}
+function renderTAFac(){
+  const row = $('ta-facRow');
+  if(!row) return;
+  let h = '';
+  h += `<button type="button" class="btn-toggle${TAFAC.facility==='한의원'?' selected':''}" onclick="setTAFac('한의원')">한의원</button>`;
+  h += `<button type="button" class="btn-toggle${TAFAC.facility==='한방병원'?' selected':''}" onclick="setTAFac('한방병원')">한방병원</button>`;
+  h += `<span style="color:var(--muted);">|</span>`;
+  h += `<button type="button" class="btn-toggle${TAFAC.침?' selected':''}" onclick="toggleTAFacTx('침')">침</button>`;
+  h += `<button type="button" class="btn-toggle${TAFAC.추나?' selected':''}" onclick="toggleTAFacTx('추나')">추나</button>`;
+  h += `<button type="button" class="btn-toggle${TAFAC.한약?' selected':''}" onclick="toggleTAFacTx('한약')">한약</button>`;
+  if(TAFAC.한약){
+    h += `<span style="color:var(--muted);">|</span>`;
+    [7,10].forEach(d=>{
+      h += `<button type="button" class="btn-toggle tier2${TAFAC.hanyakDur===String(d)?' selected':''}" onclick="setTAFacDur(${d})">${d}일</button>`;
+    });
+    h += `<input type="text" class="ch-inline" placeholder="기타(일)" value="${escAttr(TAFAC.hanyakCustom)}" oninput="setTAFacCustom(this.value)" style="width:70px;flex:0 0 auto;">`;
+    h += `<button type="button" class="btn-toggle tier2${TAFAC.hanyakUnknown?' selected':''}" onclick="toggleTAFacUnknown()">모름</button>`;
+  }
+  row.innerHTML = h;
+}
+function taFacilitySentence(){
+  const any = TAFAC.침 || TAFAC.추나 || TAFAC.한약;
+  if(!any) return '- 이번 사고로 인한 한의원/한방병원 치료(-)';
+  const fac = TAFAC.facility || '한의원';
+  let hanyakText = '한약(-)';
+  if(TAFAC.한약){
+    let dur = '';
+    if(TAFAC.hanyakUnknown) dur = '몇일 분인지 모름';
+    else if(TAFAC.hanyakDur === 'custom') dur = (TAFAC.hanyakCustom||'') + '일분';
+    else if(TAFAC.hanyakDur) dur = TAFAC.hanyakDur + '일분';
+    hanyakText = `한약(+${dur ? ', '+dur : ''})`;
+  }
+  return `- 이번 사고로 인한 ${fac} 치료(+) / 침(${TAFAC.침?'+':'-'}) 추나(${TAFAC.추나?'+':'-'}) ${hanyakText}`;
+}
+function getTABlock(ns){
+  if(ns === 'main'){
+    if(!TASTATE.main.active) return '';
+    return '- ' + TA_ITEMS.map(it => it.key + '(' + (TASTATE.main[it.key]?'+':'-') + ')').join(' ');
+  }
+  const chk = '- ' + TA_ITEMS.map(it => it.key + '(' + (TASTATE.ta[it.key]?'+':'-') + ')').join(' ');
+  return [chk, '- 검사 : ', '- 치료 : ', taFacilitySentence()].join('\n');
+}
+
+/* ==================== P 섹션 (ns별) ==================== */
 const ACU_AREAS = ['두경부','흉복부','요배부','상지부(견)','상지부(주)','상지부(완)','하지부(고)','하지부(슬)','하지부(족)'];
 const ACU_MAP = {
   '두경부':    {경혈:'천주',   투자:['풍부','풍지'],    관절:null,   척추:'대추',   복강:null,   간접구:'대추'},
@@ -1082,461 +1266,498 @@ function areaLabel(a){
   if(!pair) return a;
   return `${pair[0]} <span class="area-sub">${pair[1]}</span>`;
 }
-function escAttr(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); }
-function inputWidthFor(val, min, max){
-  const len = (val||'').length;
-  return Math.min(max||220, Math.max(min||80, len*8+24));
-}
-
-let acuAreas = [];
-let acuSt = {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:false, 핫팩:true, ir:true, ict:false};
-let pTaping = {active:false, buyi:'', gae:'4', allergy:false};
-let pShockwave = {active:false, buyi:'', ta:'', noFracture:false};
-let pYakchim = {active:false, kind:'', buyi:'', cc:'', gae:''};
-let pChunaActive = {단순추나:false, 복잡추나:false};
-let pChunaSpine = null;
-let chunaSelected = {};
-let chunaText = {};
 const CHUNA_BTNS = ['COX','drop','Lumbar roll','MET','SCS','골타','JS123','경추 thrust','흉추 thrust'];
 const CHUNA_TEXT_BTNS = ['MET','SCS'];
-let pHerbActive = {'보험약':false, '상비약':false, '탕약':false, 'TA탕약':false};
-var pBohumyak = {name:'', perDay:'', totalDays:''};
-var pSangbiyak = {name:'', perDay:'', totalDays:''};
-var pTangyak = {name:'', perDay:'', totalDays:''};
-var pTATangyak = {name:'', perDay:'', totalDays:''};
 
-function toggleAcuArea(area){
-  const idx = acuAreas.indexOf(area);
-  if(idx>=0){ acuAreas.splice(idx,1); }
-  else{ if(acuAreas.length>=2) acuAreas.shift(); acuAreas.push(area); }
-  renderPBody();
+function newPState(ns){
+  if(ns === 'ta'){
+    return {
+      acuAreas: [],
+      acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:false, ir:true, ict:true},
+      pYakchim: {active:true, kind:'어혈', buyi:'', cc:'', gae:''},
+      pChunaActive: {단순추나:true, 복잡추나:false},
+      pChunaSpine: null,
+      chunaSelected: {COX:true, 'drop':true, 'Lumbar roll':true, JS123:true},
+      chunaText: {},
+      pTaping: {active:false, buyi:'', gae:'4', allergy:false},
+      pShockwave: {active:false, buyi:'', ta:'', noFracture:false},
+      pSilbi: {sel:null, gen:null},
+      pHerbActive: {},
+      herb: {},
+      taJcheop: {active:false, name:'', days:'7', gagam:''}
+    };
+  }
+  return {
+    acuAreas: [],
+    acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:false, 핫팩:true, ir:true, ict:false},
+    pYakchim: {active:false, kind:'', buyi:'', cc:'', gae:''},
+    pChunaActive: {단순추나:false, 복잡추나:false},
+    pChunaSpine: null,
+    chunaSelected: {},
+    chunaText: {},
+    pTaping: {active:false, buyi:'', gae:'4', allergy:false},
+    pShockwave: {active:false, buyi:'', ta:'', noFracture:false},
+    pSilbi: {sel:null, gen:null},
+    pHerbActive: {'보험약':false, '상비약':false, '탕약':false, 'TA탕약':false},
+    herb: {'보험약':{name:'',perDay:'',totalDays:''}, '상비약':{name:'',perDay:'',totalDays:''}, '탕약':{name:'',perDay:'',totalDays:''}, 'TA탕약':{name:'',perDay:'',totalDays:''}},
+    taJcheop: {active:false, name:'', days:'7', gagam:''}
+  };
 }
-function toggleGyeolhyeol(k){ acuSt.경혈 = (acuSt.경혈===k) ? null : k; renderPBody(); }
-function toggleAcuFlag(k){ acuSt[k] = !acuSt[k]; renderPBody(); }
-function toggleTaping(){ pTaping.active = !pTaping.active; renderPBody(); }
-function toggleTapingAllergy(){ pTaping.allergy = !pTaping.allergy; renderPBody(); }
-function toggleShockwave(){ pShockwave.active = !pShockwave.active; renderPBody(); }
-function toggleShockwaveNoFracture(){ pShockwave.noFracture = !pShockwave.noFracture; renderPBody(); }
-function toggleYakchim(){ pYakchim.active = !pYakchim.active; renderPBody(); }
-function setYakchimKind(v){ pYakchim.kind = (pYakchim.kind===v?'':v); renderPBody(); }
-function setYakchimCc(v){ pYakchim.cc = (pYakchim.cc===v?'':v); renderPBody(); }
-function setYakchimGae(v){ pYakchim.gae = (pYakchim.gae===String(v)?'':String(v)); renderPBody(); }
-function toggleChuna(type){
-  if(type==='단순추나' && !pChunaActive['단순추나']) pChunaActive['복잡추나']=false;
-  if(type==='복잡추나' && !pChunaActive['복잡추나']) pChunaActive['단순추나']=false;
-  pChunaActive[type] = !pChunaActive[type];
-  if(!pChunaActive['복잡추나']) pChunaSpine = null;
-  renderPBody();
-}
-function setChunaSpine(v){ pChunaSpine = (pChunaSpine===v?null:v); renderPBody(); }
-function applyChunaPreset(name){
-  if(name==='C 경추'){ chunaSelected={COX:true,MET:true,JS123:true,SCS:true}; chunaText={MET:'사각근, 견갑거근, 승모근',SCS:'견갑거근'}; }
-  else{ chunaSelected={COX:true,MET:true,SCS:true}; chunaText={MET:'햄스트링, 둔근, 이상근, 내전근',SCS:'장요근'}; }
-  renderPBody();
-}
-function toggleChunaBtn(k){ chunaSelected[k] = !chunaSelected[k]; renderPBody(); }
-function setChunaText(k,v){ chunaText[k]=v; }
-function toggleHerb(k){ pHerbActive[k]=!pHerbActive[k]; renderPBody(); }
+const PSTATE = { main: newPState('main'), ta: newPState('ta') };
 
-function resetPBody(){
-  acuAreas = [];
-  acuSt = {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:false, 핫팩:true, ir:true, ict:false};
-  pTaping = {active:false, buyi:'', gae:'4', allergy:false};
-  pShockwave = {active:false, buyi:'', ta:'', noFracture:false};
-  pYakchim = {active:false, kind:'', buyi:'', cc:'', gae:''};
-  pChunaActive = {단순추나:false, 복잡추나:false};
-  pChunaSpine = null;
-  chunaSelected = {};
-  chunaText = {};
-  pHerbActive = {'보험약':false, '상비약':false, '탕약':false, 'TA탕약':false};
-  pBohumyak = {name:'', perDay:'', totalDays:''};
-  pSangbiyak = {name:'', perDay:'', totalDays:''};
-  pTangyak = {name:'', perDay:'', totalDays:''};
-  pTATangyak = {name:'', perDay:'', totalDays:''};
-  pSilbi = {sel:null, gen:null};
-  renderPBody();
+function toggleAcuArea(ns, area){
+  const st = PSTATE[ns];
+  const idx = st.acuAreas.indexOf(area);
+  if(idx>=0){ st.acuAreas.splice(idx,1); }
+  else{ if(st.acuAreas.length>=2) st.acuAreas.shift(); st.acuAreas.push(area); }
+  renderPBody(ns);
 }
-
-var BIJEUNG_LIST = [
-  {name:'寒凝血瘀', maek:'脈沈', seol:'舌暗苔白'},
-  {name:'氣滯血瘀', maek:'脈澀', seol:'舌暗苔白'},
-  {name:'脾胃濕熱', maek:'脈滑', seol:'舌黃苔膩'},
-  {name:'脾胃虛弱', maek:'脈弱', seol:'舌淡苔白'},
-  {name:'氣血兩虛', maek:'脈弱', seol:'舌淡苔白'},
-  {name:'腎氣不足', maek:'脈細', seol:'舌淡苔白'}
-];
-var bijeungSel = null;
-function selectBijeung(name){
-  bijeungSel = (bijeungSel === name) ? null : name;
-  renderBijeung();
+function toggleGyeolhyeol(ns, k){ const st=PSTATE[ns]; st.acuSt.경혈 = (st.acuSt.경혈===k) ? null : k; renderPBody(ns); }
+function toggleAcuFlag(ns, k){ PSTATE[ns].acuSt[k] = !PSTATE[ns].acuSt[k]; renderPBody(ns); }
+function toggleTaping(ns){ PSTATE[ns].pTaping.active = !PSTATE[ns].pTaping.active; renderPBody(ns); }
+function toggleTapingAllergy(ns){ PSTATE[ns].pTaping.allergy = !PSTATE[ns].pTaping.allergy; renderPBody(ns); }
+function toggleShockwave(ns){ PSTATE[ns].pShockwave.active = !PSTATE[ns].pShockwave.active; renderPBody(ns); }
+function toggleShockwaveNoFracture(ns){ PSTATE[ns].pShockwave.noFracture = !PSTATE[ns].pShockwave.noFracture; renderPBody(ns); }
+function toggleYakchim(ns){ PSTATE[ns].pYakchim.active = !PSTATE[ns].pYakchim.active; renderPBody(ns); }
+function setYakchimKind(ns, v){ PSTATE[ns].pYakchim.kind = (PSTATE[ns].pYakchim.kind===v?'':v); renderPBody(ns); }
+function setYakchimCc(ns, v){ PSTATE[ns].pYakchim.cc = (PSTATE[ns].pYakchim.cc===v?'':v); renderPBody(ns); }
+function setYakchimGae(ns, v){ PSTATE[ns].pYakchim.gae = (PSTATE[ns].pYakchim.gae===String(v)?'':String(v)); renderPBody(ns); }
+function toggleChuna(ns, type){
+  const st = PSTATE[ns];
+  if(type==='단순추나' && !st.pChunaActive['단순추나']) st.pChunaActive['복잡추나']=false;
+  if(type==='복잡추나' && !st.pChunaActive['복잡추나']) st.pChunaActive['단순추나']=false;
+  st.pChunaActive[type] = !st.pChunaActive[type];
+  if(!st.pChunaActive['복잡추나']) st.pChunaSpine = null;
+  renderPBody(ns);
 }
-function renderBijeung(){
-  const body = document.getElementById('bijeungBody');
-  if(!body) return;
-  body.innerHTML = BIJEUNG_LIST.map(b =>
-    `<button class="btn-toggle${bijeungSel===b.name?' selected':''}" onclick="selectBijeung('${b.name}')">${b.name}</button>`
-  ).join('');
+function setChunaSpine(ns, v){ PSTATE[ns].pChunaSpine = (PSTATE[ns].pChunaSpine===v?null:v); renderPBody(ns); }
+function applyChunaPreset(ns, name){
+  const st = PSTATE[ns];
+  if(name==='C 경추'){ st.chunaSelected={COX:true,MET:true,JS123:true,SCS:true}; st.chunaText={MET:'사각근, 견갑거근, 승모근',SCS:'견갑거근'}; }
+  else{ st.chunaSelected={COX:true,MET:true,SCS:true}; st.chunaText={MET:'햄스트링, 둔근, 이상근, 내전근',SCS:'장요근'}; }
+  renderPBody(ns);
 }
-function getBijeungLine(){
-  if(!bijeungSel) return '';
-  const b = BIJEUNG_LIST.find(x => x.name === bijeungSel);
-  return b ? ('\u25a0 ' + b.name + ' | ' + b.maek + ' | ' + b.seol) : '';
+function toggleChunaBtn(ns, k){ PSTATE[ns].chunaSelected[k] = !PSTATE[ns].chunaSelected[k]; renderPBody(ns); }
+function setChunaText(ns, k, v){ PSTATE[ns].chunaText[k]=v; }
+function toggleHerb(ns, k){ PSTATE[ns].pHerbActive[k]=!PSTATE[ns].pHerbActive[k]; renderPBody(ns); }
+function toggleTaJcheop(ns){ PSTATE[ns].taJcheop.active = !PSTATE[ns].taJcheop.active; renderPBody(ns); }
+function setSilbiSel(ns, v){
+  const st = PSTATE[ns];
+  st.pSilbi.sel = (st.pSilbi.sel===v ? null : v);
+  if(st.pSilbi.sel !== '유') st.pSilbi.gen = null;
+  renderPBody(ns);
 }
-
-// ── T/A (두통 H / 현훈 D / 오심 N / 구토 V) ──
-var TA_ITEMS = [
-  {key:'H', label:'H 두통'},
-  {key:'D', label:'D 현훈'},
-  {key:'N', label:'N 오심'},
-  {key:'V', label:'V 구토'}
-];
-var taActive = false;      // T/A 환자 여부 (토글 버튼으로 켬)
-var taState = {H:false, D:false, N:false, V:false};
-function toggleTAActive(){
-  taActive = !taActive;
-  renderTA();
-}
-function toggleTA(key){
-  taState[key] = !taState[key];
-  renderTA();
-}
-function renderTA(){
-  const btn = document.getElementById('taActiveBtn');
-  if(btn) btn.classList.toggle('selected', taActive);
-  const body = document.getElementById('taBody');
-  if(!body) return;
-  body.innerHTML = TA_ITEMS.map(it =>
-    `<button class="btn-toggle${taState[it.key]?' selected':''}" onclick="toggleTA('${it.key}')">${it.label}</button>`
-  ).join('');
-}
-function getTALine(){
-  if(!taActive) return '';
-  return '- ' + TA_ITEMS.map(it => it.key + '(' + (taState[it.key]?'+':'-') + ')').join(' ');
-}
-
-// ── 실비(실손보험) ── 상태: sel = '유'|'무'|'거부'|null, gen = 1~4
-var pSilbi = {sel:null, gen:null};
-function setSilbiSel(v){
-  pSilbi.sel = (pSilbi.sel===v ? null : v);
-  if(pSilbi.sel !== '유') pSilbi.gen = null;
-  renderPBody();
-}
-function setSilbiGen(v){
-  pSilbi.gen = (pSilbi.gen===v ? null : v);
-  renderPBody();
-}
-function getSilbiLine(){
-  if(!pSilbi.sel) return '';
-  if(pSilbi.sel === '거부') return '\u25a0 \uc2e4\ube44 : \uc870\ud68c \uac70\ubd80';
-  if(pSilbi.sel === '유'){
-    const gen = pSilbi.gen ? ' (' + pSilbi.gen + '\uc138\ub300)' : '';
+function setSilbiGen(ns, v){ PSTATE[ns].pSilbi.gen = (PSTATE[ns].pSilbi.gen===v ? null : v); renderPBody(ns); }
+function getSilbiLine(ns){
+  const st = PSTATE[ns].pSilbi;
+  if(!st.sel) return '';
+  if(st.sel === '거부') return '\u25a0 \uc2e4\ube44 : \uc870\ud68c \uac70\ubd80';
+  if(st.sel === '유'){
+    const gen = st.gen ? ' (' + st.gen + '\uc138\ub300)' : '';
     return '\u25a0 \uc2e4\ube44 : \uc720' + gen;
   }
   return '\u25a0 \uc2e4\ube44 : \ubb34';
 }
 
-function renderPBody(){
-  const body = document.getElementById('pBody');
+function resetPBody(ns){
+  PSTATE[ns] = newPState(ns);
+  renderPBody(ns);
+}
+
+function renderPBody(ns){
+  const st = PSTATE[ns];
+  const body = $(elId(ns,'pBody'));
   if(!body) return;
+  const isTA = ns === 'ta';
+  const ictLabel = isTA ? 'TENS' : 'ICT';
   let h = '';
 
   h += '<div class="p-group"><div class="btn-toggle-row">';
   ACU_AREAS.slice(0,3).forEach(a=>{
-    h += `<button type="button" class="btn-toggle${acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${a}')">${areaLabel(a)}</button>`;
+    h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
   ACU_AREAS.slice(3,6).forEach(a=>{
-    h += `<button type="button" class="btn-toggle${acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${a}')">${areaLabel(a)}</button>`;
+    h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
   ACU_AREAS.slice(6).forEach(a=>{
-    h += `<button type="button" class="btn-toggle${acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${a}')">${areaLabel(a)}</button>`;
+    h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
   });
   h += '</div>';
-  const needs2 = acuSt.경혈==='경혈2' || acuSt.습부2;
-  if(needs2 && acuAreas.length<2){
+  const needs2 = st.acuSt.경혈==='경혈2' || st.acuSt.습부2;
+  if(needs2 && st.acuAreas.length<2){
     h += '<div style="font-size:11.5px;color:var(--danger);margin-top:4px;">부위를 두 개 선택해주세요</div>';
   }
   h += '</div>';
 
   h += '<div class="p-group"><div class="btn-toggle-row">';
   ['경혈1','경혈2'].forEach(k=>{
-    h += `<button type="button" class="btn-toggle${acuSt.경혈===k?' selected':''}" onclick="toggleGyeolhyeol('${k}')">${k}</button>`;
+    h += `<button type="button" class="btn-toggle${st.acuSt.경혈===k?' selected':''}" onclick="toggleGyeolhyeol('${ns}','${k}')">${k}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
   ['투자','관절','척추','복강'].forEach(k=>{
-    h += `<button type="button" class="btn-toggle${acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${k}')">${k}</button>`;
+    h += `<button type="button" class="btn-toggle${st.acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${ns}','${k}')">${k}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-  h += `<button type="button" class="btn-toggle${acuSt.전침?' selected':''}" onclick="toggleAcuFlag('전침')">전침</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.전침?' selected':''}" onclick="toggleAcuFlag('${ns}','전침')">전침</button>`;
   h += '</div>';
 
   h += '<div class="btn-toggle-row">';
-  h += `<button type="button" class="btn-toggle${acuSt.건부?' selected':''}" onclick="toggleAcuFlag('건부')">건부</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.건부?' selected':''}" onclick="toggleAcuFlag('${ns}','건부')">건부</button>`;
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
   ['습부1','습부2'].forEach(k=>{
-    h += `<button type="button" class="btn-toggle${acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${k}')">${k}</button>`;
+    h += `<button type="button" class="btn-toggle${st.acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${ns}','${k}')">${k}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-  h += `<button type="button" class="btn-toggle${acuSt.간접구?' selected':''}" onclick="toggleAcuFlag('간접구')">간접구</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.간접구?' selected':''}" onclick="toggleAcuFlag('${ns}','간접구')">간접구</button>`;
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-  h += `<button type="button" class="btn-toggle${acuSt.핫팩?' selected':''}" onclick="toggleAcuFlag('핫팩')">핫팩</button>`;
-  h += `<button type="button" class="btn-toggle${acuSt.ir?' selected':''}" onclick="toggleAcuFlag('ir')">IR</button>`;
-  h += `<button type="button" class="btn-toggle${acuSt.ict?' selected':''}" onclick="toggleAcuFlag('ict')">ICT</button>`;
+  if(!isTA){
+    h += `<button type="button" class="btn-toggle${st.acuSt.핫팩?' selected':''}" onclick="toggleAcuFlag('${ns}','핫팩')">핫팩</button>`;
+  }
+  h += `<button type="button" class="btn-toggle${st.acuSt.ir?' selected':''}" onclick="toggleAcuFlag('${ns}','ir')">IR</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.ict?' selected':''}" onclick="toggleAcuFlag('${ns}','ict')">${ictLabel}</button>`;
   h += '</div></div>';
 
   h += '<div class="p-group"><div class="btn-toggle-row">';
-  h += `<button type="button" class="btn-toggle${pYakchim.active?' selected':''}" onclick="toggleYakchim()">약침</button>`;
-  if(pYakchim.active){
-    // 그룹: 태반 | 어혈 죽염 신경통 | 봉독 뇌순환 | 심부 | 코어강화
-    var yakGroups = [['태반'],['어혈','죽염','신경통'],['봉독','뇌순환'],['심부'],['코어강화']];
+  h += `<button type="button" class="btn-toggle${st.pYakchim.active?' selected':''}" onclick="toggleYakchim('${ns}')">약침</button>`;
+  if(st.pYakchim.active){
+    const yakGroups = [['태반'],['어혈','죽염','신경통'],['봉독','뇌순환'],['심부'],['코어강화']];
     yakGroups.forEach((grp,gi)=>{
       if(gi>0) h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
       grp.forEach(k=>{
-        h += `<button type="button" class="btn-toggle tier2${pYakchim.kind===k?' selected':''}" onclick="setYakchimKind('${k}')">${k}</button>`;
+        h += `<button type="button" class="btn-toggle tier2${st.pYakchim.kind===k?' selected':''}" onclick="setYakchimKind('${ns}','${k}')">${k}</button>`;
       });
     });
   }
   h += '</div>';
-  if(pYakchim.active){
+  if(st.pYakchim.active){
     h += '<div class="btn-toggle-row">';
-    h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(pYakchim.buyi)}" oninput="pYakchim.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(pYakchim.buyi)}px;flex:0 0 auto;">`;
+    h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(st.pYakchim.buyi)}" oninput="PSTATE.${ns}.pYakchim.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(st.pYakchim.buyi)}px;flex:0 0 auto;">`;
     h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
     [0.5,1,2,3,4].forEach(n=>{
       const v = n+'cc';
-      h += `<button type="button" class="btn-toggle tier2${pYakchim.cc===v?' selected':''}" onclick="setYakchimCc('${v}')">${v}</button>`;
+      h += `<button type="button" class="btn-toggle tier2${st.pYakchim.cc===v?' selected':''}" onclick="setYakchimCc('${ns}','${v}')">${v}</button>`;
     });
     h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
     [1,2,3,4].forEach(n=>{
-      h += `<button type="button" class="btn-toggle tier2${pYakchim.gae===String(n)?' selected':''}" onclick="setYakchimGae(${n})">${n}개</button>`;
+      h += `<button type="button" class="btn-toggle tier2${st.pYakchim.gae===String(n)?' selected':''}" onclick="setYakchimGae('${ns}',${n})">${n}개</button>`;
     });
     h += '</div>';
   }
   h += '</div>';
 
   h += '<div class="p-group"><div class="btn-toggle-row">';
-  h += `<button type="button" class="btn-toggle${pChunaActive['단순추나']?' selected':''}" onclick="toggleChuna('단순추나')">단순추나</button>`;
-  h += `<button type="button" class="btn-toggle${pChunaActive['복잡추나']?' selected':''}" onclick="toggleChuna('복잡추나')">복잡추나</button>`;
-  if(pChunaActive['복잡추나']){
+  h += `<button type="button" class="btn-toggle${st.pChunaActive['단순추나']?' selected':''}" onclick="toggleChuna('${ns}','단순추나')">단순추나</button>`;
+  h += `<button type="button" class="btn-toggle${st.pChunaActive['복잡추나']?' selected':''}" onclick="toggleChuna('${ns}','복잡추나')">복잡추나</button>`;
+  if(st.pChunaActive['복잡추나']){
     h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-    h += `<button type="button" class="btn-toggle${pChunaSpine==='경추'?' selected':''}" onclick="setChunaSpine('경추')">경추</button>`;
-    h += `<button type="button" class="btn-toggle${pChunaSpine==='요추'?' selected':''}" onclick="setChunaSpine('요추')">요추</button>`;
+    h += `<button type="button" class="btn-toggle${st.pChunaSpine==='경추'?' selected':''}" onclick="setChunaSpine('${ns}','경추')">경추</button>`;
+    h += `<button type="button" class="btn-toggle${st.pChunaSpine==='요추'?' selected':''}" onclick="setChunaSpine('${ns}','요추')">요추</button>`;
   }
-  if(pChunaActive['단순추나'] || pChunaActive['복잡추나']){
+  if(st.pChunaActive['단순추나'] || st.pChunaActive['복잡추나']){
     h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-    h += `<button type="button" class="btn-toggle tier2" onclick="applyChunaPreset('C 경추')">C 경추</button>`;
-    h += `<button type="button" class="btn-toggle tier2" onclick="applyChunaPreset('C 요추')">C 요추</button>`;
+    h += `<button type="button" class="btn-toggle tier2" onclick="applyChunaPreset('${ns}','C 경추')">C 경추</button>`;
+    h += `<button type="button" class="btn-toggle tier2" onclick="applyChunaPreset('${ns}','C 요추')">C 요추</button>`;
   }
   h += '</div>';
-  if(pChunaActive['복잡추나'] && !pChunaSpine){
+  if(st.pChunaActive['복잡추나'] && !st.pChunaSpine){
     h += '<div style="font-size:11.5px;color:var(--danger);margin:-4px 0 8px;">경추 또는 요추를 선택해주세요</div>';
   }
-  if(pChunaActive['단순추나'] || pChunaActive['복잡추나']){
+  if(st.pChunaActive['단순추나'] || st.pChunaActive['복잡추나']){
     h += '<div style="margin-top:6px;">';
     h += '<div class="btn-toggle-row">';
     CHUNA_BTNS.forEach(k=>{
-      const active = !!chunaSelected[k];
-      h += `<button type="button" class="btn-toggle tier3${active?' selected':''}" onclick="toggleChunaBtn('${k}')">${k}</button>`;
+      const active = !!st.chunaSelected[k];
+      h += `<button type="button" class="btn-toggle tier3${active?' selected':''}" onclick="toggleChunaBtn('${ns}','${k}')">${k}</button>`;
       if(active && CHUNA_TEXT_BTNS.includes(k)){
-        h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(chunaText[k]||'')}" oninput="setChunaText('${k}',this.value);this.style.width=inputWidthFor(this.value,90,200)+'px'" style="width:${inputWidthFor(chunaText[k]||'',90,200)}px;flex:0 0 auto;">`;
+        h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(st.chunaText[k]||'')}" oninput="setChunaText('${ns}','${k}',this.value);this.style.width=inputWidthFor(this.value,90,200)+'px'" style="width:${inputWidthFor(st.chunaText[k]||'',90,200)}px;flex:0 0 auto;">`;
       }
     });
     h += '</div></div>';
   }
   h += '</div>';
 
-  h += '<div class="p-group">';
-  h += '<div class="btn-toggle-row">';
-  h += `<button type="button" class="btn-toggle${pTaping.active?' selected':''}" onclick="toggleTaping()">테이핑</button>`;
-  if(pTaping.active){
-    h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(pTaping.buyi)}" oninput="pTaping.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(pTaping.buyi)}px;flex:0 0 auto;">`;
-    h += `<input type="number" class="ch-inline" min="1" value="${escAttr(pTaping.gae)}" oninput="pTaping.gae=this.value" style="width:44px;flex:0 0 auto;">`;
-    h += `<span style="font-size:12px;color:var(--muted);">개</span>`;
-    h += `<button type="button" class="btn-toggle tier2${pTaping.allergy?' selected':''}" onclick="toggleTapingAllergy()">알러지 없음</button>`;
-  }
-  h += '</div>';
-  h += '<div class="btn-toggle-row">';
-  h += `<button type="button" class="btn-toggle${pShockwave.active?' selected':''}" onclick="toggleShockwave()">충격파</button>`;
-  if(pShockwave.active){
-    h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(pShockwave.buyi)}" oninput="pShockwave.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(pShockwave.buyi)}px;flex:0 0 auto;">`;
-    h += `<input type="number" class="ch-inline" min="1" placeholder="타수" value="${escAttr(pShockwave.ta)}" oninput="pShockwave.ta=this.value" style="width:56px;flex:0 0 auto;">`;
-    h += `<span style="font-size:12px;color:var(--muted);">타</span>`;
-    h += `<button type="button" class="btn-toggle tier2${pShockwave.noFracture?' selected':''}" onclick="toggleShockwaveNoFracture()">골절, 골다공증 없음</button>`;
-  }
-  h += '</div>';
+  if(!isTA){
+    h += '<div class="p-group">';
+    h += '<div class="btn-toggle-row">';
+    h += `<button type="button" class="btn-toggle${st.pTaping.active?' selected':''}" onclick="toggleTaping('${ns}')">테이핑</button>`;
+    if(st.pTaping.active){
+      h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(st.pTaping.buyi)}" oninput="PSTATE.${ns}.pTaping.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(st.pTaping.buyi)}px;flex:0 0 auto;">`;
+      h += `<input type="number" class="ch-inline" min="1" value="${escAttr(st.pTaping.gae)}" oninput="PSTATE.${ns}.pTaping.gae=this.value" style="width:44px;flex:0 0 auto;">`;
+      h += `<span style="font-size:12px;color:var(--muted);">개</span>`;
+      h += `<button type="button" class="btn-toggle tier2${st.pTaping.allergy?' selected':''}" onclick="toggleTapingAllergy('${ns}')">알러지 없음</button>`;
+    }
+    h += '</div>';
+    h += '<div class="btn-toggle-row">';
+    h += `<button type="button" class="btn-toggle${st.pShockwave.active?' selected':''}" onclick="toggleShockwave('${ns}')">충격파</button>`;
+    if(st.pShockwave.active){
+      h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(st.pShockwave.buyi)}" oninput="PSTATE.${ns}.pShockwave.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(st.pShockwave.buyi)}px;flex:0 0 auto;">`;
+      h += `<input type="number" class="ch-inline" min="1" placeholder="타수" value="${escAttr(st.pShockwave.ta)}" oninput="PSTATE.${ns}.pShockwave.ta=this.value" style="width:56px;flex:0 0 auto;">`;
+      h += `<span style="font-size:12px;color:var(--muted);">타</span>`;
+      h += `<button type="button" class="btn-toggle tier2${st.pShockwave.noFracture?' selected':''}" onclick="toggleShockwaveNoFracture('${ns}')">골절, 골다공증 없음</button>`;
+    }
+    h += '</div>';
 
-  // ── 실비(실손보험) ──
-  h += '<div class="btn-toggle-row">';
-  [['유','실비 유'],['무','실비 무'],['거부','실비 조회 거부']].forEach(pair=>{
-    h += `<button type="button" class="btn-toggle${pSilbi.sel===pair[0]?' selected':''}" onclick="setSilbiSel('${pair[0]}')">${pair[1]}</button>`;
-  });
-  if(pSilbi.sel === '유'){
-    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-    [1,2,3,4].forEach(n=>{
-      h += `<button type="button" class="btn-toggle tier2${pSilbi.gen===n?' selected':''}" onclick="setSilbiGen(${n})">${n}세대</button>`;
+    h += '<div class="btn-toggle-row">';
+    [['유','실비 유'],['무','실비 무'],['거부','실비 조회 거부']].forEach(pair=>{
+      h += `<button type="button" class="btn-toggle${st.pSilbi.sel===pair[0]?' selected':''}" onclick="setSilbiSel('${ns}','${pair[0]}')">${pair[1]}</button>`;
     });
-  }
-  h += '</div>';
+    if(st.pSilbi.sel === '유'){
+      h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+      [1,2,3,4].forEach(n=>{
+        h += `<button type="button" class="btn-toggle tier2${st.pSilbi.gen===n?' selected':''}" onclick="setSilbiGen('${ns}',${n})">${n}세대</button>`;
+      });
+    }
+    h += '</div>';
+    h += '</div>';
 
-  h += '</div>';
-
-  h += '<div class="p-group"><div class="btn-toggle-row">';
-  h += `<button type="button" class="btn-toggle${pHerbActive['보험약']?' selected':''}" onclick="toggleHerb('보험약')">보험약</button>`;
-  h += `<button type="button" class="btn-toggle${pHerbActive['상비약']?' selected':''}" onclick="toggleHerb('상비약')">상비약</button>`;
-  h += `<button type="button" class="btn-toggle${pHerbActive['탕약']?' selected':''}" onclick="toggleHerb('탕약')">탕약</button>`;
-  h += `<button type="button" class="btn-toggle${pHerbActive['TA탕약']?' selected':''}" onclick="toggleHerb('TA탕약')">TA 탕약</button>`;
-  h += '</div>';
-  function herbRow(label, storeVar, unit){
-    const store = window[storeVar];
-    return `<div class="taping-row">
-      <span class="herb-label">${label}</span>
-      <input type="text" class="ch-inline" placeholder="약 이름" value="${escAttr(store.name)}" oninput="${storeVar}.name=this.value;this.style.width=inputWidthFor(this.value,90,200)+'px'" style="width:${inputWidthFor(store.name,90,200)}px;flex:0 0 auto;">
-      <span style="color:var(--muted);margin:0 2px;">|</span>
-      <span style="font-size:12px;color:var(--muted);">1일</span>
-      <input type="number" class="ch-inline" value="${escAttr(store.perDay)}" oninput="${storeVar}.perDay=this.value" style="width:40px;flex:0 0 auto;">
-      <span style="font-size:12px;color:var(--muted);">${unit}</span>
-      <span style="color:var(--muted);margin:0 2px;">|</span>
-      <span style="font-size:12px;color:var(--muted);">총</span>
-      <input type="number" class="ch-inline" value="${escAttr(store.totalDays)}" oninput="${storeVar}.totalDays=this.value" style="width:40px;flex:0 0 auto;">
-      <span style="font-size:12px;color:var(--muted);">일</span>
-    </div>`;
+    h += '<div class="p-group"><div class="btn-toggle-row">';
+    h += `<button type="button" class="btn-toggle${st.pHerbActive['보험약']?' selected':''}" onclick="toggleHerb('${ns}','보험약')">보험약</button>`;
+    h += `<button type="button" class="btn-toggle${st.pHerbActive['상비약']?' selected':''}" onclick="toggleHerb('${ns}','상비약')">상비약</button>`;
+    h += `<button type="button" class="btn-toggle${st.pHerbActive['탕약']?' selected':''}" onclick="toggleHerb('${ns}','탕약')">탕약</button>`;
+    h += `<button type="button" class="btn-toggle${st.pHerbActive['TA탕약']?' selected':''}" onclick="toggleHerb('${ns}','TA탕약')">TA 탕약</button>`;
+    h += '</div>';
+    function herbRow(label, key, unit){
+      const store = st.herb[key];
+      return `<div class="taping-row">
+        <span class="herb-label">${label}</span>
+        <input type="text" class="ch-inline" placeholder="약 이름" value="${escAttr(store.name)}" oninput="PSTATE.${ns}.herb['${key}'].name=this.value;this.style.width=inputWidthFor(this.value,90,200)+'px'" style="width:${inputWidthFor(store.name,90,200)}px;flex:0 0 auto;">
+        <span style="color:var(--muted);margin:0 2px;">|</span>
+        <span style="font-size:12px;color:var(--muted);">1일</span>
+        <input type="number" class="ch-inline" value="${escAttr(store.perDay)}" oninput="PSTATE.${ns}.herb['${key}'].perDay=this.value" style="width:40px;flex:0 0 auto;">
+        <span style="font-size:12px;color:var(--muted);">${unit}</span>
+        <span style="color:var(--muted);margin:0 2px;">|</span>
+        <span style="font-size:12px;color:var(--muted);">총</span>
+        <input type="number" class="ch-inline" value="${escAttr(store.totalDays)}" oninput="PSTATE.${ns}.herb['${key}'].totalDays=this.value" style="width:40px;flex:0 0 auto;">
+        <span style="font-size:12px;color:var(--muted);">일</span>
+      </div>`;
+    }
+    if(st.pHerbActive['보험약']) h += herbRow('보험약', '보험약', '회');
+    if(st.pHerbActive['상비약']) h += herbRow('상비약', '상비약', '회');
+    if(st.pHerbActive['탕약']) h += herbRow('탕약', '탕약', '첩');
+    if(st.pHerbActive['TA탕약']) h += herbRow('TA 탕약', 'TA탕약', '첩');
+    h += '</div>';
+  } else {
+    /* TA 탭: 테이핑/충격파/실비/기존 한약군 대신 TA 첩약만 */
+    const jc = st.taJcheop;
+    const days = jc.days || '7';
+    const cheop = (parseFloat(days)||0) * 2;
+    h += '<div class="p-group"><div class="btn-toggle-row">';
+    h += `<button type="button" class="btn-toggle${jc.active?' selected':''}" onclick="toggleTaJcheop('${ns}')">TA 첩약</button>`;
+    h += '</div>';
+    if(jc.active){
+      h += '<div class="taping-row">';
+      h += `<span class="herb-label" style="width:auto;">처방명</span>`;
+      h += `<input type="text" class="ch-inline" placeholder="처방명" value="${escAttr(jc.name)}" oninput="PSTATE.ta.taJcheop.name=this.value;this.style.width=inputWidthFor(this.value,100,220)+'px'" style="width:${inputWidthFor(jc.name,100,220)}px;flex:0 0 auto;">`;
+      h += `<input type="text" class="ch-inline" readonly value="${cheop}첩" style="width:60px;flex:0 0 auto;text-align:center;">`;
+      h += `<input type="number" class="ch-inline" value="${escAttr(days)}" oninput="PSTATE.ta.taJcheop.days=this.value;renderPBody('ta')" style="width:50px;flex:0 0 auto;">`;
+      h += `<span style="font-size:12px;color:var(--muted);">일</span>`;
+      h += '<span style="color:var(--muted);margin:0 4px;">|</span>';
+      h += `<span class="herb-label" style="width:auto;">가감 약재</span>`;
+      h += `<input type="text" class="ch-inline" placeholder="가감 약재" value="${escAttr(jc.gagam)}" oninput="PSTATE.ta.taJcheop.gagam=this.value;this.style.width=inputWidthFor(this.value,120,260)+'px'" style="width:${inputWidthFor(jc.gagam,120,260)}px;flex:0 0 auto;">`;
+      h += '</div>';
+    }
+    h += '</div>';
   }
-  if(pHerbActive['보험약']) h += herbRow('보험약', 'pBohumyak', '회');
-  if(pHerbActive['상비약']) h += herbRow('상비약', 'pSangbiyak', '회');
-  if(pHerbActive['탕약']) h += herbRow('탕약', 'pTangyak', '첩');
-  if(pHerbActive['TA탕약']) h += herbRow('TA 탕약', 'pTATangyak', '첩');
-  h += '</div>';
 
   body.innerHTML = h;
 }
 
-function buildPText(){
-  const a0 = acuAreas[0], a1 = acuAreas[1];
+function buildPText(ns){
+  const st = PSTATE[ns];
+  const isTA = ns === 'ta';
+  const ictLabel = isTA ? 'TENS' : 'ICT';
+  const a0 = st.acuAreas[0], a1 = st.acuAreas[1];
   const m0 = a0 ? ACU_MAP[a0] : null, m1 = a1 ? ACU_MAP[a1] : null;
   const parts = [];
-  // 투자/관절/척추/복강/간접구 등은 두 부위 중 하나만 사용.
-  // 상지부·하지부를 우선으로 하고, 그 부위에 해당 항목이 있으면 그것을, 없으면 다른 부위를 사용.
   function isLimb(area){ return area && (area.indexOf('상지부')===0 || area.indexOf('하지부')===0); }
-  // key에 해당하는 값이 있는 부위를 우선순위(상지/하지 먼저)로 골라 반환
   function pickArea(key){
-    // 후보를 우선순위대로 정렬: 상지/하지 먼저
     const cands = [];
     if(a0) cands.push({area:a0, m:m0});
     if(a1) cands.push({area:a1, m:m1});
     cands.sort((x,y)=> (isLimb(y.area)?1:0) - (isLimb(x.area)?1:0));
-    // 값이 있는 첫 후보
     for(const cd of cands){ if(cd.m && cd.m[key]) return cd; }
     return null;
   }
-  if(acuSt.경혈==='경혈2' && m0 && m1) parts.push(`경혈2부위(${m0.경혈} ${m1.경혈})`);
-  else if(acuSt.경혈==='경혈1' && m0) parts.push(`경혈1부위(${m0.경혈})`);
-  if(acuSt.투자){ const p=pickArea('투자'); if(p) parts.push(`투자(${p.m.투자.join(' ')})`); }
-  if(acuSt.관절){ const p=pickArea('관절'); if(p) parts.push(`관절(${p.m.관절})`); }
-  if(acuSt.척추){ const p=pickArea('척추'); if(p) parts.push(`척추(${p.m.척추})`); }
-  if(acuSt.복강){ const p=pickArea('복강'); if(p) parts.push(`복강(${p.m.복강})`); }
-  if(acuSt.전침) parts.push('침전기자극술');
-  if(acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${acuShortName(a0)} ${acuShortName(a1)})`);
-  else if(acuSt.습부2 && m0) parts.push(`습부2부위(${acuShortName(a0)})`);
-  if(acuSt.습부1 && m0) parts.push(`습부1부위(${acuShortName(a0)})`);
-  if(acuSt.건부 && m0) parts.push(`건부(${acuShortName(a0)})`);
-  if(acuSt.간접구){ const p=pickArea('간접구'); if(p) parts.push(`간접구(${p.m.간접구})`); }
-  if(acuSt.핫팩 && a0) parts.push(`핫팩(${acuShortName(a0)})`);
-  if(acuSt.ir && a0) parts.push(`IR(${acuShortName(a0)})`);
-  if(acuSt.ict && a0) parts.push(`ICT(${acuShortName(a0)})`);
+  if(st.acuSt.경혈==='경혈2' && m0 && m1) parts.push(`경혈2부위(${m0.경혈} ${m1.경혈})`);
+  else if(st.acuSt.경혈==='경혈1' && m0) parts.push(`경혈1부위(${m0.경혈})`);
+  if(st.acuSt.투자){ const p=pickArea('투자'); if(p) parts.push(`투자(${p.m.투자.join(' ')})`); }
+  if(st.acuSt.관절){ const p=pickArea('관절'); if(p) parts.push(`관절(${p.m.관절})`); }
+  if(st.acuSt.척추){ const p=pickArea('척추'); if(p) parts.push(`척추(${p.m.척추})`); }
+  if(st.acuSt.복강){ const p=pickArea('복강'); if(p) parts.push(`복강(${p.m.복강})`); }
+  if(st.acuSt.전침) parts.push('침전기자극술');
+  if(st.acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${acuShortName(a0)} ${acuShortName(a1)})`);
+  else if(st.acuSt.습부2 && m0) parts.push(`습부2부위(${acuShortName(a0)})`);
+  if(st.acuSt.습부1 && m0) parts.push(`습부1부위(${acuShortName(a0)})`);
+  if(st.acuSt.건부 && m0) parts.push(`건부(${acuShortName(a0)})`);
+  if(st.acuSt.간접구){ const p=pickArea('간접구'); if(p) parts.push(`간접구(${p.m.간접구})`); }
+  if(!isTA && st.acuSt.핫팩 && a0) parts.push(`핫팩(${acuShortName(a0)})`);
+  if(st.acuSt.ir && a0) parts.push(`IR(${acuShortName(a0)})`);
+  if(st.acuSt.ict && a0) parts.push(`${ictLabel}(${acuShortName(a0)})`);
 
   let result = 'P) \n' + parts.join(', ');
 
-  if(pYakchim.active){
-    const main = (pYakchim.kind||'') + (pYakchim.cc ? ' '+pYakchim.cc : '') + (pYakchim.gae ? '*'+pYakchim.gae : '');
-    const detail = main + (pYakchim.buyi ? ` (${pYakchim.buyi})` : '');
+  if(st.pYakchim.active){
+    const main = (st.pYakchim.kind||'') + (st.pYakchim.cc ? ' '+st.pYakchim.cc : '') + (st.pYakchim.gae ? '*'+st.pYakchim.gae : '');
+    const detail = main + (st.pYakchim.buyi ? ` (${st.pYakchim.buyi})` : '');
     result += `\n■ 약침 : ${detail}`;
   }
-  const chunaType = pChunaActive['단순추나'] ? '단순추나' : (pChunaActive['복잡추나'] ? '복잡추나' : '');
+  const chunaType = st.pChunaActive['단순추나'] ? '단순추나' : (st.pChunaActive['복잡추나'] ? '복잡추나' : '');
   if(chunaType){
     const techList = [];
     CHUNA_BTNS.forEach(k=>{
-      if(!chunaSelected[k]) return;
-      const txt = chunaText[k] ? `(${chunaText[k]})` : '';
+      if(!st.chunaSelected[k]) return;
+      const txt = st.chunaText[k] ? `(${st.chunaText[k]})` : '';
       techList.push(k+txt);
     });
     result += `\n■ ${chunaType}${techList.length ? ' : '+techList.join(' - ') : ''}`;
     if(chunaType === '복잡추나'){
-      if(pChunaSpine === '경추'){
+      if(st.pChunaSpine === '경추'){
         result += '\n- 상기 환자 경추 추간판 탈출증으로 인한 항강통 및 상지 방사통 호소하여 교정기법 포함한 복잡추나 시행함\n- 복잡추나 시행 이후 통증 감소 및 관절가동범위 증가를 확인함';
-      } else if(pChunaSpine === '요추'){
+      } else if(st.pChunaSpine === '요추'){
         result += '\n- 상기 환자 요추 추간판 탈출증으로 인한 요통 및 하지 방사통 호소하여 교정기법 포함한 복잡추나 시행함\n- 복잡추나 시행 이후 통증 감소 및 관절가동범위 증가를 확인함';
       }
+    } else if(chunaType === '단순추나'){
+      result += '\n- 단순추나 시행 이후 통증 감소 및 관절가동범위 증가를 확인함';
     }
   }
-  let extGroupStarted = false;
-  if(pTaping.active){
-    const gae = pTaping.gae || '4';
-    const buyiPart = pTaping.buyi ? pTaping.buyi+' ' : '';
-    result += `${extGroupStarted?'\n':'\n\n'}■ 테이핑 : ${buyiPart}(${gae}개)${pTaping.allergy ? ' / 알러지 없음' : ''}`;
-    extGroupStarted = true;
+
+  if(!isTA){
+    let extGroupStarted = false;
+    if(st.pTaping.active){
+      const gae = st.pTaping.gae || '4';
+      const buyiPart = st.pTaping.buyi ? st.pTaping.buyi+' ' : '';
+      result += `${extGroupStarted?'\n':'\n\n'}■ 테이핑 : ${buyiPart}(${gae}개)${st.pTaping.allergy ? ' / 알러지 없음' : ''}`;
+      extGroupStarted = true;
+    }
+    if(st.pShockwave.active){
+      const buyiPart = st.pShockwave.buyi ? st.pShockwave.buyi+' ' : '';
+      result += `${extGroupStarted?'\n':'\n\n'}■ 충격파 : ${buyiPart}(${st.pShockwave.ta || ''}타)${st.pShockwave.noFracture ? ' / 골절, 골다공증 없음' : ''}`;
+      extGroupStarted = true;
+    }
+    const silbiLine = getSilbiLine(ns);
+    if(silbiLine){
+      result += `\n\n${silbiLine}`;
+    }
+    let herbGroupStarted = false;
+    function herbLine(label, store, unit){
+      const dose = (store.perDay || store.totalDays) ? `1일 ${store.perDay||''}${unit} 총 ${store.totalDays||''}일` : '';
+      const s = [store.name, dose].filter(Boolean).join(' ');
+      const line = `${herbGroupStarted?'\n':'\n\n'}■ ${label}${s ? ' : '+s : ''}`;
+      herbGroupStarted = true;
+      return line;
+    }
+    if(st.pHerbActive['보험약']) result += herbLine('보험약', st.herb['보험약'], '회');
+    if(st.pHerbActive['상비약']) result += herbLine('상비약', st.herb['상비약'], '회');
+    if(st.pHerbActive['탕약']) result += herbLine('탕약', st.herb['탕약'], '첩');
+    if(st.pHerbActive['TA탕약']) result += herbLine('TA 탕약', st.herb['TA탕약'], '첩');
+  } else if(st.taJcheop.active){
+    const jc = st.taJcheop;
+    const days = jc.days || '7';
+    const cheop = (parseFloat(days)||0) * 2;
+    const namePart = jc.name || '(처방명)';
+    const gagamPart = jc.gagam || '';
+    result += `\n\n■ ${namePart} ${cheop}첩 ${days}일 처방${gagamPart? ' / '+gagamPart:''}`;
+    result += '\n' + buildTaJcheopSentence(cheop, days, namePart, gagamPart);
   }
-  if(pShockwave.active){
-    const buyiPart = pShockwave.buyi ? pShockwave.buyi+' ' : '';
-    result += `${extGroupStarted?'\n':'\n\n'}■ 충격파 : ${buyiPart}(${pShockwave.ta || ''}타)${pShockwave.noFracture ? ' / 골절, 골다공증 없음' : ''}`;
-    extGroupStarted = true;
-  }
-  const silbiLine = getSilbiLine();
-  if(silbiLine){
-    result += `\n\n${silbiLine}`;
-    extGroupStarted = true;
-  }
-  let herbGroupStarted = false;
-  function herbLine(label, store, unit){
-    const dose = (store.perDay || store.totalDays) ? `1일 ${store.perDay||''}${unit} 총 ${store.totalDays||''}일` : '';
-    const s = [store.name, dose].filter(Boolean).join(' ');
-    const line = `${herbGroupStarted?'\n':'\n\n'}■ ${label}${s ? ' : '+s : ''}`;
-    herbGroupStarted = true;
-    return line;
-  }
-  if(pHerbActive['보험약']) result += herbLine('보험약', pBohumyak, '회');
-  if(pHerbActive['상비약']) result += herbLine('상비약', pSangbiyak, '회');
-  if(pHerbActive['탕약']) result += herbLine('탕약', pTangyak, '첩');
-  if(pHerbActive['TA탕약']) result += herbLine('TA 탕약', pTATangyak, '첩');
   return result;
 }
 
-renderPBody();
-renderBijeung();
-renderTA();
+/* TA 첩약 문구 자동 생성 (C/C 키워드 기반) */
+function detectCC(text){
+  text = text || '';
+  return {
+    요통: /요통|허리/.test(text),
+    항강통: /항강통|목\s*뒤|경추/.test(text),
+    무릎: /무릎|슬관절/.test(text),
+    팔꿈치: /팔꿈치|주관절/.test(text)
+  };
+}
+function taSourceText(){
+  const t1 = $('ta-directTextInput') ? $('ta-directTextInput').value : '';
+  const t2 = $('ta-extraNotesInput') ? $('ta-extraNotesInput').value : '';
+  const t3 = $('ta-scriptOutput') ? $('ta-scriptOutput').value : '';
+  const t4 = $('ta-soaOutput') ? $('ta-soaOutput').value : '';
+  return [t1,t2,t3,t4].join(' ');
+}
+function buildTaJcheopSentence(cheop, days, name, gagam){
+  const cc = detectCC(taSourceText());
+  const painPhrases = [];
+  if(cc.항강통) painPhrases.push('NRS # 수준의 항강통 및 경추 관절가동범위 제한');
+  if(cc.요통) painPhrases.push('NRS # 수준의 요통 및 요추 관절가동범위 제한');
+  if(cc.팔꿈치) painPhrases.push('NRS # 수준의 팔꿈치 통증 및 주관절 관절가동범위 제한');
+  if(cc.무릎) painPhrases.push('NRS # 수준의 무릎 통증 및 슬관절 관절가동범위 제한');
+  if(!painPhrases.length) painPhrases.push('NRS # 수준의 통증 및 관절가동범위 제한');
+  const painText = painPhrases.join(', ');
 
-// ---------- Combine ----------
-document.getElementById('combineBtn').addEventListener('click', ()=>{
-  let soa = document.getElementById('soaOutput').value;
+  const headache = TASTATE.ta.H;
+  const headacheText = headache ? ', 두통 동반되고' : '';
+
+  const examParts = [];
+  if(cc.항강통) examParts.push('SPURLING(+/+)');
+  if(cc.요통) examParts.push('SLRT(+/+)');
+  const examText = examParts.length ? `, 이학적 검사상 ${examParts.join(' 및 ')} 확인되었으며` : '';
+
+  const romParts = [];
+  if(cc.항강통) romParts.push('경추부');
+  if(cc.요통) romParts.push('요추부');
+  if(cc.팔꿈치) romParts.push('주관절');
+  if(cc.무릎) romParts.push('슬관절');
+  const romText = romParts.length ? romParts.join(' 및 ') : '관절';
+
+  const namePart = name || '(처방명)';
+  const gagamText = gagam ? `${namePart}을 기본방으로 설정하고 ${gagam} 등의 약재를 더하여` : `${namePart}을 기본방으로 하여`;
+
+  return `- 상기 환자 TA로 인한 ${painText} 호소하며${headacheText}${examText}, 본원 치료로 호전 보임에도 불구하고 ${romText} 관절가동범위 내 통증 잔여하여 환자 동의 하 ${days}일분을 처방하였으며, ${gagamText} 교통사고 후 통증 개선 및 신속한 일상 복귀를 위하여 본 첩약을 처방함`;
+}
+
+/* ==================== 차트 결합 ==================== */
+function normalizeSectionBreaks(text){
+  const lines = text.split('\n');
+  const headers = new Set(['S)','O)','A)','P)']);
+  const out = [];
+  for(let i=0;i<lines.length;i++){
+    const cur = lines[i].trim();
+    if(headers.has(cur) && out.length>0){
+      while(out.length && out[out.length-1].trim()===''){ out.pop(); }
+      out.push('');
+    }
+    out.push(lines[i]);
+  }
+  return out.join('\n');
+}
+function chartFooter(){
+  const now = new Date();
+  const md = (now.getMonth()+1) + '/' + now.getDate();
+  return '----------------------------------------------------------------------\n* 등, 어깨 부위는 0.3cm 이하로 천자함\n* ' + md;
+}
+function combineChart(ns){
+  let soa = $(elId(ns,'soaOutput')).value;
   let lines = soa.split('\n');
 
-  // (1) T/A 삽입: S) 블록 안에서, O/S 가 시작되기 직전(C/C 항목들 맨 밑)에 넣음
-  const taLine = getTALine();
-  if(taLine){
+  const taBlock = getTABlock(ns);
+  if(taBlock){
     let sIdx = -1, insertAt = -1;
     for(let i=0;i<lines.length;i++){
       if(lines[i].trim() === 'S)'){ sIdx = i; continue; }
       if(sIdx >= 0){
         const t = lines[i].trim();
-        // O/S, S/H, P/H, O) 등 다음 항목이 시작되면 그 직전에 삽입
         if(/^(O\/S|S\/H|P\/H|F\/H)/.test(t) || t === 'O)'){ insertAt = i; break; }
       }
     }
     if(sIdx >= 0){
       if(insertAt === -1) insertAt = lines.length;
-      // 삽입 지점 바로 앞의 빈 줄들은 건너뛰어 C/C 내용 바로 밑에 붙임
       let at = insertAt;
       while(at-1 > sIdx && lines[at-1].trim() === '') at--;
-      lines.splice(at, 0, taLine);
+      lines.splice(at, 0, taBlock);
     }
   }
 
-  // (2) 변증 삽입: A) 블록 맨 아래
-  const bijeungLine = getBijeungLine();
+  const bijeungLine = getBijeungLine(ns);
   if(bijeungLine){
     let aIdx = -1;
-    for(let i=0;i<lines.length;i++){
-      if(lines[i].trim() === 'A)'){ aIdx = i; break; }
-    }
+    for(let i=0;i<lines.length;i++){ if(lines[i].trim() === 'A)'){ aIdx = i; break; } }
     if(aIdx >= 0){
       let insertAt = lines.length;
       for(let i=aIdx+1;i<lines.length;i++){
@@ -1551,51 +1772,34 @@ document.getElementById('combineBtn').addEventListener('click', ()=>{
 
   soa = lines.join('\n');
   soa = normalizeSectionBreaks(soa);
-  const p = buildPText();
-  document.getElementById('fullOutput').value = `${soa}\n\n${p}\n\n${chartFooter()}`;
+  const p = buildPText(ns);
+  let full = `${soa}\n\n${p}\n\n${chartFooter()}`;
+  full = uppercaseEnglish(full);
+  const out = $(elId(ns,'fullOutput'));
+  out.value = full;
+  autoGrow(out);
+}
+
+/* 생성하기 버튼: 분석 + 결합을 한 번에 */
+$('main-combineBtn').addEventListener('click', ()=>runGenerate('main'));
+$('ta-combineBtn').addEventListener('click', ()=>runGenerate('ta'));
+
+/* 차트 textarea 자동 높이 (스크롤 대신 통으로 표시) */
+['main-fullOutput','ta-fullOutput'].forEach(id=>{
+  const el = $(id);
+  if(el) el.addEventListener('input', ()=>autoGrow(el));
 });
 
-// S)/O)/A) 등 구역 헤더 앞에 반드시 빈 줄 하나만 있도록 보정
-function normalizeSectionBreaks(text){
-  const lines = text.split('\n');
-  const headers = new Set(['S)','O)','A)','P)']);
-  const out = [];
-  for(let i=0;i<lines.length;i++){
-    const cur = lines[i].trim();
-    if(headers.has(cur) && out.length>0){
-      // 직전 줄들의 끝 빈 줄을 정확히 하나로 맞춤
-      while(out.length && out[out.length-1].trim()===''){ out.pop(); }
-      out.push('');
-    }
-    out.push(lines[i]);
-  }
-  return out.join('\n');
-}
+/* 전달 카드 접기/펴기 */
+function toggleDeliver(){ $('deliver-card').classList.toggle('collapsed'); }
+function toggleDeliverTA(){ $('ta-deliver-card').classList.toggle('collapsed'); }
 
-// 차트 맨 끝 날짜 푸터: ----...---- \n* 7/8
-function chartFooter(){
-  const now = new Date();
-  const md = (now.getMonth()+1) + '/' + now.getDate();
-  return '----------------------------------------------------------------------\n* ' + md;
-}
-
-// P) 부분만 차트칸에 생성
-function generatePOnly(){
-  const p = buildPText();
-  document.getElementById('fullOutput').value = p;
-}
-
-// 전달 토글 접기/펴기
-function toggleDeliver(){
-  document.getElementById('deliver-card').classList.toggle('collapsed');
-}
-
-// ---------- Copy buttons ----------
+/* ==================== 복사 버튼 ==================== */
 document.querySelectorAll('[data-copy]').forEach(btn=>{
   const orig = btn.textContent;
   let revertTimer = null;
   btn.addEventListener('click', async ()=>{
-    const el = document.getElementById(btn.dataset.copy);
+    const el = $(btn.dataset.copy);
     try{
       await navigator.clipboard.writeText(el.value);
     }catch(e){
@@ -1615,9 +1819,7 @@ document.querySelectorAll('[data-copy]').forEach(btn=>{
   });
 });
 
-/* ════════════════════════════════════
-   청구 수가 조회 (포털에서 이식)
-════════════════════════════════════ */
+/* ==================== 청구 수가 조회 (통증 탭 전용) ==================== */
 var CQ = {visit:null, cupping:null, chuna:null};
 var CQ_ALL = [
   {visit:'초진',cupping:'1부위',chuna:'없음',label:'침+습부(1부위)+전침',평일:14300,주말:15500,조합:['이체+전침+관절+습부1부위(컵4)+IR+변증','이체+전침+관절+습부1부위(컵3)+IR+변증','이체+전침+척추+습부1부위(컵3)+IR+변증']},
@@ -1706,19 +1908,7 @@ function toggleCQ(){
   document.querySelector('.cq-card').classList.toggle('collapsed');
 }
 
-/* ════════════════════════════════════
-   페이지 전환 (근골격계 / 피부)
-════════════════════════════════════ */
-function switchPage(name, btn){
-  document.querySelectorAll('.page-content').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  btn.classList.add('active');
-}
-
-/* ════════════════════════════════════
-   피부 시술 선택 (포털에서 이식)
-════════════════════════════════════ */
+/* ==================== 피부 시술 선택 ==================== */
 var PROC_GROUPS={
   '슈링크':{'100샷':['1회 체험','1회 이벤트','3회'],'300샷':['1회 체험','1회 이벤트','3회'],'600샷':['1회 체험','1회 이벤트','3회']},
   '볼뉴머':{'300샷':['1회 체험','1회 이벤트','3회'],'600샷':['1회 체험','1회 이벤트','3회']},
@@ -1731,15 +1921,12 @@ var PROC_GROUPS={
   '흉터':{'새살침 1부위':['1회 체험','1회 이벤트']},
   '실리프팅':{'매선 1부위':['1회 체험','1회 이벤트']}
 };
-// RF 시크릿 → AMTS 변경 토글
 var rfAmtsChange=false;
 function toggleRfAmts(btn){
   rfAmtsChange=!rfAmtsChange;
   btn.classList.toggle('selected',rfAmtsChange);
 }
 var skinSelection={};
-var PROC_COL1=['슈링크','볼뉴머','볼링크','RF 시크릿','바이오셀'];
-var PROC_COL2=['토닝','여드름','바디','흉터','실리프팅'];
 function buildProcGroupHTML(containerId,g){
   var map=PROC_GROUPS[g];
   var titleExtra='';
@@ -1761,7 +1948,6 @@ function buildProcUI(containerId){
 }
 function procSelectPrefix(containerId,g,pre,btn){
   var sufWrap=document.getElementById(containerId+'-'+encodeURIComponent(g)+'-suffix');
-  // 이미 펼쳐진 대분류를 다시 누르면 닫기
   if(btn.classList.contains('viewing')){
     btn.classList.remove('viewing');
     sufWrap.innerHTML='';
@@ -1798,22 +1984,14 @@ function skinGenerate(){
   Object.keys(PROC_GROUPS).forEach(function(g){
     if(!skinSelection[g]) return;
     var amts=(g==='RF 시크릿' && rfAmtsChange) ? ' (AMTS로 변경)' : '';
-    // 그룹명 앞에 붙이되, prefix가 그룹명과 같으면(바이오셀 등) 중복 제거
     var sel=skinSelection[g];
     var text=(sel.indexOf(g)===0) ? sel : (g+' '+sel);
     lines.push('* '+date+' '+text+amts+' 결제');
   });
   document.getElementById('skin-result-area').value=lines.join('\n');
 }
-buildProcUI('skin-p-buttons');
-renderCQResult();
-// 초기엔 접어둠 (헤더만 보이게)
-document.querySelector('.cq-card').classList.add('collapsed');
 
-/* ════════════════════════════════════
-   전달 탭 (치료실 전달 문구 생성)
-════════════════════════════════════ */
-var DV_ORDER = ['충격파','추나','추나(환자복)','BC','간접구','습부2','습부1','건부','침(전)','침','약침','I','핫팩','돔','JB'];
+/* ==================== 전달 탭 (통증 탭 전용) ==================== */
 var DV_COLORS = {
   'JB':'#7C8FD4','돔':'#5B7C99','핫팩':'#FF6B35','I':'#3B8DCC','약침':'#0052FF',
   '침':'#00C48C','침(전)':'#00C48C',
@@ -1824,11 +2002,9 @@ var DV_FORM = { '핫팩':['부위'], 'I':['부위'], '약침':['종류','cc','�
 var DV_DEFAULT = ['BC','습부2','침(전)','I','핫팩'];
 var DV_CHIM_BASES = ['침','침(전)'];
 var DV_CHIM_POS = ['앞침','엎침','옆침/좌','옆침/우'];
-// 습부1/습부2/건부는 셋 중 하나만
 var DV_EXCLUSIVE = ['습부1','습부2','건부'];
 var DV_EXCLUSIVE2 = ['침','침(전)'];
 var DV_EXCLUSIVE3 = ['추나','추나(환자복)'];
-// 예비 버튼 표시 순서 (문장 출력 순서와 별개)
 var DV_BTN_ORDER = ['핫팩','돔','JB','I','침','침(전)','약침','간접구','습부2','습부1','건부','BC','추나','추나(환자복)','충격파'];
 
 var dvSeq = 1;
@@ -1844,24 +2020,18 @@ function dvInsertSorted(obj){
   dvTreatments.splice(insertAt, 0, obj);
 }
 function dvAdd(base){
-  // 배타 그룹(습부1/습부2/건부): 기존 것 제거 후 추가(교체)
   if(DV_EXCLUSIVE.indexOf(base) >= 0){
     dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE.indexOf(t.base) < 0; });
   }
-  // 배타 그룹(침/침(전)): 하나만
   if(DV_EXCLUSIVE2.indexOf(base) >= 0){
     dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE2.indexOf(t.base) < 0; });
   }
-  // 배타 그룹(추나/추나(환자복)): 하나만
   if(DV_EXCLUSIVE3.indexOf(base) >= 0){
     dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
   }
-  // 추나(계열) ↔ BC 상호 배타 (같이 사용 불가)
   if(DV_EXCLUSIVE3.indexOf(base) >= 0){
-    // 추나 넣으면 BC 제거
     dvTreatments = dvTreatments.filter(function(t){ return t.base !== 'BC'; });
   } else if(base === 'BC'){
-    // BC 넣으면 추나(환자복 포함) 제거
     dvTreatments = dvTreatments.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
   }
   dvInsertSorted({ id:dvNewId(), base:base, extra:{} });
@@ -1891,7 +2061,6 @@ function dvTreatmentLabel(t){
   return t.base;
 }
 
-// 칩 드래그로 순서 변경
 var dvDrag = null;
 function dvAttachDrag(chip, id){
   chip.dataset.id = id;
@@ -1919,7 +2088,6 @@ function dvAttachDrag(chip, id){
           var insertBefore = (ev.clientX - rect.left) < rect.width/2;
           dvReorder(dvDrag.id, targetChip.dataset.id, insertBefore);
         } else if(!targetChip){
-          // 다른 칩이 아니라 빈 공간(줄 끝 등)에 놓으면 맨 뒤로 이동
           var container = el && el.closest('#deliver-chips');
           if(container) dvReorderToEnd(dvDrag.id);
         }
@@ -2017,7 +2185,6 @@ function dvRender(){
     }
   });
 
-  // 아직 추가 안 된 시술 버튼
   var added = {};
   dvTreatments.forEach(function(t){ added[t.base] = true; });
   DV_BTN_ORDER.forEach(function(name){
@@ -2037,10 +2204,7 @@ function dvRender(){
   });
 }
 
-var DV_OUTPUT_ORDER = DV_ORDER.slice().reverse();  // 핫팩부터
 function dvBuildSummary(){
-  var region = document.getElementById('deliver-region').value.trim();
-  // 드래그로 바꾼 순서(dvTreatments 배열 순서)를 그대로 사용
   var treatments = dvTreatments.slice();
   var yakIdx = treatments.findIndex(function(t){ return t.base === '약침'; });
   var chimIdx = treatments.findIndex(function(t){ return t.base === '침(전)'; });
@@ -2105,9 +2269,22 @@ function showToastDv(msg){
   alert(msg);
 }
 
+/* ==================== 초기화 ==================== */
+renderPBody('main');
+renderPBody('ta');
+renderBijeung('main');
+renderBijeung('ta');
+renderTA('main');
+renderTA('ta');
+buildProcUI('skin-p-buttons');
+renderCQResult();
+document.querySelector('.cq-card').classList.add('collapsed');
 dvInit();
 var _dvCard = document.getElementById('deliver-card');
 if(_dvCard) _dvCard.classList.add('collapsed');
+var _taDvCard = document.getElementById('ta-deliver-card');
+if(_taDvCard) _taDvCard.classList.add('collapsed');
+
 </script>
 </body>
 </html>
