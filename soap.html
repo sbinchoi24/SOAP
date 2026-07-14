@@ -102,27 +102,39 @@
   }
   .skin-output-card{position:sticky;top:16px;}
   .skin-grid{
-    display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;
+    display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;
   }
   @media (max-width:900px){
     .skin-layout{grid-template-columns:1fr;}
     .skin-grid{grid-template-columns:1fr;}
   }
   .skin-gen-btn{margin-left:0;padding:6px 16px;font-size:13px;width:100%;margin-bottom:8px;}
+  .skin-dc-row{display:flex;gap:8px;margin-bottom:10px;}
+  .skin-dc-btn{
+    flex:1;height:38px;border-radius:12px;border:none;
+    background:#f2f4f6;color:var(--text);font-size:13px;font-weight:700;
+    cursor:pointer;font-family:inherit;
+  }
+  .skin-dc-btn:hover{background:#e5e8eb;}
+  .skin-dc-btn.selected{background:var(--danger);color:#fff;}
   .skin-group{
-    padding:12px 14px;
-    background:#fafbfc;border-radius:12px;
+    padding:18px 18px 20px;
+    background:#fafbfc;border-radius:16px;
+    border:1px solid var(--border);
   }
   .skin-group-title{
-    font-size:13px;font-weight:800;color:var(--text);
-    margin-bottom:10px;
+    font-size:15.5px;font-weight:800;color:var(--primary-dark);
+    margin:0 0 14px;padding-bottom:10px;
+    border-bottom:2px solid var(--primary-light);
+    letter-spacing:-0.01em;
   }
   .skin-btn-row{display:flex;flex-wrap:wrap;gap:6px;}
-  .skin-suffix-row{display:flex;flex-wrap:wrap;gap:6px;}
-  .skin-suffix-row:not(:empty){
-    margin-top:8px;padding-top:8px;
-    border-top:1px dashed var(--border);
+  .skin-item-row{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+    margin-bottom:14px;
   }
+  .skin-item-row:last-child{margin-bottom:0;}
+  .skin-suffix-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
   .skin-btn{
     height:34px;padding:0 14px;border-radius:17px;border:none;
     background:#f2f4f6;color:var(--text);font-size:12.5px;font-weight:600;
@@ -719,11 +731,25 @@
         <div id="skin-p-buttons"></div>
       </div>
       <div class="card skin-output-card">
-        <div class="card-header">
+        <div class="card-header" style="display:block;">
+          <div class="skin-dc-row" id="skin-dc-row">
+            <button type="button" class="skin-dc-btn" id="skin-dc-10" onclick="setSkinDiscount(10,this)">10% DC</button>
+            <button type="button" class="skin-dc-btn" id="skin-dc-20" onclick="setSkinDiscount(20,this)">20% DC</button>
+            <button type="button" class="skin-dc-btn" id="skin-dc-30" onclick="setSkinDiscount(30,this)">30% DC</button>
+          </div>
           <button class="btn-primary skin-gen-btn" onclick="skinGenerate()">생성</button>
         </div>
         <textarea id="skin-result-area" style="min-height:400px;" placeholder="시술을 선택하고 생성 버튼을 눌러주세요."></textarea>
-        <div class="copy-btn-row" style="gap:8px;"><button class="btn-secondary" onclick="skinReset()">초기화</button><button class="btn-secondary" data-copy="skin-result-area">복사</button></div>
+        <div class="copy-btn-row" style="justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn-secondary" onclick="skinShowTotal()">합계</button>
+            <span id="skin-total-display" style="font-size:12.5px;font-weight:700;color:var(--primary-dark);"></span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" onclick="skinReset()">초기화</button>
+            <button class="btn-secondary" data-copy="skin-result-area">복사</button>
+          </div>
+        </div>
       </div>
     </div>
   </div><!-- /page-피부 -->
@@ -1910,86 +1936,227 @@ function toggleCQ(){
 }
 
 /* ==================== 피부 시술 선택 ==================== */
-var PROC_GROUPS={
-  '슈링크':{'100샷':['1회 체험','1회 이벤트','3회'],'300샷':['1회 체험','1회 이벤트','3회'],'600샷':['1회 체험','1회 이벤트','3회']},
-  '볼뉴머':{'300샷':['1회 체험','1회 이벤트','3회'],'600샷':['1회 체험','1회 이벤트','3회']},
-  '볼링크':{'Light':['1회 체험','1회 이벤트','3회'],'Standard':['1회 체험','1회 이벤트'],'Premium':['1회 체험','1회 이벤트']},
-  'RF 시크릿':{'PDRN 1cc':['1회 체험','1회 이벤트','3회'],'PDRN 2cc':['1회 체험','1회 이벤트','3회'],'라디쥬 3cc':['1회 체험','1회 이벤트','3회'],'PLLA':['1회 체험','1회 이벤트','3회'],'엑소좀':['1회 체험','1회 이벤트','3회']},
-  '바이오셀':{'바이오셀':['1회','4회','8+1회']},
-  '토닝':{'제네시스':['1회 체험','1회 이벤트','10회'],'듀얼':['1회 체험','1회 이벤트','10회']},
-  '여드름':{'기본관리':['1회 체험','1회 이벤트','4회','8회','12회'],'스케일링':['1회 체험','1회 이벤트','4회','8회','12회'],'맞춤필링':['1회 체험','1회 이벤트','4회','8회','12회'],'골드PTT':['1회 체험','1회 이벤트','3회']},
-  '바디':{'BASIC':['1회 체험','1회 이벤트','5회','10회'],'PLUS':['1회 체험','1회 이벤트','5회','10회']},
-  '흉터':{'새살침 1부위':['1회 체험','1회 이벤트']},
-  '실리프팅':{'매선 1부위':['1회 체험','1회 이벤트']}
+var SKIN_CATALOG = {
+  '리프팅': [
+    {name:'슈링크 100샷', tiers:{'체험':9000,'1회':29000,'3회':79000}},
+    {name:'슈링크 300샷', tiers:{'체험':55000,'1회':79000,'3회':199000}},
+    {name:'슈링크 600샷', tiers:{'체험':108000,'1회':129000,'3회':299000}},
+    {name:'볼뉴머 300샷', tiers:{'체험':249000,'1회':349000,'3회':899000}},
+    {name:'볼뉴머 600샷', tiers:{'체험':449000,'1회':599000,'3회':1490000}},
+    {name:'볼뉴머 + 슈링크 100샷 추가', tiers:{'체험':9000,'1회':25000}},
+    {name:'볼뉴머 + 슈링크 300샷 추가', tiers:{'체험':55000,'1회':72000}},
+    {name:'볼뉴머 + 슈링크 600샷 추가', tiers:{'체험':108000,'1회':116000}}
+  ],
+  '여드름': [
+    {name:'여드름 기본 관리', tiers:{'체험':19000,'1회':70000,'4회':259000,'8회':459000}},
+    {name:'여드름 스케일링', tiers:{'체험':49000,'1회':90000,'4회':339000,'8회':639000}},
+    {name:'블랙필 집중 관리', tiers:{'체험':59000,'1회':120000,'4회':439000,'8회':799000}},
+    {name:'AMTS 원데이', tiers:{'체험':69000,'1회':130000,'4회':489000,'8회':889000}},
+    {name:'AMTS 2 STEP', tiers:{'1회':180000,'4회':659000,'8회':1199000}},
+    {name:'피지 여드름균 골드 PTT', tiers:{'체험':159000,'1회':250000,'3회':599000}},
+    {name:'염증약침 또는 자국약침', tiers:{'시술':5000}},
+    {name:'진정 관리 업그레이드', tiers:{'LED':9000,'이온토':19000,'LDM':29000}}
+  ],
+  '토닝': [
+    {name:'제네시스 토닝', tiers:{'체험':25000,'1회':50000,'5회':239000,'10회':450000}},
+    {name:'제네시스 리페어', tiers:{'체험':35000,'1회':70000,'5회':314000,'10회':600000}},
+    {name:'듀얼 토닝', tiers:{'체험':30000,'1회':60000,'5회':269000,'10회':499000}},
+    {name:'듀얼 리페어', tiers:{'체험':40000,'1회':80000,'5회':344000,'10회':649000}}
+  ],
+  '모공·흉터': [
+    {name:'RF시크릿 모공 흉터', tiers:{'체험':79000,'1회':129000,'3회':329000}},
+    {name:'RF시크릿 라디쥬', tiers:{'체험':159000,'1회':319000,'3회':638000}},
+    {name:'RF시크릿 PLLA', tiers:{'체험':179000,'1회':339000,'3회':678000}},
+    {name:'RF시크릿 엑소좀', tiers:{'체험':249000,'1회':399000,'3회':798000}},
+    {name:'RF시크릿 PDRN', tiers:{'체험':129000,'1회':199000,'3회':398000}},
+    {name:'어붐 프락셀 나비존', tiers:{'체험':19000,'1회':39000,'3회':99000}},
+    {name:'어붐 프락셀 풀페이스', tiers:{'체험':39000,'1회':79000,'3회':179000}},
+    {name:'어붐 PDRN', tiers:{'체험':49000,'1회':99000,'3회':259000}},
+    {name:'새살침 스팟 관리', tiers:{'체험':30000,'1회':50000}},
+    {name:'진정 관리 업그레이드', tiers:{'LED':9000,'LDM':29000}}
+  ],
+  '스킨부스터': [
+    {name:'미주안약침 2cc', tiers:{'체험':99000,'1회':150000,'3회':399000}},
+    {name:'연아약침 2cc', tiers:{'체험':69000,'1회':120000,'3회':329000}},
+    {name:'진정 관리 업그레이드', tiers:{'LED':9000,'이온토':19000,'LDM':29000}}
+  ],
+  '재생·진정': [
+    {name:'LED 재생 레이저', tiers:{'체험':9000,'1회':19000,'10회':149000}},
+    {name:'이온토 미백 관리', tiers:{'체험':19000,'1회':29000,'10회':249000}},
+    {name:'LDM 관리', tiers:{'체험':29000,'1회':49000,'10회':349000}}
+  ],
+  '바이오셀': [
+    {name:'바이오셀', tiers:{'체험':149000,'4회':990000,'8+1회':1990000}}
+  ],
+  '바디': [
+    {name:'바디 기본 관리', tiers:{'체험':59000,'1회':129000,'5회':490000,'10회':890000}},
+    {name:'바디 재생 기기 관리', tiers:{'체험':99000,'1회':219000,'5회':949000,'10회':1690000}},
+    {name:'바디 쏠라테라피 재생 관리', tiers:{'체험':119000,'1회':239000,'5회':990000,'10회':1779000}}
+  ]
 };
-var rfAmtsChange=false;
-function toggleRfAmts(btn){
-  rfAmtsChange=!rfAmtsChange;
-  btn.classList.toggle('selected',rfAmtsChange);
-}
-var skinSelection={};
-function buildProcGroupHTML(containerId,g){
-  var map=PROC_GROUPS[g];
-  var titleExtra='';
-  if(g==='RF 시크릿'){
-    titleExtra='<button class="skin-btn suffix rf-amts-btn'+(rfAmtsChange?' selected':'')+'" onclick="toggleRfAmts(this)">AMTS로 변경</button>';
+function fmtWon(n){ return Number(n).toLocaleString() + '원'; }
+function skinItemKey(cat, name){ return cat + '__' + name; }
+
+var skinSelection = {}; // key(cat__name) -> tierLabel
+
+function skinToggleTier(cat, name, tier, btn){
+  var key = skinItemKey(cat, name);
+  var nowActive = !btn.classList.contains('selected');
+  var sufRow = btn.closest('.skin-suffix-row');
+  if(sufRow){
+    Array.prototype.forEach.call(sufRow.querySelectorAll('button.skin-btn'), function(b){ b.classList.remove('selected'); });
   }
-  var html='<div class="skin-group"><div class="skin-group-title" style="display:flex;align-items:center;justify-content:space-between;">'+'<span>'+g+'</span>'+titleExtra+'</div>';
-  html+='<div class="skin-btn-row" id="'+containerId+'-'+encodeURIComponent(g)+'-row">';
-  Object.keys(map).forEach(function(pre){html+='<button class="skin-btn direct" data-prefix="'+pre+'" onclick="procSelectPrefix(\''+containerId+'\',\''+g+'\',\''+pre.replace(/'/g,"\\'")+'\',this)">'+pre+'</button>';});
-  html+='</div>';
-  html+='<div id="'+containerId+'-'+encodeURIComponent(g)+'-suffix" class="skin-suffix-row"></div>';
-  html+='</div>';
+  if(nowActive){
+    btn.classList.add('selected');
+    skinSelection[key] = tier;
+  } else {
+    delete skinSelection[key];
+  }
+  var itemBtn = sufRow && sufRow.parentNode ? sufRow.parentNode.querySelector('.skin-btn.direct') : null;
+  if(itemBtn){
+    itemBtn.classList.toggle('selected', !!skinSelection[key]);
+    itemBtn.textContent = name + (skinSelection[key] ? ' · ' + skinSelection[key] : '');
+  }
+}
+function skinBolnewmerBaseSelected(){
+  return !!(skinSelection[skinItemKey('리프팅','볼뉴머 300샷')] || skinSelection[skinItemKey('리프팅','볼뉴머 600샷')]);
+}
+function skinToggleItemOpen(cat, name, btn){
+  if(name.indexOf('볼뉴머 + ') === 0 && !skinBolnewmerBaseSelected()){
+    alert('볼뉴머 300샷 또는 600샷을 먼저 선택해주세요.');
+    return;
+  }
+  var group = btn.closest('.skin-group');
+  var wasOpen = btn.classList.contains('viewing');
+  if(group){
+    Array.prototype.forEach.call(group.querySelectorAll('.skin-item-row'), function(row){
+      var b = row.querySelector('.skin-btn.direct');
+      var suf = row.querySelector('.skin-suffix-row');
+      if(b) b.classList.remove('viewing');
+      if(suf) suf.innerHTML = '';
+    });
+  }
+  if(wasOpen){
+    var key = skinItemKey(cat, name);
+    delete skinSelection[key];
+    btn.classList.remove('selected');
+    btn.textContent = name;
+    return;
+  }
+  btn.classList.add('viewing');
+  var key = skinItemKey(cat, name);
+  var selTier = skinSelection[key];
+  var item = (SKIN_CATALOG[cat]||[]).find(function(it){ return it.name === name; });
+  if(!item) return;
+  var sufWrap = btn.parentNode.querySelector('.skin-suffix-row');
+  var h = '';
+  Object.keys(item.tiers).forEach(function(tier){
+    var price = item.tiers[tier];
+    var label = (tier === '시술') ? '선택' : tier;
+    h += '<button type="button" class="skin-btn suffix'+(selTier===tier?' selected':'')+'" title="'+fmtWon(price)+'" onclick="skinToggleTier(\''+cat+'\',\''+name.replace(/'/g,"\\'")+'\',\''+tier+'\',this)">'+label+'</button>';
+  });
+  if(sufWrap) sufWrap.innerHTML = h;
+}
+
+function buildSkinItemHTML(cat, item){
+  var key = skinItemKey(cat, item.name);
+  var selTier = skinSelection[key];
+  var label = item.name + (selTier ? ' · ' + selTier : '');
+  var h = '<div class="skin-item-row">';
+  h += '<button type="button" class="skin-btn direct'+(selTier?' selected':'')+'" onclick="skinToggleItemOpen(\''+cat+'\',\''+item.name.replace(/'/g,"\\'")+'\',this)">'+label+'</button>';
+  h += '<div class="skin-suffix-row"></div>';
+  h += '</div>';
+  return h;
+}
+function buildSkinGroupHTML(cat){
+  var items = SKIN_CATALOG[cat];
+  var html = '<div class="skin-group"><div class="skin-group-title">'+cat+'</div>';
+  items.forEach(function(item){ html += buildSkinItemHTML(cat, item); });
+  html += '</div>';
   return html;
 }
 function buildProcUI(containerId){
-  var h='';
-  Object.keys(PROC_GROUPS).forEach(function(g){h+=buildProcGroupHTML(containerId,g);});
-  document.getElementById(containerId).innerHTML='<div class="skin-grid">'+h+'</div>';
-}
-function procSelectPrefix(containerId,g,pre,btn){
-  var sufWrap=document.getElementById(containerId+'-'+encodeURIComponent(g)+'-suffix');
-  if(btn.classList.contains('viewing')){
-    btn.classList.remove('viewing');
-    sufWrap.innerHTML='';
-    return;
-  }
-  Array.prototype.forEach.call(btn.parentNode.querySelectorAll('button.skin-btn'),function(b){b.classList.remove('viewing');});
-  btn.classList.add('viewing');
-  var suffixes=PROC_GROUPS[g][pre]||[];
-  var h='';
-  suffixes.forEach(function(suf){
-    var label=pre+' '+suf;
-    h+='<button class="skin-btn suffix'+(skinSelection[g]===label?' selected':'')+'" data-group="'+g+'" data-label="'+label+'" onclick="procToggleSuffix(this)">'+suf+'</button>';
-  });
-  sufWrap.innerHTML=h;
-}
-function procToggleSuffix(btn){
-  var group=btn.getAttribute('data-group');
-  var label=btn.getAttribute('data-label');
-  var nowActive=!btn.classList.contains('selected');
-  Array.prototype.forEach.call(document.querySelectorAll('#skin-p-buttons button[data-group="'+group+'"]'),function(b){b.classList.remove('selected');});
-  if(nowActive){btn.classList.add('selected');skinSelection[group]=label;}
-  else{skinSelection[group]=null;}
+  var h = '';
+  Object.keys(SKIN_CATALOG).forEach(function(cat){ h += buildSkinGroupHTML(cat); });
+  document.getElementById(containerId).innerHTML = '<div class="skin-grid">'+h+'</div>';
 }
 function skinReset(){
-  skinSelection={};
-  rfAmtsChange=false;
+  skinSelection = {};
+  skinDiscount = 0;
+  document.querySelectorAll('.skin-dc-btn').forEach(function(b){ b.classList.remove('selected'); });
   buildProcUI('skin-p-buttons');
-  document.getElementById('skin-result-area').value='';
+  document.getElementById('skin-result-area').value = '';
+  var totalEl = document.getElementById('skin-total-display');
+  if(totalEl) totalEl.textContent = '';
 }
-function skinTodayMD(){var d=new Date();return (d.getMonth()+1)+'/'+d.getDate();}
-function skinGenerate(){
-  var date=skinTodayMD();
-  var lines=[];
-  Object.keys(PROC_GROUPS).forEach(function(g){
-    if(!skinSelection[g]) return;
-    var amts=(g==='RF 시크릿' && rfAmtsChange) ? ' (AMTS로 변경)' : '';
-    var sel=skinSelection[g];
-    var text=(sel.indexOf(g)===0) ? sel : (g+' '+sel);
-    lines.push('* '+date+' '+text+amts+' 결제');
+var skinDiscount = 0;
+function setSkinDiscount(pct, btn){
+  if(skinDiscount === pct){
+    skinDiscount = 0;
+    btn.classList.remove('selected');
+  } else {
+    skinDiscount = pct;
+    document.querySelectorAll('.skin-dc-btn').forEach(function(b){ b.classList.remove('selected'); });
+    btn.classList.add('selected');
+  }
+}
+function skinDiscountedPrice(price){
+  if(!skinDiscount) return price;
+  return Math.round(price * (100 - skinDiscount) / 100);
+}
+function skinShowTotal(){
+  var total = 0;
+  Object.keys(SKIN_CATALOG).forEach(function(cat){
+    SKIN_CATALOG[cat].forEach(function(item){
+      var key = skinItemKey(cat, item.name);
+      var tier = skinSelection[key];
+      if(!tier) return;
+      total += skinDiscountedPrice(item.tiers[tier]);
+    });
   });
-  document.getElementById('skin-result-area').value=lines.join('\n');
+  var el = document.getElementById('skin-total-display');
+  if(el) el.textContent = fmtWon(total);
+}
+function skinTodayMD(){ var d = new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
+function skinGenerate(){
+  var date = skinTodayMD();
+  var lines = [];
+  var handledKeys = {};
+  var dcNote = skinDiscount ? (' ('+skinDiscount+'% DC)') : '';
+
+  var liftItems = SKIN_CATALOG['리프팅'] || [];
+  ['볼뉴머 300샷','볼뉴머 600샷'].forEach(function(baseName){
+    var baseKey = skinItemKey('리프팅', baseName);
+    var baseTier = skinSelection[baseKey];
+    if(!baseTier) return;
+    var addonItem = liftItems.find(function(it){
+      return it.name.indexOf('볼뉴머 + ') === 0 && !!skinSelection[skinItemKey('리프팅', it.name)];
+    });
+    if(!addonItem) return;
+    var addonKey = skinItemKey('리프팅', addonItem.name);
+    var addonTier = skinSelection[addonKey];
+    var baseItem = liftItems.find(function(it){ return it.name === baseName; });
+    var basePrice = skinDiscountedPrice(baseItem.tiers[baseTier]);
+    var addonPrice = skinDiscountedPrice(addonItem.tiers[addonTier]);
+    var sum = basePrice + addonPrice;
+    var addonShortName = addonItem.name.replace('볼뉴머 + ', '');
+    lines.push('* '+date+' '+baseName+' + '+addonShortName+' | '+fmtWon(basePrice)+' + '+fmtWon(addonPrice)+' = '+fmtWon(sum)+' 결제'+dcNote);
+    handledKeys[baseKey] = true;
+    handledKeys[addonKey] = true;
+  });
+
+  Object.keys(SKIN_CATALOG).forEach(function(cat){
+    SKIN_CATALOG[cat].forEach(function(item){
+      var key = skinItemKey(cat, item.name);
+      if(handledKeys[key]) return;
+      var tier = skinSelection[key];
+      if(!tier) return;
+      var price = skinDiscountedPrice(item.tiers[tier]);
+      var tierText = (tier === '시술') ? '' : (' '+tier);
+      lines.push('* '+date+' '+item.name+tierText+' | '+fmtWon(price)+' 결제'+dcNote);
+    });
+  });
+  document.getElementById('skin-result-area').value = lines.join('\n');
 }
 
 /* ==================== 전달 탭 (통증 탭 전용) ==================== */
