@@ -128,7 +128,7 @@
     border-bottom:2px solid var(--primary-light);
     letter-spacing:-0.01em;
   }
-  .skin-group-collapsible .skin-group-title{margin:0 0 36px;}
+  .skin-group-collapsible .skin-group-title{margin:0 0 10px;padding-bottom:8px;}
   .skin-group-flat .skin-group-title{margin:0 0 10px;padding-bottom:8px;}
   .skin-group.collapsed .skin-group-title{margin-bottom:0;border-bottom:none;padding-bottom:0;}
   .skin-group.collapsed .skin-group-body{display:none;}
@@ -1913,7 +1913,6 @@ function toggleDeliverCard(ns){ $(elId(ns,'deliver-card')).classList.toggle('col
 
 /* ==================== 복사 버튼 ==================== */
 document.querySelectorAll('[data-copy]').forEach(btn=>{
-  const orig = btn.textContent;
   let revertTimer = null;
   btn.addEventListener('click', async ()=>{
     const el = $(btn.dataset.copy);
@@ -1924,11 +1923,9 @@ document.querySelectorAll('[data-copy]').forEach(btn=>{
       document.execCommand('copy');
     }
     if(revertTimer) clearTimeout(revertTimer);
-    btn.textContent = '성공';
     btn.style.background = 'var(--primary)';
     btn.style.color = '#fff';
     revertTimer = setTimeout(()=>{
-      btn.textContent = orig;
       btn.style.background = '';
       btn.style.color = '';
       revertTimer = null;
@@ -2326,6 +2323,32 @@ function catGenerate(tabns, resultId){
       lines.push('* '+date+' '+baseName+' + '+addonShortName+' | '+fmtWon(basePrice)+' + '+fmtWon(addonPrice)+' = '+fmtWon(sum)+' \uacb0\uc81c'+dcNote);
       handledKeys[baseKey] = true;
       handledKeys[addonKey] = true;
+    });
+
+    var upgradeName = '진정 관리 업그레이드';
+    Object.keys(cfg.catalog).forEach(function(cat){
+      var items = cfg.catalog[cat];
+      var upgradeItem = items.find(function(it){ return it.name === upgradeName; });
+      if(!upgradeItem) return;
+      var upgradeKey = catKey(cat, upgradeName);
+      if(handledKeys[upgradeKey]) return;
+      var upgradeTier = sel[upgradeKey];
+      if(!upgradeTier) return;
+      var otherItem = items.find(function(it){
+        if(it.name === upgradeName) return false;
+        var k = catKey(cat, it.name);
+        return !handledKeys[k] && !!sel[k];
+      });
+      if(!otherItem) return;
+      var otherKey = catKey(cat, otherItem.name);
+      var otherTier = sel[otherKey];
+      var otherPrice = catDiscountedPrice(tabns, otherItem.tiers[otherTier]);
+      var upgradePrice = catDiscountedPrice(tabns, upgradeItem.tiers[upgradeTier]);
+      var sum = otherPrice + upgradePrice;
+      var otherTierText = (otherTier === '시술') ? '' : (' '+otherTier);
+      lines.push('* '+date+' '+otherItem.name+otherTierText+' + '+upgradeName+' '+upgradeTier+' | '+fmtWon(otherPrice)+' + '+fmtWon(upgradePrice)+' = '+fmtWon(sum)+' 결제'+dcNote);
+      handledKeys[otherKey] = true;
+      handledKeys[upgradeKey] = true;
     });
   }
 
