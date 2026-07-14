@@ -2000,7 +2000,10 @@ var DV_COLORS = {
   '추나':'#A67C52','추나(환자복)':'#A67C52','충격파':'#1A1D29','BC':'#5B6B81'
 };
 var DV_FORM = { '핫팩':['부위'], 'I':['부위'], '약침':['종류','cc','개수'] };
-var DV_DEFAULT = ['BC','습부2','침(전)','I','핫팩'];
+var DV_DEFAULT = {
+  main: ['BC','습부2','침(전)','I','핫팩'],
+  ta:   ['추나','습부2','침(전)','I','핫팩','약침']
+};
 var DV_CHIM_BASES = ['침','침(전)'];
 var DV_CHIM_POS = ['앞침','엎침','옆침/좌','옆침/우'];
 var DV_EXCLUSIVE = ['습부1','습부2','건부'];
@@ -2047,7 +2050,11 @@ function dvRemove(ns, id){
 }
 function dvInit(ns){
   DVSTATE[ns].treatments = [];
-  DV_DEFAULT.forEach(function(name){ dvInsertSorted(ns, { id:dvNewId(ns), base:name, extra:{} }); });
+  DV_DEFAULT[ns].forEach(function(name){
+    var extra = {};
+    if(ns === 'ta' && name === '약침'){ extra = {'종류':'중성어혈', 'cc':'0.5CC', '개수':'1'}; }
+    dvInsertSorted(ns, { id:dvNewId(ns), base:name, extra:extra });
+  });
   dvRender(ns);
 }
 function dvReset(ns){
