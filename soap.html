@@ -473,7 +473,7 @@
   <div class="two-col">
     <div class="col-left">
       <div class="card">
-        <div class="card-header"><span class="step-badge">1</span>녹음</div>
+        <div class="card-header"><span class="step-badge">1</span>입력</div>
         <div class="tabs">
           <button class="tab-btn active" data-tab="text" data-ns="main">직접 입력</button>
           <button class="tab-btn" data-tab="record" data-ns="main">직접 녹음</button>
@@ -615,7 +615,7 @@
   <div class="two-col">
     <div class="col-left">
       <div class="card">
-        <div class="card-header"><span class="step-badge">1</span>녹음</div>
+        <div class="card-header"><span class="step-badge">1</span>입력</div>
         <div class="tabs">
           <button class="tab-btn active" data-tab="text" data-ns="ta">직접 입력</button>
           <button class="tab-btn" data-tab="record" data-ns="ta">직접 녹음</button>
@@ -646,7 +646,7 @@
       <textarea id="ta-soaOutput" style="display:none;"></textarea>
 
       <div class="card">
-        <div class="card-header"><span class="step-badge">3</span>T/A</div>
+        <div class="card-header"><span class="step-badge">2</span>T/A</div>
         <div id="ta-taBody" class="btn-toggle-row"></div>
         <div class="ta-fac-row" id="ta-facRow"></div>
       </div>
@@ -654,12 +654,12 @@
 
     <div class="col-right">
       <div class="card">
-        <div class="card-header"><span class="step-badge">4</span>변증</div>
+        <div class="card-header"><span class="step-badge">3</span>변증</div>
         <div id="ta-bijeungBody" class="btn-toggle-row"></div>
       </div>
       <div class="card">
         <div class="card-header" style="justify-content:space-between;">
-          <span style="display:flex;align-items:center;"><span class="step-badge">5</span>P</span>
+          <span style="display:flex;align-items:center;"><span class="step-badge">4</span>P</span>
           <button class="p-reset-btn" onclick="resetPBody('ta')" style="height:34px;padding:0 14px;border-radius:17px;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;">초기화</button>
         </div>
         <div id="ta-pBody"></div>
@@ -669,7 +669,7 @@
     <div class="col-cq">
       <div class="card cq-card" id="ta-deliver-card">
         <div class="card-header cq-toggle-header" onclick="toggleDeliverCard('ta')">
-          <span class="step-badge">6</span>전달
+          <span class="step-badge">5</span>전달
           <span class="cq-chevron" id="ta-deliver-chevron"></span>
         </div>
         <div id="ta-deliver-body" class="cq-body">
@@ -701,7 +701,7 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="step-badge">8</span>스크립트</div>
+    <div class="card-header"><span class="step-badge">7</span>스크립트</div>
     <textarea id="ta-scriptOutput" style="min-height:160px;" placeholder="녹음한 내용이 추출됩니다"></textarea>
     <div class="copy-btn-row"><button class="btn-secondary" data-copy="ta-scriptOutput">복사</button></div>
   </div>
@@ -982,15 +982,13 @@ function activeTabOf(ns){
 }
 
 async function runGenerate(ns){
-  const apiKey = apiKeyInput.value.trim();
-  if(!apiKey){ alert('Gemini API 키를 먼저 입력하고 저장해주세요.'); return; }
-
   const activeTab = activeTabOf(ns);
   let sourceBlob = null;
   let directText = '';
+  let skipAI = false;
   if(activeTab === 'text'){
     directText = $(elId(ns,'directTextInput')).value.trim();
-    if(!directText){ alert('진료 내용을 입력해주세요.'); return; }
+    if(!directText) skipAI = true;
   } else if(activeTab === 'upload'){
     const f = $(elId(ns,'audioFileInput')).files[0];
     if(!f){ alert('오디오 파일을 선택해주세요.'); return; }
@@ -1004,8 +1002,20 @@ async function runGenerate(ns){
   const btn = $(elId(ns,'combineBtn'));
   const statusEl = $(elId(ns,'statusMsg'));
   const warnEl = $(elId(ns,'chartWarn'));
-  btn.disabled = true;
   warnEl.textContent = '';
+
+  if(skipAI){
+    $(elId(ns,'soaOutput')).value = '';
+    $(elId(ns,'scriptOutput')).value = '';
+    statusEl.textContent = '입력 내용이 없어 P 항목만 생성했습니다.';
+    combineChart(ns);
+    return;
+  }
+
+  const apiKey = apiKeyInput.value.trim();
+  if(!apiKey){ alert('Gemini API 키를 먼저 입력하고 저장해주세요.'); return; }
+
+  btn.disabled = true;
 
   try{
     let base64Audio = null;
@@ -1723,46 +1733,49 @@ function chartFooter(){
 }
 function combineChart(ns){
   let soa = $(elId(ns,'soaOutput')).value;
+  const hasSoa = soa.trim() !== '';
   let lines = soa.split('\n');
 
-  const taBlock = getTABlock(ns);
-  if(taBlock){
-    let sIdx = -1, insertAt = -1;
-    for(let i=0;i<lines.length;i++){
-      if(lines[i].trim() === 'S)'){ sIdx = i; continue; }
+  if(hasSoa){
+    const taBlock = getTABlock(ns);
+    if(taBlock){
+      let sIdx = -1, insertAt = -1;
+      for(let i=0;i<lines.length;i++){
+        if(lines[i].trim() === 'S)'){ sIdx = i; continue; }
+        if(sIdx >= 0){
+          const t = lines[i].trim();
+          if(/^(O\/S|S\/H|P\/H|F\/H)/.test(t) || t === 'O)'){ insertAt = i; break; }
+        }
+      }
       if(sIdx >= 0){
-        const t = lines[i].trim();
-        if(/^(O\/S|S\/H|P\/H|F\/H)/.test(t) || t === 'O)'){ insertAt = i; break; }
+        if(insertAt === -1) insertAt = lines.length;
+        let at = insertAt;
+        while(at-1 > sIdx && lines[at-1].trim() === '') at--;
+        lines.splice(at, 0, taBlock);
       }
     }
-    if(sIdx >= 0){
-      if(insertAt === -1) insertAt = lines.length;
-      let at = insertAt;
-      while(at-1 > sIdx && lines[at-1].trim() === '') at--;
-      lines.splice(at, 0, taBlock);
-    }
-  }
 
-  const bijeungLine = getBijeungLine(ns);
-  if(bijeungLine){
-    let aIdx = -1;
-    for(let i=0;i<lines.length;i++){ if(lines[i].trim() === 'A)'){ aIdx = i; break; } }
-    if(aIdx >= 0){
-      let insertAt = lines.length;
-      for(let i=aIdx+1;i<lines.length;i++){
-        const t = lines[i].trim();
-        if(t === '' || /^[SOAP]\)/.test(t) || t.startsWith('[SCRIPT]')){ insertAt = i; break; }
+    const bijeungLine = getBijeungLine(ns);
+    if(bijeungLine){
+      let aIdx = -1;
+      for(let i=0;i<lines.length;i++){ if(lines[i].trim() === 'A)'){ aIdx = i; break; } }
+      if(aIdx >= 0){
+        let insertAt = lines.length;
+        for(let i=aIdx+1;i<lines.length;i++){
+          const t = lines[i].trim();
+          if(t === '' || /^[SOAP]\)/.test(t) || t.startsWith('[SCRIPT]')){ insertAt = i; break; }
+        }
+        lines.splice(insertAt, 0, bijeungLine);
+      } else {
+        lines.push('', 'A)', bijeungLine);
       }
-      lines.splice(insertAt, 0, bijeungLine);
-    } else {
-      lines.push('', 'A)', bijeungLine);
     }
+    soa = lines.join('\n');
+    soa = normalizeSectionBreaks(soa);
   }
 
-  soa = lines.join('\n');
-  soa = normalizeSectionBreaks(soa);
   const p = buildPText(ns);
-  let full = `${soa}\n\n${p}\n\n${chartFooter()}`;
+  let full = hasSoa ? `${soa}\n\n${p}\n\n${chartFooter()}` : `${p}\n\n${chartFooter()}`;
   full = uppercaseEnglish(full);
   const out = $(elId(ns,'fullOutput'));
   out.value = full;
