@@ -495,6 +495,26 @@
   }
   .chart-textarea{min-height:340px;height:auto;overflow-y:hidden;}
   .ta-fac-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;}
+  .chart-btn-row{display:flex;gap:8px;margin-top:8px;}
+  .chart-btn-row .btn-primary{margin-top:0;}
+  .btn-secondary-wide{
+    background:var(--primary-light);
+    color:var(--primary);
+    padding:15px 16px;
+    border-radius:14px;
+    font-size:15px;
+    font-weight:700;
+    width:100%;
+    margin-top:8px;
+  }
+  .btn-secondary-wide:hover{background:#dce9ff;}
+  .skin-vat-btn{
+    height:34px;padding:0 14px;border-radius:10px;border:none;
+    background:#f2f4f6;color:var(--text);font-size:12px;font-weight:700;
+    cursor:pointer;font-family:inherit;
+  }
+  .skin-vat-btn:hover{background:#e5e8eb;}
+  .skin-vat-btn.selected{background:var(--primary);color:#fff;}
 </style>
 </head>
 <body>
@@ -615,7 +635,10 @@
       <span style="display:flex;align-items:center;"><span class="step-badge">6</span>차트</span>
       <span class="chart-warn-inline" id="main-chartWarn"></span>
     </div>
-    <button class="btn-primary" id="main-combineBtn">생성하기</button>
+    <div class="chart-btn-row">
+      <button class="btn-primary" id="main-combineBtn" style="flex:1;">생성하기</button>
+      <button class="btn-secondary-wide" id="main-skeletonBtn" style="flex:1;">P차트만 + 템플릿</button>
+    </div>
     <div class="status-msg" id="main-statusMsg"></div>
     <textarea id="main-fullOutput" class="chart-textarea"></textarea>
     <div class="copy-btn-row"><button class="btn-secondary" data-copy="main-fullOutput">복사</button></div>
@@ -733,7 +756,10 @@
       <span style="display:flex;align-items:center;"><span class="step-badge">6</span>차트</span>
       <span class="chart-warn-inline" id="ta-chartWarn"></span>
     </div>
-    <button class="btn-primary" id="ta-combineBtn">생성하기</button>
+    <div class="chart-btn-row">
+      <button class="btn-primary" id="ta-combineBtn" style="flex:1;">생성하기</button>
+      <button class="btn-secondary-wide" id="ta-skeletonBtn" style="flex:1;">P차트만 + 템플릿</button>
+    </div>
     <div class="status-msg" id="ta-statusMsg"></div>
     <textarea id="ta-fullOutput" class="chart-textarea"></textarea>
     <div class="copy-btn-row"><button class="btn-secondary" data-copy="ta-fullOutput">복사</button></div>
@@ -830,6 +856,7 @@
         <div class="copy-btn-row" style="justify-content:space-between;gap:8px;">
           <div style="display:flex;align-items:center;gap:10px;">
             <button class="btn-secondary" onclick="catShowTotal('skin','skin-total-display')">합계</button>
+            <button type="button" class="skin-vat-btn" id="skin-vat-btn" onclick="catToggleVat('skin',this,'skin-total-display')">VAT 10%</button>
             <span id="skin-total-display" style="font-size:12.5px;font-weight:700;color:var(--primary-dark);"></span>
           </div>
           <div style="display:flex;gap:8px;">
@@ -1088,10 +1115,41 @@ A)
 
 실제 대화에 없는 내용은 지어내지 말고, 규칙에 따라 빈칸 또는 #으로 채우세요. A) 아래에는 진단 설명 한 줄만 쓰고 다른 문구는 추가하지 마세요.`;
 
+/* P차트만 버튼에 사용하는 빈 S/O/A 뼈대 (직접 입력용) */
+const SOA_SKELETON = `S)
+C/C : 
+- 
+
+O/S : 
+- 검사 : 
+- 치료 : 
+
+S/H : 
+P/H : 
+F/H : 
+
+O)
+TD : 
+ROM : 
+
+A)
+`;
+
 /* ==================== 생성 (분석+결합 통합) ==================== */
 function activeTabOf(ns){
   const b = document.querySelector(`.tab-btn.active[data-ns="${ns}"]`);
   return b ? b.dataset.tab : 'text';
+}
+
+/* P차트만: AI 호출 없이 빈 S/O/A 뼈대 + 현재 입력된 P 섹션만 결합 */
+function generateSkeletonChart(ns){
+  $(elId(ns,'soaOutput')).value = SOA_SKELETON;
+  $(elId(ns,'scriptOutput')).value = '';
+  const warnEl = $(elId(ns,'chartWarn'));
+  if(warnEl) warnEl.textContent = '';
+  const statusEl = $(elId(ns,'statusMsg'));
+  if(statusEl) statusEl.textContent = 'P차트만 생성했습니다. S/O/A는 직접 입력해주세요.';
+  combineChart(ns);
 }
 
 async function runGenerate(ns){
@@ -1902,6 +1960,10 @@ function combineChart(ns){
 $('main-combineBtn').addEventListener('click', ()=>runGenerate('main'));
 $('ta-combineBtn').addEventListener('click', ()=>runGenerate('ta'));
 
+/* P차트만 버튼: AI 호출 없이 빈 S/O/A 뼈대 + P만 결합 */
+$('main-skeletonBtn').addEventListener('click', ()=>generateSkeletonChart('main'));
+$('ta-skeletonBtn').addEventListener('click', ()=>generateSkeletonChart('ta'));
+
 /* 차트 textarea 자동 높이 (스크롤 대신 통으로 표시) */
 ['main-fullOutput','ta-fullOutput'].forEach(id=>{
   const el = $(id);
@@ -2129,6 +2191,13 @@ var DIET_CATALOG = {
 };
 
 function fmtWon(n){ return Number(n).toLocaleString() + '\uc6d0'; }
+function fmtPriceTooltip(tabns, price){
+  if(tabns === 'skin'){
+    var vatPrice = Math.round(price * 1.1);
+    return fmtWon(price) + ' / VAT\ud3ec\ud568 ' + fmtWon(vatPrice);
+  }
+  return fmtWon(price);
+}
 function catKey(cat, name){ return cat + '__' + name; }
 
 var CAT_CONFIG = {
@@ -2138,6 +2207,7 @@ var CAT_CONFIG = {
 };
 var CATSEL = { skin:{}, nc:{}, diet:{} };
 var CATDC  = { skin:0, nc:0, diet:0 };
+var CATVAT = { skin:false, nc:false, diet:false };
 
 function catToggleTier(tabns, cat, name, tier, btn){
   var sel = CATSEL[tabns];
@@ -2188,7 +2258,7 @@ function catToggleItemOpen(tabns, cat, name, btn){
   Object.keys(item.tiers).forEach(function(tier){
     var price = item.tiers[tier];
     var label = (tier === '\uc2dc\uc220') ? '\uc120\ud0dd' : tier;
-    h += '<button type="button" class="skin-btn suffix'+(selTier===tier?' selected':'')+'" data-price="'+fmtWon(price)+'" onclick="catToggleTier(\''+tabns+'\',\''+cat+'\',\''+name.replace(/'/g,"\\'")+'\',\''+tier+'\',this)">'+label+'</button>';
+    h += '<button type="button" class="skin-btn suffix'+(selTier===tier?' selected':'')+'" data-price="'+fmtPriceTooltip(tabns, price)+'" onclick="catToggleTier(\''+tabns+'\',\''+cat+'\',\''+name.replace(/'/g,"\\'")+'\',\''+tier+'\',this)">'+label+'</button>';
   });
   if(sufWrap) sufWrap.innerHTML = h;
 }
@@ -2228,7 +2298,7 @@ function buildCatItemHTML(tabns, cat, item){
   if(tierKeys.length === 1){
     var onlyTier = tierKeys[0];
     var price = item.tiers[onlyTier];
-    h += '<button type="button" class="skin-btn direct'+(selTier?' selected':'')+'" data-price="'+fmtWon(price)+'" onclick="catToggleSingleTier(\''+tabns+'\',\''+cat+'\',\''+item.name.replace(/'/g,"\\'")+'\',\''+onlyTier+'\',this)">'+item.name+'</button>';
+    h += '<button type="button" class="skin-btn direct'+(selTier?' selected':'')+'" data-price="'+fmtPriceTooltip(tabns, price)+'" onclick="catToggleSingleTier(\''+tabns+'\',\''+cat+'\',\''+item.name.replace(/'/g,"\\'")+'\',\''+onlyTier+'\',this)">'+item.name+'</button>';
   } else {
     h += '<button type="button" class="skin-btn direct'+(selTier?' selected':'')+'" onclick="catToggleItemOpen(\''+tabns+'\',\''+cat+'\',\''+item.name.replace(/'/g,"\\'")+'\',this)">'+item.name+'</button>';
     h += '<div class="skin-suffix-row"></div>';
@@ -2278,6 +2348,12 @@ function catDiscountedPrice(tabns, price){
   if(!pct) return price;
   return Math.round(price * (100 - pct) / 100);
 }
+/* VAT 토글 (현재는 피부 탭 전용으로 사용: 피부시술은 VAT 10% 별도) */
+function catToggleVat(tabns, btn, totalId){
+  CATVAT[tabns] = !CATVAT[tabns];
+  if(btn) btn.classList.toggle('selected', CATVAT[tabns]);
+  catShowTotal(tabns, totalId);
+}
 function catShowTotal(tabns, totalId){
   var cfg = CAT_CONFIG[tabns];
   var sel = CATSEL[tabns];
@@ -2290,8 +2366,10 @@ function catShowTotal(tabns, totalId){
       total += catDiscountedPrice(tabns, item.tiers[tier]);
     });
   });
+  var vatApplied = CATVAT[tabns];
+  if(vatApplied) total = Math.round(total * 1.1);
   var el = document.getElementById(totalId);
-  if(el) el.textContent = fmtWon(total);
+  if(el) el.textContent = fmtWon(total) + (vatApplied ? ' (VAT 10% 포함)' : '');
 }
 function catTodayMD(){ var d = new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
 
@@ -2363,16 +2441,22 @@ function catGenerate(tabns, resultId){
       lines.push('* '+date+' '+item.name+tierText+' | '+fmtWon(price)+' \uacb0\uc81c'+dcNote);
     });
   });
+  if(CATVAT[tabns]){
+    lines.push('* VAT 10% 별도');
+  }
   document.getElementById(resultId).value = lines.join('\n');
 }
 
 function catReset(tabns, containerId, resultId, totalId){
   CATSEL[tabns] = {};
   CATDC[tabns] = 0;
+  CATVAT[tabns] = false;
   var row = document.getElementById(tabns+'-dc-row');
   if(row){
     Array.prototype.forEach.call(row.querySelectorAll('.skin-dc-btn'), function(b){ b.classList.remove('selected'); });
   }
+  var vatBtn = document.getElementById(tabns+'-vat-btn');
+  if(vatBtn) vatBtn.classList.remove('selected');
   buildCatUI(tabns, containerId);
   document.getElementById(resultId).value = '';
   var totalEl = document.getElementById(totalId);
