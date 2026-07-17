@@ -495,8 +495,8 @@
   }
   .chart-textarea{min-height:340px;height:auto;overflow-y:hidden;}
   .ta-fac-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;}
-  .chart-btn-row{display:flex;gap:8px;margin-top:8px;}
-  .chart-btn-row .btn-primary{margin-top:0;}
+  .chart-btn-row{display:flex;gap:8px;margin-top:8px;align-items:stretch;}
+  .chart-btn-row .btn-primary, .chart-btn-row .btn-secondary-wide{margin-top:0;width:auto;flex:1 1 0;}
   .btn-secondary-wide{
     background:var(--primary-light);
     color:var(--primary);
@@ -636,8 +636,8 @@
       <span class="chart-warn-inline" id="main-chartWarn"></span>
     </div>
     <div class="chart-btn-row">
+      <button class="btn-secondary-wide" id="main-skeletonBtn" style="flex:1;">템플릿 + P차트</button>
       <button class="btn-primary" id="main-combineBtn" style="flex:1;">생성하기</button>
-      <button class="btn-secondary-wide" id="main-skeletonBtn" style="flex:1;">P차트만 + 템플릿</button>
     </div>
     <div class="status-msg" id="main-statusMsg"></div>
     <textarea id="main-fullOutput" class="chart-textarea"></textarea>
@@ -757,8 +757,8 @@
       <span class="chart-warn-inline" id="ta-chartWarn"></span>
     </div>
     <div class="chart-btn-row">
+      <button class="btn-secondary-wide" id="ta-skeletonBtn" style="flex:1;">템플릿 + P차트</button>
       <button class="btn-primary" id="ta-combineBtn" style="flex:1;">생성하기</button>
-      <button class="btn-secondary-wide" id="ta-skeletonBtn" style="flex:1;">P차트만 + 템플릿</button>
     </div>
     <div class="status-msg" id="ta-statusMsg"></div>
     <textarea id="ta-fullOutput" class="chart-textarea"></textarea>
@@ -1121,6 +1121,9 @@ A)
 
 실제 대화에 없는 내용은 지어내지 말고, 규칙에 따라 빈칸 또는 #으로 채우세요. A) 아래에는 진단 설명 한 줄만 쓰고 다른 문구는 추가하지 마세요.`;
 
+/* A) 섹션 공통 고정 문구 (AI 생성/템플릿 공용) */
+const FIXED_A_EXPLANATION = '- 초기 통증 증가 가능성 및 경과에 따라서 추가 검사 필요성 설명함\n- 추정 진단, 치료 계획, 치료에 따른 효과 및 예상되는 부작용에 대해서 설명함';
+
 /* P차트만 버튼에 사용하는 빈 S/O/A 뼈대 (직접 입력용) */
 const SOA_SKELETON = `S)
 C/C : 
@@ -1139,6 +1142,8 @@ TD :
 ROM : 
 
 A)
+으로 추정됨을 환자에게 설명함
+${FIXED_A_EXPLANATION}
 `;
 
 /* ==================== 생성 (분석+결합 통합) ==================== */
@@ -1277,8 +1282,7 @@ async function runGenerate(ns){
     let aMatch = rest.split('[SCRIPT]')[0].trim();
     const scriptMatch = (rest.split('[SCRIPT]')[1] || '').trim();
 
-    const fixedAExplanation = '- 초기 통증 증가 가능성 및 경과에 따라서 추가 검사 필요성 설명함\n- 추정 진단, 치료 계획, 치료에 따른 효과 및 예상되는 부작용에 대해서 설명함';
-    aMatch = aMatch ? `${aMatch}\n${fixedAExplanation}` : fixedAExplanation;
+    aMatch = aMatch ? `${aMatch}\n${FIXED_A_EXPLANATION}` : FIXED_A_EXPLANATION;
 
     $(elId(ns,'soaOutput')).value = `${sMatch}\n\nO)\n${oMatch}\n\nA)\n${aMatch}`;
     $(elId(ns,'scriptOutput')).value = scriptMatch;
@@ -1415,10 +1419,9 @@ function taFacilitySentence(){
   }
   return `- 이번 사고로 인한 ${fac} 치료(+) / 침(${TAFAC.침?'+':'-'}) 추나(${TAFAC.추나?'+':'-'}) ${hanyakText}`;
 }
-function getTABlock(ns){
+function getTASymptomLine(ns){
   if(ns !== 'ta') return '';
-  const chk = '- ' + TA_ITEMS.map(it => it.key + '(' + (TASTATE.ta[it.key]?'+':'-') + ')').join(' ');
-  return [chk, '- 검사 : ', '- 치료 : ', taFacilitySentence()].join('\n');
+  return '- ' + TA_ITEMS.map(it => it.key + '(' + (TASTATE.ta[it.key]?'+':'-') + ')').join(' ');
 }
 
 /* ==================== P 섹션 (ns별) ==================== */
@@ -1906,10 +1909,10 @@ function normalizeSectionBreaks(text){
   }
   return out.join('\n');
 }
-function chartFooter(){
+function chartHeader(){
   const now = new Date();
   const md = (now.getMonth()+1) + '/' + now.getDate();
-  return '----------------------------------------------------------------------\n* ' + md;
+  return '* ' + md + '\n----------------------------------------------------------------------';
 }
 function combineChart(ns){
   let soa = $(elId(ns,'soaOutput')).value;
@@ -1917,21 +1920,41 @@ function combineChart(ns){
   let lines = soa.split('\n');
 
   if(hasSoa){
-    const taBlock = getTABlock(ns);
-    if(taBlock){
-      let sIdx = -1, insertAt = -1;
-      for(let i=0;i<lines.length;i++){
-        if(lines[i].trim() === 'S)'){ sIdx = i; continue; }
+    if(ns === 'ta'){
+      const symptomLine = getTASymptomLine(ns);
+      if(symptomLine){
+        let sIdx = -1, insertAt = -1;
+        for(let i=0;i<lines.length;i++){
+          if(lines[i].trim() === 'S)'){ sIdx = i; continue; }
+          if(sIdx >= 0){
+            const t = lines[i].trim();
+            if(/^(O\/S|S\/H|P\/H|F\/H)/.test(t) || t === 'O)'){ insertAt = i; break; }
+          }
+        }
         if(sIdx >= 0){
-          const t = lines[i].trim();
-          if(/^(O\/S|S\/H|P\/H|F\/H)/.test(t) || t === 'O)'){ insertAt = i; break; }
+          if(insertAt === -1) insertAt = lines.length;
+          let at = insertAt;
+          while(at-1 > sIdx && lines[at-1].trim() === '') at--;
+          lines.splice(at, 0, symptomLine);
         }
       }
-      if(sIdx >= 0){
-        if(insertAt === -1) insertAt = lines.length;
-        let at = insertAt;
-        while(at-1 > sIdx && lines[at-1].trim() === '') at--;
-        lines.splice(at, 0, taBlock);
+
+      const facilityLine = taFacilitySentence();
+      if(facilityLine){
+        let osIdx = -1;
+        for(let i=0;i<lines.length;i++){ if(/^O\/S/.test(lines[i].trim())){ osIdx = i; break; } }
+        if(osIdx >= 0){
+          let blockEnd = lines.length;
+          for(let i=osIdx+1;i<lines.length;i++){
+            const t = lines[i].trim();
+            if(t === '' || /^(S\/H|P\/H|F\/H)/.test(t) || t === 'O)'){ blockEnd = i; break; }
+          }
+          let insertPos = blockEnd;
+          for(let i=osIdx+1;i<blockEnd;i++){
+            if(/^-\s*치료\s*:/.test(lines[i].trim())){ insertPos = i+1; }
+          }
+          lines.splice(insertPos, 0, facilityLine);
+        }
       }
     }
 
@@ -1955,7 +1978,7 @@ function combineChart(ns){
   }
 
   const p = buildPText(ns);
-  let full = hasSoa ? `${soa}\n\n${p}\n\n${chartFooter()}` : `${p}\n\n${chartFooter()}`;
+  let full = hasSoa ? `${chartHeader()}\n\n${soa}\n\n${p}` : `${chartHeader()}\n\n${p}`;
   full = uppercaseEnglish(full);
   const out = $(elId(ns,'fullOutput'));
   out.value = full;
