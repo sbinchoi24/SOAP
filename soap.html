@@ -508,13 +508,6 @@
     margin-top:8px;
   }
   .btn-secondary-wide:hover{background:#dce9ff;}
-  .skin-vat-btn{
-    height:34px;padding:0 14px;border-radius:10px;border:none;
-    background:#f2f4f6;color:var(--text);font-size:12px;font-weight:700;
-    cursor:pointer;font-family:inherit;
-  }
-  .skin-vat-btn:hover{background:#e5e8eb;}
-  .skin-vat-btn.selected{background:var(--primary);color:#fff;}
 </style>
 </head>
 <body>
@@ -856,7 +849,6 @@
         <div class="copy-btn-row" style="justify-content:space-between;gap:8px;">
           <div style="display:flex;align-items:center;gap:10px;">
             <button class="btn-secondary" onclick="catShowTotal('skin','skin-total-display')">합계</button>
-            <button type="button" class="skin-vat-btn" id="skin-vat-btn" onclick="catToggleVat('skin',this,'skin-total-display')">VAT 10%</button>
             <span id="skin-total-display" style="font-size:12.5px;font-weight:700;color:var(--primary-dark);"></span>
           </div>
           <div style="display:flex;gap:8px;">
@@ -2236,7 +2228,6 @@ var CAT_CONFIG = {
 };
 var CATSEL = { skin:{}, nc:{}, diet:{} };
 var CATDC  = { skin:0, nc:0, diet:0 };
-var CATVAT = { skin:false, nc:false, diet:false };
 
 function catToggleTier(tabns, cat, name, tier, btn){
   var sel = CATSEL[tabns];
@@ -2377,11 +2368,11 @@ function catDiscountedPrice(tabns, price){
   if(!pct) return price;
   return Math.round(price * (100 - pct) / 100);
 }
-/* VAT 토글 (현재는 피부 탭 전용으로 사용: 피부시술은 VAT 10% 별도) */
-function catToggleVat(tabns, btn, totalId){
-  CATVAT[tabns] = !CATVAT[tabns];
-  if(btn) btn.classList.toggle('selected', CATVAT[tabns]);
-  catShowTotal(tabns, totalId);
+/* 할인 적용 + (피부 탭인 경우) VAT 10% 자동 반영된 최종 결제 금액 */
+function catFinalPrice(tabns, price){
+  var p = catDiscountedPrice(tabns, price);
+  if(tabns === 'skin') p = Math.round(p * 1.1);
+  return p;
 }
 function catShowTotal(tabns, totalId){
   var cfg = CAT_CONFIG[tabns];
@@ -2392,13 +2383,11 @@ function catShowTotal(tabns, totalId){
       var key = catKey(cat, item.name);
       var tier = sel[key];
       if(!tier) return;
-      total += catDiscountedPrice(tabns, item.tiers[tier]);
+      total += catFinalPrice(tabns, item.tiers[tier]);
     });
   });
-  var vatApplied = CATVAT[tabns];
-  if(vatApplied) total = Math.round(total * 1.1);
   var el = document.getElementById(totalId);
-  if(el) el.textContent = fmtWon(total) + (vatApplied ? ' (VAT 10% 포함)' : '');
+  if(el) el.textContent = fmtWon(total) + (tabns === 'skin' ? ' (VAT 10% 포함)' : '');
 }
 function catTodayMD(){ var d = new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
 
@@ -2423,8 +2412,8 @@ function catGenerate(tabns, resultId){
       var addonKey = catKey('\ub9ac\ud504\ud305', addonItem.name);
       var addonTier = sel[addonKey];
       var baseItem = liftItems.find(function(it){ return it.name === baseName; });
-      var basePrice = catDiscountedPrice(tabns, baseItem.tiers[baseTier]);
-      var addonPrice = catDiscountedPrice(tabns, addonItem.tiers[addonTier]);
+      var basePrice = catFinalPrice(tabns, baseItem.tiers[baseTier]);
+      var addonPrice = catFinalPrice(tabns, addonItem.tiers[addonTier]);
       var sum = basePrice + addonPrice;
       var addonShortName = addonItem.name.replace('\ubcfc\ub274\uba38 + ', '');
       lines.push('* '+date+' '+baseName+' + '+addonShortName+' | '+fmtWon(basePrice)+' + '+fmtWon(addonPrice)+' = '+fmtWon(sum)+' \uacb0\uc81c'+dcNote);
@@ -2449,8 +2438,8 @@ function catGenerate(tabns, resultId){
       if(!otherItem) return;
       var otherKey = catKey(cat, otherItem.name);
       var otherTier = sel[otherKey];
-      var otherPrice = catDiscountedPrice(tabns, otherItem.tiers[otherTier]);
-      var upgradePrice = catDiscountedPrice(tabns, upgradeItem.tiers[upgradeTier]);
+      var otherPrice = catFinalPrice(tabns, otherItem.tiers[otherTier]);
+      var upgradePrice = catFinalPrice(tabns, upgradeItem.tiers[upgradeTier]);
       var sum = otherPrice + upgradePrice;
       var otherTierText = (otherTier === '시술') ? '' : (' '+otherTier);
       lines.push('* '+date+' '+otherItem.name+otherTierText+' + '+upgradeName+' '+upgradeTier+' | '+fmtWon(otherPrice)+' + '+fmtWon(upgradePrice)+' = '+fmtWon(sum)+' 결제'+dcNote);
@@ -2465,27 +2454,21 @@ function catGenerate(tabns, resultId){
       if(handledKeys[key]) return;
       var tier = sel[key];
       if(!tier) return;
-      var price = catDiscountedPrice(tabns, item.tiers[tier]);
+      var price = catFinalPrice(tabns, item.tiers[tier]);
       var tierText = (tier === '\uc2dc\uc220') ? '' : (' '+tier);
       lines.push('* '+date+' '+item.name+tierText+' | '+fmtWon(price)+' \uacb0\uc81c'+dcNote);
     });
   });
-  if(CATVAT[tabns]){
-    lines.push('* VAT 10% 별도');
-  }
   document.getElementById(resultId).value = lines.join('\n');
 }
 
 function catReset(tabns, containerId, resultId, totalId){
   CATSEL[tabns] = {};
   CATDC[tabns] = 0;
-  CATVAT[tabns] = false;
   var row = document.getElementById(tabns+'-dc-row');
   if(row){
     Array.prototype.forEach.call(row.querySelectorAll('.skin-dc-btn'), function(b){ b.classList.remove('selected'); });
   }
-  var vatBtn = document.getElementById(tabns+'-vat-btn');
-  if(vatBtn) vatBtn.classList.remove('selected');
   buildCatUI(tabns, containerId);
   document.getElementById(resultId).value = '';
   var totalEl = document.getElementById(totalId);
