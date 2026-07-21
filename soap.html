@@ -877,7 +877,7 @@ function autoGrow(el){
   el.style.height = (el.scrollHeight + 4) + 'px';
 }
 function uppercaseEnglish(text){
-  return String(text||'').replace(/[a-z]/g, c => c.toUpperCase());
+  return String(text || '');
 }
 
 /* ==================== 페이지 전환 ==================== */
@@ -1471,21 +1471,37 @@ function renderTAFac(){
 }
 function taFacilitySentence(){
   const any = TAFAC.침 || TAFAC.추나 || TAFAC.한약;
-  if(!any) return '- 이번 사고로 인한 한의원/한방병원 치료(-)';
+
+  if(!any) return '';
+
   const fac = TAFAC.facility || '한의원';
   let hanyakText = '한약(-)';
+
   if(TAFAC.한약){
     let dur = '';
-    if(TAFAC.hanyakUnknown) dur = '몇일 분인지 모름';
-    else if(TAFAC.hanyakDur === 'custom') dur = (TAFAC.hanyakCustom||'') + '일분';
-    else if(TAFAC.hanyakDur) dur = TAFAC.hanyakDur + '일분';
-    hanyakText = `한약(+${dur ? ', '+dur : ''})`;
+
+    if(TAFAC.hanyakUnknown){
+      dur = '몇일 분인지 모름';
+    } else if(TAFAC.hanyakDur === 'custom'){
+      dur = (TAFAC.hanyakCustom || '') + '일분';
+    } else if(TAFAC.hanyakDur){
+      dur = TAFAC.hanyakDur + '일분';
+    }
+
+    hanyakText = `한약(+${dur ? ', ' + dur : ''})`;
   }
-  return `- 이번 사고로 인한 ${fac} 치료(+) / 침(${TAFAC.침?'+':'-'}) 추나(${TAFAC.추나?'+':'-'}) ${hanyakText}`;
+
+  return `- 이번 사고로 인한 ${fac} 치료(+) / 침(${TAFAC.침 ? '+' : '-'}) 추나(${TAFAC.추나 ? '+' : '-'}) ${hanyakText}`;
 }
 function getTASymptomLine(ns){
   if(ns !== 'ta') return '';
-  return '- ' + TA_ITEMS.map(it => it.key + '(' + (TASTATE.ta[it.key]?'+':'-') + ')').join(' ');
+
+  const hasSelectedSymptom = TA_ITEMS.some(it => TASTATE.ta[it.key]);
+  if(!hasSelectedSymptom) return '';
+
+  return '- ' + TA_ITEMS
+    .map(it => it.key + '(' + (TASTATE.ta[it.key] ? '+' : '-') + ')')
+    .join(' ');
 }
 
 /* ==================== P 섹션 (ns별) ==================== */
