@@ -1087,6 +1087,9 @@ S) 작성 규칙:
 
 C/C는 한 개로 제한하지 않습니다.
 실제 입력에서 서로 다른 주요 통증 부위가 확인되면 모두 작성하세요.
+TA 탭에서 두통, 머리 통증, 어지럼증, 오심, 구토는 근골격계 C/C로 만들지 마세요.
+따라서 Head pain, Headache, Dizziness, Nausea, Vomiting 항목을 ■ C/C로 작성하지 마세요.
+이 증상들은 TA의 H/D/N/V 상태로만 분류하세요.
 
 "C/C"를 한 줄에 단독으로 작성하고, 다음 줄부터 각 증상을 아래 형식으로 작성하세요.
 
@@ -1184,8 +1187,12 @@ ROM : [해당 C/C 부위에서 확인된 움직임별 통증 또는 가동범위
 O)에서는 모든 C/C를 S)에 작성한 순서대로 빠짐없이 반복하세요.
 각 C/C의 TD와 ROM을 다른 부위와 섞지 마세요.
 TD와 ROM 줄은 내용이 없어도 생략하지 말고 반드시 빈칸으로 출력하세요.
-환자가 특정 동작에서 아프다고 말한 것만으로 객관적인 ROM 검사 결과를 추정하지 마세요.
-의사가 직접 움직임을 확인하거나 검사했다는 내용이 있을 때만 ROM에 작성하세요.
+환자가 목, 허리 또는 관절의 특정 움직임에서 통증이 발생한다고 말한 경우 그 내용을 C/C 아래의 증상 설명과 O)의 해당 부위 ROM에 모두 작성하세요.
+예: "고개를 숙일 때 통증"은 C/C 아래에 작성하고, PNP 항목의 ROM에도 "경추 굴곡 시 통증"으로 작성하세요.
+예: "허리를 뒤로 젖힐 때 통증"은 C/C 아래에 작성하고, LBP 항목의 ROM에도 "요추 신전 시 통증"으로 작성하세요.
+"숙이기 힘듦", "젖히기 힘듦", "돌리기 힘듦"처럼 움직임이 어렵다는 표현도 해당 움직임의 ROM 제한으로 작성하세요.
+예: "고개 숙이기 힘듦"은 "경추 굴곡 제한", "허리 뒤로 젖히기 힘듦"은 "요추 신전 제한"으로 작성하세요.
+움직임과 방향이 언급되지 않았다면 임의로 ROM을 추정하지 말고 빈칸으로 두세요.
 
 A)
 [실제 입력을 근거로 한 구체적인 추정 진단명]으로 추정됨을 환자에게 설명함
@@ -1230,7 +1237,27 @@ function activeTabOf(ns){
   return b ? b.dataset.tab : 'text';
 }
 
-function normalizeAIResponse(rawText){
+function syncTASymptomsFromAI(rawText){
+  const text = String(rawText || '');
+  const marker = text.match(/\[TA_FLAGS\]\s*H\(([+-])\)\s*D\(([+-])\)\s*N\(([+-])\)\s*V\(([+-])\)/i);
+
+  if(marker){
+    TASTATE.ta.H = marker[1] === '+';
+    TASTATE.ta.D = marker[2] === '+';
+    TASTATE.ta.N = marker[3] === '+';
+    TASTATE.ta.V = marker[4] === '+';
+  } else {
+    // 모델이 판정 마커를 누락한 경우 실제 문구를 기준으로 보조 판정
+    TASTATE.ta.H = /두통|머리\s*통증|머리가\s*아프|headache|head pain/i.test(text);
+    TASTATE.ta.D = /어지럼|어지러|현훈|dizz/i.test(text);
+    TASTATE.ta.N = /오심|메스꺼|구역감|nausea/i.test(text);
+    TASTATE.ta.V = /구토|토했|토함|vomit/i.test(text);
+  }
+
+  renderTA('ta');
+}
+
+function normalizeAIResponse(rawText, ns){
   let lines = String(rawText || '').replace(/\r/g, '').split('\n');
 
   // 구형 C/C 한 줄 형식을 새 형식으로 보정
@@ -1238,6 +1265,31 @@ function normalizeAIResponse(rawText){
   if(ccLegacyIndex >= 0){
     const complaint = lines[ccLegacyIndex].trim().replace(/^C\/C\s*:\s*/, '');
     lines.splice(ccLegacyIndex, 1, 'C/C', '■ ' + complaint);
+  }
+
+  if(ns === 'ta'){
+    // 내부 판정용 마커는 최종 차트에서 제거
+    lines = lines.filter(line => !/^\s*\[TA_FLAGS\]/i.test(line));
+
+    // 두통·어지럼증 계열은 근골격계 C/C가 아니라 H/D/N/V로만 관리
+    const filtered = [];
+    let skippingHeadGroup = false;
+    for(const line of lines){
+      const t = line.trim();
+      if(/^■\s*(?:Head\s*pain|Headache|머리\s*통증|두통)/i.test(t)){
+        skippingHeadGroup = true;
+        continue;
+      }
+      if(skippingHeadGroup){
+        if(t.startsWith('■') || /^(O\/S|S\/H|P\/H|F\/H)\s*:/.test(t) || /^(O\)|A\)|\[SCRIPT\])$/.test(t)){
+          skippingHeadGroup = false;
+        } else {
+          continue;
+        }
+      }
+      filtered.push(line);
+    }
+    lines = filtered;
   }
 
   // NRS 이외 항목의 #은 빈칸으로, 내용 없는 선택 항목은 줄 자체를 제거
@@ -1373,7 +1425,7 @@ async function runGenerate(ns){
 
     const contentParts = [];
     const tabSpecificPrompt = ns === 'ta'
-      ? `이번 요청은 TA 탭의 교통사고 진료입니다. 사고 발생 시점과 사고 관련 검사·치료를 우선 확인하세요. H/D/N/V 줄은 화면의 수동 체크값으로 별도 삽입되므로 AI 응답에는 만들지 마세요. O)에서는 S)의 모든 C/C를 같은 순서로 반복하고 각 항목 바로 아래에 해당 부위의 TD와 ROM을 작성하세요. 오늘 날짜는 ${PROMPT_CURRENT_DATE}입니다.`
+      ? `이번 요청은 TA 탭의 교통사고 진료입니다. 사고 발생 시점과 사고 관련 검사·치료를 우선 확인하세요. 두통·머리 통증·어지럼증·오심·구토는 Head pain 등의 근골격계 C/C로 만들지 마세요. 대신 실제 내용에 따라 H=두통 또는 머리 통증, D=어지럼증 또는 현훈, N=오심 또는 메스꺼움, V=구토로 판정하세요. [SCRIPT] 바로 앞에 반드시 [TA_FLAGS] H(+) D(-) N(-) V(-) 형식의 판정 줄을 하나 작성하세요. 언급되지 않은 증상은 (-)로 판정하세요. 이 판정 줄은 코드가 화면 버튼 상태와 동기화한 뒤 최종 차트에서는 제거합니다. O)에서는 S)의 모든 근골격계 C/C를 같은 순서로 반복하고 각 항목 바로 아래에 해당 부위의 TD와 ROM을 작성하세요. 환자가 특정 움직임에서 통증이 발생하거나 움직이기 힘들다고 말하면 C/C에만 두지 말고 해당 부위 ROM에도 반드시 변환하여 작성하세요. 예를 들어 고개를 숙일 때 통증은 경추 굴곡 시 통증, 고개 숙이기 힘듦은 경추 굴곡 제한, 허리를 뒤로 젖힐 때 통증은 요추 신전 시 통증, 허리 뒤로 젖히기 힘듦은 요추 신전 제한으로 작성하세요. 오늘 날짜는 ${PROMPT_CURRENT_DATE}입니다.`
       : `이번 요청은 일반 근골격계 진료입니다. 오늘 날짜는 ${PROMPT_CURRENT_DATE}입니다.`;
     if(activeTab === 'text'){
       contentParts.push({text: SOAP_PROMPT});
@@ -1430,7 +1482,8 @@ async function runGenerate(ns){
       throw new Error(msg);
     }
     const rawText = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
-    const text = normalizeAIResponse(rawText);
+    if(ns === 'ta') syncTASymptomsFromAI(rawText);
+    const text = normalizeAIResponse(rawText, ns);
     let sMatch = text.split('O)')[0].trim();
     sMatch = sMatch.replace(/([^\n])\nS\/H :/, '$1\n\nS/H :');
     let rest = text.split('O)')[1] || '';
@@ -1515,6 +1568,7 @@ const TAFAC = {facility:null, 침:false, 추나:false, 한약:false, hanyakDur:n
 function toggleTA(ns, key){
   TASTATE[ns][key] = !TASTATE[ns][key];
   renderTA(ns);
+  if(ns === 'ta' && $('ta-soaOutput') && $('ta-soaOutput').value.trim()) combineChart('ta');
 }
 function renderTA(ns){
   const body = $(elId(ns,'taBody'));
@@ -1525,22 +1579,28 @@ function renderTA(ns){
   }
   if(ns === 'ta') renderTAFac();
 }
-function setTAFac(v){ TAFAC.facility = (TAFAC.facility===v?null:v); renderTAFac(); }
-function toggleTAFacTx(k){ TAFAC[k] = !TAFAC[k]; renderTAFac(); }
+function refreshTACombinedChart(){
+  if($('ta-soaOutput') && $('ta-soaOutput').value.trim()) combineChart('ta');
+}
+function setTAFac(v){ TAFAC.facility = (TAFAC.facility===v?null:v); renderTAFac(); refreshTACombinedChart(); }
+function toggleTAFacTx(k){ TAFAC[k] = !TAFAC[k]; renderTAFac(); refreshTACombinedChart(); }
 function setTAFacDur(d){
   TAFAC.hanyakDur = (TAFAC.hanyakDur===String(d)?null:String(d));
   TAFAC.hanyakUnknown = false;
   renderTAFac();
+  refreshTACombinedChart();
 }
 function toggleTAFacUnknown(){
   TAFAC.hanyakUnknown = !TAFAC.hanyakUnknown;
   if(TAFAC.hanyakUnknown){ TAFAC.hanyakDur = null; TAFAC.hanyakCustom = ''; }
   renderTAFac();
+  refreshTACombinedChart();
 }
 function setTAFacCustom(v){
   TAFAC.hanyakCustom = v;
   TAFAC.hanyakDur = 'custom';
   TAFAC.hanyakUnknown = false;
+  refreshTACombinedChart();
 }
 function renderTAFac(){
   const row = $('ta-facRow');
@@ -1565,7 +1625,7 @@ function renderTAFac(){
 function taFacilitySentence(){
   const any = TAFAC.침 || TAFAC.추나 || TAFAC.한약;
 
-  if(!any) return '';
+  if(!any) return '- 이번 사고로 인한 한의원/한방병원 치료(-)';
 
   const fac = TAFAC.facility || '한의원';
   let hanyakText = '한약(-)';
