@@ -1179,12 +1179,16 @@ P/H : [과거력 또는 기저질환. 없으면 빈칸]
 F/H : [가족력. 없으면 빈칸]
 
 O)
-[C/C가 한 개이면 아래 형식을 한 번, 여러 개이면 S)의 C/C 순서대로 반복]
-■ [S)에 작성한 영문 증상명과 NRS를 그대로 반복]
+[C/C가 한 개이면 ■ 제목을 반복하지 않고 TD와 ROM만 작성]
 TD : [해당 C/C 부위에서 압통이 확인된 근육만 TD(+)로 작성. 없으면 빈칸]
 ROM : [해당 C/C 부위에서 확인된 움직임별 통증 또는 가동범위 제한. 없으면 빈칸]
 
-O)에서는 모든 C/C를 S)에 작성한 순서대로 빠짐없이 반복하세요.
+[C/C가 두 개 이상이면 S)의 C/C 순서대로 아래 묶음을 반복]
+■ [S)에 작성한 영문 증상명과 NRS를 그대로 반복]
+TD : [해당 C/C 부위의 압통]
+ROM : [해당 C/C 부위의 움직임별 통증 또는 가동범위 제한]
+
+C/C가 두 개 이상일 때만 O)에서 모든 C/C를 S)에 작성한 순서대로 빠짐없이 반복하세요.
 각 C/C의 TD와 ROM을 다른 부위와 섞지 마세요.
 TD와 ROM 줄은 내용이 없어도 생략하지 말고 반드시 빈칸으로 출력하세요.
 환자가 목, 허리 또는 관절의 특정 움직임에서 통증이 발생한다고 말한 경우 그 내용을 C/C 아래의 증상 설명과 O)의 해당 부위 ROM에 모두 작성하세요.
@@ -1222,7 +1226,6 @@ P/H :
 F/H :
 
 O)
-■  (NRS #)
 TD :
 ROM :
 
@@ -1325,7 +1328,17 @@ function normalizeAIResponse(rawText, ns){
 
   if(oIndex >= 0 && aIndex > oIndex){
     let block = lines.slice(oIndex + 1, aIndex);
-    if(ccHeadings.length && !block.some(line => line.trim().startsWith('■'))){
+    if(ccHeadings.length === 1){
+      // C/C가 하나면 O)에서 ■ 제목을 반복하지 않음
+      block = block.filter(line => !line.trim().startsWith('■'));
+      while(block.length && block[block.length - 1].trim() === '') block.pop();
+      if(!block.some(v => /^TD\s*:/.test(v.trim()))) block.push('TD :');
+      if(!block.some(v => /^ROM\s*:/.test(v.trim()))) block.push('ROM :');
+      lines.splice(oIndex + 1, aIndex - oIndex - 1, ...block);
+      return lines.join('\n');
+    }
+
+    if(ccHeadings.length > 1 && !block.some(line => line.trim().startsWith('■'))){
       block.unshift(ccHeadings[0]);
     }
 
@@ -1425,7 +1438,7 @@ async function runGenerate(ns){
 
     const contentParts = [];
     const tabSpecificPrompt = ns === 'ta'
-      ? `이번 요청은 TA 탭의 교통사고 진료입니다. 사고 발생 시점과 사고 관련 검사·치료를 우선 확인하세요. 두통·머리 통증·어지럼증·오심·구토는 Head pain 등의 근골격계 C/C로 만들지 마세요. 대신 실제 내용에 따라 H=두통 또는 머리 통증, D=어지럼증 또는 현훈, N=오심 또는 메스꺼움, V=구토로 판정하세요. [SCRIPT] 바로 앞에 반드시 [TA_FLAGS] H(+) D(-) N(-) V(-) 형식의 판정 줄을 하나 작성하세요. 언급되지 않은 증상은 (-)로 판정하세요. 이 판정 줄은 코드가 화면 버튼 상태와 동기화한 뒤 최종 차트에서는 제거합니다. O)에서는 S)의 모든 근골격계 C/C를 같은 순서로 반복하고 각 항목 바로 아래에 해당 부위의 TD와 ROM을 작성하세요. 환자가 특정 움직임에서 통증이 발생하거나 움직이기 힘들다고 말하면 C/C에만 두지 말고 해당 부위 ROM에도 반드시 변환하여 작성하세요. 예를 들어 고개를 숙일 때 통증은 경추 굴곡 시 통증, 고개 숙이기 힘듦은 경추 굴곡 제한, 허리를 뒤로 젖힐 때 통증은 요추 신전 시 통증, 허리 뒤로 젖히기 힘듦은 요추 신전 제한으로 작성하세요. 오늘 날짜는 ${PROMPT_CURRENT_DATE}입니다.`
+      ? `이번 요청은 TA 탭의 교통사고 진료입니다. 사고 발생 시점과 사고 관련 검사·치료를 우선 확인하세요. 두통·머리 통증·어지럼증·오심·구토는 Head pain 등의 근골격계 C/C로 만들지 마세요. 대신 실제 내용에 따라 H=두통 또는 머리 통증, D=어지럼증 또는 현훈, N=오심 또는 메스꺼움, V=구토로 판정하세요. [SCRIPT] 바로 앞에 반드시 [TA_FLAGS] H(+) D(-) N(-) V(-) 형식의 판정 줄을 하나 작성하세요. 언급되지 않은 증상은 (-)로 판정하세요. 이 판정 줄은 코드가 화면 버튼 상태와 동기화한 뒤 최종 차트에서는 제거합니다. O)에서 근골격계 C/C가 하나이면 ■ 제목을 반복하지 말고 TD와 ROM만 작성하세요. C/C가 두 개 이상이면 S)의 C/C를 같은 순서로 반복하고 각 ■ 항목 바로 아래에 해당 부위의 TD와 ROM을 작성하세요. 환자가 특정 움직임에서 통증이 발생하거나 움직이기 힘들다고 말하면 C/C에만 두지 말고 해당 부위 ROM에도 반드시 변환하여 작성하세요. 예를 들어 고개를 숙일 때 통증은 경추 굴곡 시 통증, 고개 숙이기 힘듦은 경추 굴곡 제한, 허리를 뒤로 젖힐 때 통증은 요추 신전 시 통증, 허리 뒤로 젖히기 힘듦은 요추 신전 제한으로 작성하세요. 오늘 날짜는 ${PROMPT_CURRENT_DATE}입니다.`
       : `이번 요청은 일반 근골격계 진료입니다. 오늘 날짜는 ${PROMPT_CURRENT_DATE}입니다.`;
     if(activeTab === 'text'){
       contentParts.push({text: SOAP_PROMPT});
