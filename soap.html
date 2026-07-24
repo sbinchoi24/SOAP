@@ -597,6 +597,15 @@
             </div>
             <button class="btn-outline cq-reset" onclick="resetCQ()">초기화</button>
           </div>
+          <div class="cq-filters" style="margin-top:-6px;">
+  <div class="cq-filter-group">
+    <span class="cq-filter-label">65세</span>
+    <button class="btn-toggle cq-btn sm" id="cq-65-초진" onclick="setCQ65('초진',this)">초진</button>
+    <button class="btn-toggle cq-btn sm" id="cq-65-재진" onclick="setCQ65('재진',this)">재진</button>
+  </div>
+  <span style="font-size:11px;color:var(--muted);">습부 들어가는 경우 65세 미만과 동일함</span>
+</div>
+<div id="cq-65-result"></div>
           <div id="cq-result-page"></div>
         </div>
       </div>
@@ -2273,6 +2282,39 @@ document.querySelectorAll('[data-copy]').forEach(btn=>{
 
 /* ==================== 청구 수가 조회 (통증 탭 전용) ==================== */
 var CQ = {visit:null, cupping:null, chuna:null};
+  var CQ65 = null;
+function setCQ65(val, btn){
+  if(CQ65 === val){
+    CQ65 = null; btn.classList.remove('selected');
+  } else {
+    CQ65 = val;
+    ['초진','재진'].forEach(function(v){
+      var b = document.getElementById('cq-65-'+v);
+      if(b) b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+  }
+  renderCQ65Result();
+}
+function renderCQ65Result(){
+  var box = document.getElementById('cq-65-result');
+  if(!box) return;
+  if(!CQ65){ box.innerHTML=''; return; }
+  var data = CQ65 === '초진'
+    ? {badge:'초진', 평일:7900, 주말:9400, line:'변증 이체 (핫팩 물치 침 BC)'}
+    : {badge:'재진', 평일:1900, 주말:1900, line:'경혈 투자 자락 (핫팩 물치 침 BC)'};
+  var html = '<div class="cq-row-card filtered">';
+  html += '<div class="cq-row-head">';
+  html += '<span class="cq-badge cq-badge-'+data.badge+'">'+data.badge+'</span>';
+  html += '<span class="cq-row-label">65세 이상</span>';
+  html += '<span class="cq-price-weekday">'+data.평일.toLocaleString()+'원</span>';
+  html += '<span class="cq-price-sep">/</span>';
+  html += '<span class="cq-price-weekend">'+data.주말.toLocaleString()+'원</span>';
+  html += '</div>';
+  html += '<div class="cq-combos"><div class="cq-combo">'+data.line+'</div></div>';
+  html += '</div>';
+  box.innerHTML = html;
+}
 var CQ_ALL = [
   {visit:'초진',cupping:'1부위',chuna:'없음',label:'침+습부(1부위)+전침',평일:14300,주말:15500,조합:['이체+전침+관절+습부1부위(컵4)+IR+변증','이체+전침+관절+습부1부위(컵3)+IR+변증','이체+전침+척추+습부1부위(컵3)+IR+변증']},
   {visit:'초진',cupping:'2부위',chuna:'없음',label:'침+습부(2부위)+전침',평일:15800,주말:17200,조합:['이체+전침+관절+습부2부위(컵4)+IR+변증','이체+전침+척추+습부2부위(컵3)+IR+변증']},
@@ -2328,8 +2370,10 @@ function setCQ(type,val,btn){
 }
 function resetCQ(){
   CQ={visit:null,cupping:null,chuna:null};
+  CQ65 = null;
   document.querySelectorAll('.cq-btn').forEach(function(b){b.classList.remove('selected');});
   renderCQResult();
+  renderCQ65Result();
 }
 function renderCQResult(){
   var hasFilter=CQ.visit||CQ.cupping||CQ.chuna;
