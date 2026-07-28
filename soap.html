@@ -1893,7 +1893,7 @@ function renderPBody(ns){
     h += `<button type="button" class="btn-toggle${st.acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${ns}','${k}')">${k}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-  h += `<button type="button" class="btn-toggle${st.acuSt.간접구?' selected':''}" onclick="toggleAcuFlag('${ns}','간접구')">간접구</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.간접구?' selected':''}" onclick="toggleAcuFlag('${ns}','간접구')">뜸</button>`;
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
   if(!isTA){
     h += `<button type="button" class="btn-toggle${st.acuSt.핫팩?' selected':''}" onclick="toggleAcuFlag('${ns}','핫팩')">핫팩</button>`;
@@ -2073,9 +2073,9 @@ function buildPText(ns){
   else if(st.acuSt.습부2 && m0) parts.push(`습부2부위(${m0.처치} 등 ${acuShortName(a0)})`);
   if(st.acuSt.습부1 && m0) parts.push(`습부1부위(${m0.처치} 등 ${acuShortName(a0)})`);
   if(st.acuSt.건부 && m0) parts.push(`건부(${m0.처치} 등 ${acuShortName(a0)})`);
-  if(st.acuSt.간접구){ const p=pickArea('간접구'); if(p) parts.push(`간접구(${p.m.간접구})`); }
-  if(!isTA && st.acuSt.핫팩){ const p=pickArea('핫팩'); if(p) parts.push(`핫팩(${p.m.핫팩} 등 ${acuShortName(p.area)})`); }
-  if(st.acuSt.ir){ const p=pickArea('IR'); if(p) parts.push(`IR(${p.m.IR} 등 ${acuShortName(p.area)})`); }
+  if(st.acuSt.간접구){ const p=pickArea('간접구'); if(p) parts.push(`기기구(${p.m.간접구})`); }
+  if(!isTA && st.acuSt.핫팩){ const p=pickArea('핫팩'); if(p) parts.push(`경피경근온열(${p.m.핫팩} 등 ${acuShortName(p.area)})`); }
+  if(st.acuSt.ir){ const p=pickArea('IR'); if(p) parts.push(`경피적외선조사(${p.m.IR} 등 ${acuShortName(p.area)})`); }
   if(st.acuSt.ict){ const p=pickArea('텐즈'); if(p) parts.push(`TENS(${p.m.텐즈} 등 ${acuShortName(p.area)})`); }
   if(st.acuSt.ssp){ const p=pickArea('텐즈'); if(p) parts.push(`SSP(${p.m.텐즈} 등 ${acuShortName(p.area)})`); }
 
