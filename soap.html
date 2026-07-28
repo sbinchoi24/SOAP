@@ -1856,15 +1856,15 @@ function renderPBody(ns){
   let h = '';
 
   h += '<div class="p-group"><div class="btn-toggle-row">';
-  ACU_AREAS.slice(0,3).forEach(a=>{
+  ACU_AREAS.slice(0,4).forEach(a=>{
     h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-  ACU_AREAS.slice(3,6).forEach(a=>{
+  ACU_AREAS.slice(4,7).forEach(a=>{
     h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-  ACU_AREAS.slice(6).forEach(a=>{
+  ACU_AREAS.slice(7).forEach(a=>{
     h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
   });
   h += '</div>';
@@ -2062,22 +2062,22 @@ function buildPText(ns){
     return null;
   }
   let acuPointsStr = '';
-  if(st.acuSt.경혈==='경혈2' && m0 && m1){ acuPointsStr = `${m0.경혈} ${m1.경혈}`; parts.push(`경혈2부위(${acuPointsStr})`); }
-  else if(st.acuSt.경혈==='경혈1' && m0){ acuPointsStr = m0.경혈; parts.push(`경혈1부위(${acuPointsStr})`); }
+  if(st.acuSt.경혈==='경혈2' && m0 && m1){ acuPointsStr = `${m0.경혈} ${m1.경혈}`; parts.push(`경혈2부위(${acuPointsStr} 등 ${acuShortName(a0)} ${acuShortName(a1)})`); }
+  else if(st.acuSt.경혈==='경혈1' && m0){ acuPointsStr = m0.경혈; parts.push(`경혈1부위(${acuPointsStr} 등 ${acuShortName(a0)})`); }
   if(st.acuSt.투자){ const p=pickArea('투자'); if(p) parts.push(`투자(${p.m.투자.join(' ')})`); }
   if(st.acuSt.관절){ const p=pickArea('관절'); if(p) parts.push(`관절(${p.m.관절})`); }
   if(st.acuSt.척추){ const p=pickArea('척추'); if(p) parts.push(`척추(${p.m.척추})`); }
   if(st.acuSt.복강){ const p=pickArea('복강'); if(p) parts.push(`복강(${p.m.복강})`); }
   if(st.acuSt.전침) parts.push('침전기자극술');
-  if(st.acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${m0.처치} ${m1.처치})`);
-  else if(st.acuSt.습부2 && m0) parts.push(`습부2부위(${m0.처치})`);
-  if(st.acuSt.습부1 && m0) parts.push(`습부1부위(${m0.처치})`);
-  if(st.acuSt.건부 && m0) parts.push(`건부(${m0.처치})`);
+  if(st.acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${m0.처치} ${m1.처치} 등 ${acuShortName(a0)} ${acuShortName(a1)})`);
+  else if(st.acuSt.습부2 && m0) parts.push(`습부2부위(${m0.처치} 등 ${acuShortName(a0)})`);
+  if(st.acuSt.습부1 && m0) parts.push(`습부1부위(${m0.처치} 등 ${acuShortName(a0)})`);
+  if(st.acuSt.건부 && m0) parts.push(`건부(${m0.처치} 등 ${acuShortName(a0)})`);
   if(st.acuSt.간접구){ const p=pickArea('간접구'); if(p) parts.push(`간접구(${p.m.간접구})`); }
-  if(!isTA && st.acuSt.핫팩){ const p=pickArea('핫팩'); if(p) parts.push(`핫팩(${p.m.핫팩})`); }
-  if(st.acuSt.ir){ const p=pickArea('IR'); if(p) parts.push(`IR(${p.m.IR})`); }
-  if(st.acuSt.ict){ const p=pickArea('텐즈'); if(p) parts.push(`TENS(${p.m.텐즈})`); }
-  if(st.acuSt.ssp){ const p=pickArea('텐즈'); if(p) parts.push(`SSP(${p.m.텐즈})`); }
+  if(!isTA && st.acuSt.핫팩){ const p=pickArea('핫팩'); if(p) parts.push(`핫팩(${p.m.핫팩} 등 ${acuShortName(p.area)})`); }
+  if(st.acuSt.ir){ const p=pickArea('IR'); if(p) parts.push(`IR(${p.m.IR} 등 ${acuShortName(p.area)})`); }
+  if(st.acuSt.ict){ const p=pickArea('텐즈'); if(p) parts.push(`TENS(${p.m.텐즈} 등 ${acuShortName(p.area)})`); }
+  if(st.acuSt.ssp){ const p=pickArea('텐즈'); if(p) parts.push(`SSP(${p.m.텐즈} 등 ${acuShortName(p.area)})`); }
 
   let result = 'P) \n' + parts.join(', ') + ' * 등, 어깨 부위는 0.3cm 이하로 천자함';
 
