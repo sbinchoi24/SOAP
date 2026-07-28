@@ -1715,17 +1715,19 @@ function getTASymptomLine(ns){
 }
 
 /* ==================== P 섹션 (ns별) ==================== */
-const ACU_AREAS = ['두경부','흉복부','요배부','상지부(견)','상지부(주)','상지부(완)','하지부(고)','하지부(슬)','하지부(족)'];
+const ACU_AREAS = ['두경부','안면부','흉복부','요배부','상지부(견)','상지부(주)','상지부(완)','하지부(고)','하지부(슬)','하지부(족)'];
+/* 부위별 전용 경혈 지정: 경혈/투자/관절·척추·복강/간접구는 기존값 유지, 처치(건부·습부1·습부2 공유)/핫팩/IR/텐즈(TENS·SSP 공유)는 신규 지정 — 같은 부위 안에서 전부 서로 다른 경혈 */
 const ACU_MAP = {
-  '두경부':    {경혈:'천주',   투자:['풍부','풍지'],    관절:null,   척추:'대추',   복강:null,   간접구:'대추'},
-  '흉복부':    {경혈:'단중',   투자:null,                관절:null,   척추:null,     복강:'중완', 간접구:'중완'},
-  '요배부':    {경혈:'신수',   투자:null,                관절:null,   척추:'요양관', 복강:null,   간접구:'명문'},
-  '상지부(견)':{경혈:'견우',   투자:['견료','극천'],     관절:'노수', 척추:null,     복강:null,   간접구:'견우'},
-  '상지부(주)':{경혈:'수삼리', 투자:['곡지','척택'],     관절:'소해', 척추:null,     복강:null,   간접구:'수삼리'},
-  '상지부(완)':{경혈:'열결',   투자:['내관','외관'],     관절:'양지', 척추:null,     복강:null,   간접구:'외관'},
-  '하지부(고)':{경혈:'풍시',   투자:null,                관절:'환도', 척추:null,     복강:null,   간접구:'풍시'},
-  '하지부(슬)':{경혈:'족삼리', 투자:['양릉천','음릉천'], 관절:'독비', 척추:null,     복강:null,   간접구:'내슬안'},
-  '하지부(족)':{경혈:'태충',   투자:['삼음교','현종'],   관절:'신맥', 척추:null,     복강:null,   간접구:'해계'}
+  '두경부':    {경혈:'천주',   투자:['풍부','풍지'],    관절:null,   척추:'대추',   복강:null,   간접구:'완골', 처치:'예풍', 핫팩:'옥침', IR:null, 텐즈:'견정'},
+  '안면부':    {경혈:'상관',   투자:['지창','협거'],    관절:null,   척추:null,     복강:null,   간접구:'예풍', 처치:'승읍', 핫팩:null,   IR:null,   텐즈:'하관'},
+  '흉복부':    {경혈:'단중',   투자:null,                관절:null,   척추:null,     복강:'중완', 간접구:'중부', 처치:'관원', 핫팩:'천추', IR:'기해', 텐즈:'하완'},
+  '요배부':    {경혈:'신수',   투자:null,                관절:null,   척추:'요양관', 복강:null,   간접구:'명문', 처치:'대장수', 핫팩:'요안', IR:'질변', 텐즈:'포황'},
+  '상지부(견)':{경혈:'견우',   투자:['견료','극천'],     관절:'노수', 척추:null,     복강:null,   간접구:'견정', 처치:'비노', 핫팩:'천부', IR:'협백', 텐즈:'노회'},
+  '상지부(주)':{경혈:'수삼리', 투자:['곡지','척택'],     관절:'소해', 척추:null,     복강:null,   간접구:'공최', 처치:'상렴', 핫팩:'하렴', IR:'곡택', 텐즈:'주료'},
+  '상지부(완)':{경혈:'열결',   투자:['내관','외관'],     관절:'양지', 척추:null,     복강:null,   간접구:'합곡', 처치:'신문', 핫팩:'노궁', IR:'후계', 텐즈:'소부'},
+  '하지부(고)':{경혈:'풍시',   투자:null,                관절:'환도', 척추:null,     복강:null,   간접구:'곡천', 처치:'승부', 핫팩:'은문', IR:'부극', 텐즈:'위양'},
+  '하지부(슬)':{경혈:'족삼리', 투자:['양릉천','음릉천'], 관절:'독비', 척추:null,     복강:null,   간접구:'위중', 처치:'혈해', 핫팩:'승산', IR:'승근', 텐즈:'비양'},
+  '하지부(족)':{경혈:'태충',   투자:['삼음교','현종'],   관절:'신맥', 척추:null,     복강:null,   간접구:'태계', 처치:'조해', 핫팩:'곤륜', IR:'태백', 텐즈:'구허'}
 };
 function acuShortName(a){ return a.replace(/\(.*\)$/,''); }
 const AREA_LABELS = {
@@ -1744,7 +1746,7 @@ function newPState(ns){
   if(ns === 'ta'){
     return {
       acuAreas: [],
-      acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:false, ir:true, ict:true},
+      acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:false, ir:true, ict:true, ssp:false},
       pYakchim: {active:true, kind:'어혈', buyi:'', cc:'0.5cc', gae:'1'},
       pChunaActive: {단순추나:true, 복잡추나:false},
       pChunaSpine: null,
@@ -1760,7 +1762,7 @@ function newPState(ns){
   }
   return {
     acuAreas: [],
-    acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:false, 핫팩:true, ir:true, ict:false},
+    acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:true, ir:true, ict:true, ssp:false},
     pYakchim: {active:false, kind:'', buyi:'', cc:'', gae:''},
     pChunaActive: {단순추나:false, 복잡추나:false},
     pChunaSpine: null,
@@ -1785,6 +1787,17 @@ function toggleAcuArea(ns, area){
 }
 function toggleGyeolhyeol(ns, k){ const st=PSTATE[ns]; st.acuSt.경혈 = (st.acuSt.경혈===k) ? null : k; renderPBody(ns); }
 function toggleAcuFlag(ns, k){ PSTATE[ns].acuSt[k] = !PSTATE[ns].acuSt[k]; renderPBody(ns); }
+function setTensSsp(ns, kind){
+  const st = PSTATE[ns];
+  if(st.acuSt[kind]){
+    st.acuSt[kind] = false;
+  } else {
+    st.acuSt.ict = false;
+    st.acuSt.ssp = false;
+    st.acuSt[kind] = true;
+  }
+  renderPBody(ns);
+}
 function toggleTaping(ns){ PSTATE[ns].pTaping.active = !PSTATE[ns].pTaping.active; renderPBody(ns); }
 function toggleTapingAllergy(ns){ PSTATE[ns].pTaping.allergy = !PSTATE[ns].pTaping.allergy; renderPBody(ns); }
 function toggleShockwave(ns){ PSTATE[ns].pShockwave.active = !PSTATE[ns].pShockwave.active; renderPBody(ns); }
@@ -1840,7 +1853,6 @@ function renderPBody(ns){
   const body = $(elId(ns,'pBody'));
   if(!body) return;
   const isTA = ns === 'ta';
-  const ictLabel = isTA ? 'TENS' : 'ICT';
   let h = '';
 
   h += '<div class="p-group"><div class="btn-toggle-row">';
@@ -1887,7 +1899,8 @@ function renderPBody(ns){
     h += `<button type="button" class="btn-toggle${st.acuSt.핫팩?' selected':''}" onclick="toggleAcuFlag('${ns}','핫팩')">핫팩</button>`;
   }
   h += `<button type="button" class="btn-toggle${st.acuSt.ir?' selected':''}" onclick="toggleAcuFlag('${ns}','ir')">IR</button>`;
-  h += `<button type="button" class="btn-toggle${st.acuSt.ict?' selected':''}" onclick="toggleAcuFlag('${ns}','ict')">${ictLabel}</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.ict?' selected':''}" onclick="setTensSsp('${ns}','ict')">TENS</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.ssp?' selected':''}" onclick="setTensSsp('${ns}','ssp')">SSP</button>`;
   h += '</div></div>';
 
   h += '<div class="p-group"><div class="btn-toggle-row">';
@@ -2036,7 +2049,6 @@ function renderPBody(ns){
 function buildPText(ns){
   const st = PSTATE[ns];
   const isTA = ns === 'ta';
-  const ictLabel = isTA ? 'TENS' : 'ICT';
   const a0 = st.acuAreas[0], a1 = st.acuAreas[1];
   const m0 = a0 ? ACU_MAP[a0] : null, m1 = a1 ? ACU_MAP[a1] : null;
   const parts = [];
@@ -2057,14 +2069,15 @@ function buildPText(ns){
   if(st.acuSt.척추){ const p=pickArea('척추'); if(p) parts.push(`척추(${p.m.척추})`); }
   if(st.acuSt.복강){ const p=pickArea('복강'); if(p) parts.push(`복강(${p.m.복강})`); }
   if(st.acuSt.전침) parts.push('침전기자극술');
-  if(st.acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${acuShortName(a0)} ${acuShortName(a1)})`);
-  else if(st.acuSt.습부2 && m0) parts.push(`습부2부위(${acuShortName(a0)})`);
-  if(st.acuSt.습부1 && m0) parts.push(`습부1부위(${acuShortName(a0)})`);
-  if(st.acuSt.건부 && m0) parts.push(`건부(${acuShortName(a0)})`);
+  if(st.acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${m0.처치} ${m1.처치})`);
+  else if(st.acuSt.습부2 && m0) parts.push(`습부2부위(${m0.처치})`);
+  if(st.acuSt.습부1 && m0) parts.push(`습부1부위(${m0.처치})`);
+  if(st.acuSt.건부 && m0) parts.push(`건부(${m0.처치})`);
   if(st.acuSt.간접구){ const p=pickArea('간접구'); if(p) parts.push(`간접구(${p.m.간접구})`); }
-  if(!isTA && st.acuSt.핫팩 && a0) parts.push(`핫팩(${acuShortName(a0)})`);
-  if(st.acuSt.ir && a0) parts.push(`IR(${acuShortName(a0)})`);
-  if(st.acuSt.ict && a0) parts.push(`${ictLabel}(${acuShortName(a0)})`);
+  if(!isTA && st.acuSt.핫팩){ const p=pickArea('핫팩'); if(p) parts.push(`핫팩(${p.m.핫팩})`); }
+  if(st.acuSt.ir){ const p=pickArea('IR'); if(p) parts.push(`IR(${p.m.IR})`); }
+  if(st.acuSt.ict){ const p=pickArea('텐즈'); if(p) parts.push(`TENS(${p.m.텐즈})`); }
+  if(st.acuSt.ssp){ const p=pickArea('텐즈'); if(p) parts.push(`SSP(${p.m.텐즈})`); }
 
   let result = 'P) \n' + parts.join(', ') + ' * 등, 어깨 부위는 0.3cm 이하로 천자함';
 
