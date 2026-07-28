@@ -610,9 +610,48 @@
         </div>
       </div>
 
+      <div class="card cq-card" id="cq2-card">
+        <div class="card-header cq-toggle-header" onclick="toggleCQ2()">
+          <span class="step-badge">5</span>청구(업데이트)
+          <span class="cq-chevron" id="cq2-chevron"></span>
+        </div>
+        <div id="cq2-body" class="cq-body">
+          <div class="cq-filters">
+            <div class="cq-filter-group">
+              <span class="cq-filter-label">진료</span>
+              <button class="btn-toggle cq-btn sm" id="cq2-초진" onclick="setCQ2('visit','초진',this)">초진</button>
+              <button class="btn-toggle cq-btn sm" id="cq2-재진" onclick="setCQ2('visit','재진',this)">재진</button>
+            </div>
+            <div class="cq-filter-group">
+              <span class="cq-filter-label">처치</span>
+              <button class="btn-toggle cq-btn sm" id="cq2-없음" onclick="setCQ2('treat','없음',this)">없음</button>
+              <button class="btn-toggle cq-btn sm" id="cq2-건부" onclick="setCQ2('treat','건부',this)">건부</button>
+              <button class="btn-toggle cq-btn sm" id="cq2-습부1부위" onclick="setCQ2('treat','습부1부위',this)">습부1부위</button>
+              <button class="btn-toggle cq-btn sm" id="cq2-습부2부위" onclick="setCQ2('treat','습부2부위',this)">습부2부위</button>
+            </div>
+            <div class="cq-filter-group">
+              <span class="cq-filter-label">추나</span>
+              <button class="btn-toggle cq-btn sm" id="cq2-추나없음" onclick="setCQ2('chuna','없음',this)">없음</button>
+              <button class="btn-toggle cq-btn sm" id="cq2-추나복잡" onclick="setCQ2('chuna','복잡',this)">복잡</button>
+            </div>
+            <div class="cq-filter-group">
+              <span class="cq-filter-label">65세</span>
+              <button class="btn-toggle cq-btn sm" id="cq2-65-초진" onclick="setCQ2_65('초진',this)">초진</button>
+              <button class="btn-toggle cq-btn sm" id="cq2-65-재진" onclick="setCQ2_65('재진',this)">재진</button>
+            </div>
+            <div class="cq-filter-group">
+              <button class="btn-toggle cq-btn sm" id="cq2-pt" onclick="toggleCQ2PT(this)">물리치료만</button>
+            </div>
+            <button class="btn-outline cq-reset" onclick="resetCQ2()">초기화</button>
+          </div>
+          <div id="cq2-65-result"></div>
+          <div id="cq2-result-page"></div>
+        </div>
+      </div>
+
       <div class="card cq-card" id="main-deliver-card" style="margin-top:12px;">
         <div class="card-header cq-toggle-header" onclick="toggleDeliverCard('main')">
-          <span class="step-badge">5</span>전달
+          <span class="step-badge">6</span>전달
           <span class="cq-chevron" id="main-deliver-chevron"></span>
         </div>
         <div id="main-deliver-body" class="cq-body">
@@ -634,7 +673,7 @@
 
   <div class="card">
     <div class="card-header" style="justify-content:space-between;">
-      <span style="display:flex;align-items:center;"><span class="step-badge">6</span>차트</span>
+      <span style="display:flex;align-items:center;"><span class="step-badge">7</span>차트</span>
       <span class="chart-warn-inline" id="main-chartWarn"></span>
     </div>
     <div class="chart-btn-row">
@@ -647,7 +686,7 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="step-badge">7</span>스크립트</div>
+    <div class="card-header"><span class="step-badge">8</span>스크립트</div>
     <textarea id="main-scriptOutput" style="min-height:160px;" placeholder="녹음한 내용이 추출됩니다"></textarea>
     <div class="copy-btn-row"><button class="btn-secondary" data-copy="main-scriptOutput">복사</button></div>
   </div>
@@ -2413,6 +2452,134 @@ function renderCQ65Result(){
   box.innerHTML = html;
 }
 
+/* ==================== 청구(업데이트) — 2026년 수가 (통증 탭 전용) ==================== */
+var CQ2 = {visit:null, treat:null, chuna:null, pt:false};
+var CQ2_ALL = [
+  {visit:'초진',treat:'습부2부위',chuna:'없음',평일:17100,주말:18500,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+변증'},
+  {visit:'초진',treat:'습부1부위',chuna:'없음',평일:15600,주말:17000,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+변증'},
+  {visit:'초진',treat:'습부2부위',chuna:'복잡',평일:52700,주말:54100,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+변증+복잡추나'},
+  {visit:'초진',treat:'습부1부위',chuna:'복잡',평일:51200,주말:52600,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+변증+복잡추나'},
+  {visit:'초진',treat:'건부',chuna:'없음',평일:14400,주말:15800,combo:'이체+전침+온뜸+(관절/척추/투자)+IR+기기구술+변증'},
+  {visit:'초진',treat:'없음',chuna:'없음',평일:12500,주말:14000,combo:'이체+(관절/척추/투자)+IR+기기구술+변증'},
+  {visit:'초진',treat:null,chuna:'없음',isPT:true,평일:8000,주말:9400,combo:'IR+기기구술+변증'},
+  {visit:'초진',treat:null,chuna:'복잡',isPT:true,평일:43500,주말:45000,combo:'IR+기기구술+변증+복잡추나'},
+
+  {visit:'재진',treat:'습부2부위',chuna:'없음',평일:14000,주말:14900,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR'},
+  {visit:'재진',treat:'습부1부위',chuna:'없음',평일:12500,주말:13400,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR'},
+  {visit:'재진',treat:'습부2부위',chuna:'복잡',평일:49500,주말:50400,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+복잡추나'},
+  {visit:'재진',treat:'습부1부위',chuna:'복잡',평일:48000,주말:48900,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+복잡추나'},
+  {visit:'재진',treat:'건부',chuna:'없음',평일:11200,주말:12100,combo:'이체+전침+온뜸+척추+IR'},
+  {visit:'재진',treat:'없음',chuna:'없음',평일:9400,주말:10300,combo:'이체+척추+IR'},
+  {visit:'재진',treat:null,chuna:'없음',isPT:true,평일:6100,주말:7000,combo:'IR+기기구술'},
+  {visit:'재진',treat:null,chuna:'복잡',isPT:true,평일:41600,주말:42500,combo:'IR+기기구술+복잡추나'}
+];
+var CQ2_65_DATA = {
+  '초진': {평일:9000, 주말:10500, combo:'경혈+자락+(관절/척추/투자)'},
+  '재진': {평일:1900, 주말:4500, combo:'경혈+자락+(관절/척추/투자)'}
+};
+var CQ2_65SEL = null;
+
+/* 요청된 표기 순서: 변증 → IR(및 온뜸/기기구술 등 물리적 처치) → 침 관련(경혈/자락/이체/관절/척추/투자) → 전침 → 건부/습부 → 추나 */
+var PART_ORDER2 = ['변증','IR','온뜸','기기구술','이체','경혈','자락','관절','척추','투자','전침','습부','건부','복잡','단순'];
+function cq2GetPartOrder(p){for(var i=0;i<PART_ORDER2.length;i++){if(p.indexOf(PART_ORDER2[i])>=0)return i;}return 99;}
+function cq2SortCombo(c){var p=c.split('+');p.sort(function(a,b){return cq2GetPartOrder(a.trim())-cq2GetPartOrder(b.trim());});return p.join('+');}
+function cq2RenderCombo(c){var parts=cq2SortCombo(c).split('+');return parts.map(cqColorPart).join('<span class="cq-combo-sep">+</span>');}
+
+function cq2Matches(row){
+  if(!!row.isPT !== !!CQ2.pt) return false;
+  if(CQ2.visit && row.visit !== CQ2.visit) return false;
+  if(CQ2.chuna && row.chuna !== CQ2.chuna) return false;
+  if(!CQ2.pt && CQ2.treat && row.treat !== CQ2.treat) return false;
+  return true;
+}
+function setCQ2(type, val, btn){
+  if(CQ2[type] === val){
+    CQ2[type] = null;
+    btn.classList.remove('selected');
+  } else {
+    CQ2[type] = val;
+    var groups = {visit:['초진','재진'], treat:['없음','건부','습부1부위','습부2부위'], chuna:['없음','복잡']};
+    groups[type].forEach(function(v){
+      var id = 'cq2-' + (type==='chuna' ? (v==='없음'?'추나없음':'추나복잡') : v);
+      var b = document.getElementById(id);
+      if(b) b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+  }
+  renderCQ2Result();
+}
+function toggleCQ2PT(btn){
+  CQ2.pt = !CQ2.pt;
+  btn.classList.toggle('selected', CQ2.pt);
+  renderCQ2Result();
+}
+function resetCQ2(){
+  CQ2 = {visit:null, treat:null, chuna:null, pt:false};
+  CQ2_65SEL = null;
+  document.querySelectorAll('#cq2-body .cq-btn').forEach(function(b){ b.classList.remove('selected'); });
+  renderCQ2Result();
+  renderCQ2_65Result();
+}
+function renderCQ2Result(){
+  var hasFilter = CQ2.visit || CQ2.treat || CQ2.chuna || CQ2.pt;
+  var rows = hasFilter ? CQ2_ALL.filter(cq2Matches) : CQ2_ALL.filter(function(r){ return !r.isPT; });
+  var html = '';
+  if(!rows.length){
+    html = '<div class="cq-empty">해당 조합이 없습니다.</div>';
+  } else {
+    rows.forEach(function(row){
+      var label = row.isPT ? ('물리치료' + (row.chuna==='복잡' ? '+복잡' : '')) : ('침' + (row.treat && row.treat!=='없음' ? '+'+row.treat : '') + (row.chuna==='복잡' ? '+복잡' : '') + '+전침');
+      html += '<div class="cq-row-card'+(hasFilter?' filtered':'')+'">';
+      html += '<div class="cq-row-head">';
+      html += '<span class="cq-badge cq-badge-'+row.visit+'">'+row.visit+'</span>';
+      html += '<span class="cq-row-label">'+label+'</span>';
+      html += '<span class="cq-price-weekday">'+row.평일.toLocaleString()+'원</span>';
+      html += '<span class="cq-price-sep">/</span>';
+      html += '<span class="cq-price-weekend">'+row.주말.toLocaleString()+'원</span>';
+      html += '</div>';
+      html += '<div class="cq-combos">';
+      html += '<div class="cq-combo">'+cq2RenderCombo(row.combo)+'</div>';
+      html += '</div></div>';
+    });
+  }
+  document.getElementById('cq2-result-page').innerHTML = html;
+}
+function setCQ2_65(val, btn){
+  if(CQ2_65SEL === val){
+    CQ2_65SEL = null;
+    btn.classList.remove('selected');
+  } else {
+    CQ2_65SEL = val;
+    ['초진','재진'].forEach(function(v){
+      var b = document.getElementById('cq2-65-'+v);
+      if(b) b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+  }
+  renderCQ2_65Result();
+}
+function renderCQ2_65Result(){
+  var box = document.getElementById('cq2-65-result');
+  if(!box) return;
+  if(!CQ2_65SEL){ box.innerHTML = ''; return; }
+  var d = CQ2_65_DATA[CQ2_65SEL];
+  var html = '<div class="cq-row-card filtered">';
+  html += '<div class="cq-row-head">';
+  html += '<span class="cq-badge cq-badge-'+CQ2_65SEL+'">'+CQ2_65SEL+'</span>';
+  html += '<span class="cq-row-label">65세 이상</span>';
+  html += '<span class="cq-price-weekday">'+d.평일.toLocaleString()+'원</span>';
+  html += '<span class="cq-price-sep">/</span>';
+  html += '<span class="cq-price-weekend">'+d.주말.toLocaleString()+'원</span>';
+  html += '</div>';
+  html += '<div class="cq-combos">';
+  html += '<div class="cq-combo">'+cq2RenderCombo(d.combo)+'</div>';
+  html += '</div></div>';
+  box.innerHTML = html;
+}
+function toggleCQ2(){
+  document.getElementById('cq2-card').classList.toggle('collapsed');
+}
+
 /* ==================== 피부 시술 선택 ==================== */
 var SKIN_CATALOG = {
   '리프팅': [
@@ -3086,6 +3253,9 @@ buildCatUI('diet', 'diet-p-buttons');
 renderCQResult();
 renderCQ65Result();
 document.querySelector('.cq-card').classList.add('collapsed');
+renderCQ2Result();
+renderCQ2_65Result();
+document.getElementById('cq2-card').classList.add('collapsed');
 dvInit('main');
 dvInit('ta');
 var _dvCard = $('main-deliver-card');
