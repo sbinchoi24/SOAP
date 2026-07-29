@@ -2965,22 +2965,23 @@ function catReset(tabns, containerId, resultId, totalId){
 
 /* ==================== 전달 탭 (통증 탭 전용) ==================== */
 var DV_COLORS = {
-  'JB':'#7C8FD4','돔':'#5B7C99','핫팩':'#FF6B35','I':'#3B8DCC','약침':'#0052FF',
+  'JB':'#7C8FD4','돔':'#5B7C99','핫팩':'#FF6B35','물':'#3B8DCC','S':'#2F80ED','약침':'#0052FF',
   '침':'#00C48C','침(전)':'#00C48C',
-  '건부':'#88BB00','습부1':'#88BB00','습부2':'#88BB00','간접구':'#D4A574',
+  '건부':'#88BB00','습부1':'#88BB00','습부2':'#88BB00','뜸':'#D4A574',
   '추나':'#A67C52','추나(환자복)':'#A67C52','충격파':'#1A1D29','BC':'#5B6B81'
 };
-var DV_FORM = { '핫팩':['부위'], 'I':['부위'], '약침':['종류','cc','개수'] };
+var DV_FORM = { '핫팩':['부위'], '물':['부위'], 'S':['부위'], '약침':['종류','cc','개수'] };
 var DV_DEFAULT = {
-  main: ['BC','습부2','침(전)','I','핫팩'],
-  ta:   ['추나','습부2','침(전)','I','핫팩','약침']
+  main: ['BC','습부2','침(전)','물','핫팩','뜸'],
+  ta:   ['추나','습부2','침(전)','물','핫팩','약침','뜸']
 };
 var DV_CHIM_BASES = ['침','침(전)'];
 var DV_CHIM_POS = ['앞침','엎침','옆침/좌','옆침/우'];
 var DV_EXCLUSIVE = ['습부1','습부2','건부'];
 var DV_EXCLUSIVE2 = ['침','침(전)'];
 var DV_EXCLUSIVE3 = ['추나','추나(환자복)'];
-var DV_BTN_ORDER = ['핫팩','돔','JB','I','침','침(전)','약침','간접구','습부2','습부1','건부','BC','추나','추나(환자복)','충격파'];
+var DV_EXCLUSIVE4 = ['물','S'];
+var DV_BTN_ORDER = ['핫팩','돔','JB','물','S','침','침(전)','약침','뜸','습부2','습부1','건부','BC','추나','추나(환자복)','충격파'];
 
 var DVSTATE = {
   main: {treatments:[], seq:1},
@@ -3005,6 +3006,9 @@ function dvAdd(ns, base){
   if(DV_EXCLUSIVE2.indexOf(base) >= 0){
     list = list.filter(function(t){ return DV_EXCLUSIVE2.indexOf(t.base) < 0; });
   }
+  if(DV_EXCLUSIVE4.indexOf(base) >= 0){
+    list = list.filter(function(t){ return DV_EXCLUSIVE4.indexOf(t.base) < 0; });
+  }
   if(DV_EXCLUSIVE3.indexOf(base) >= 0){
     list = list.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
     list = list.filter(function(t){ return t.base !== 'BC'; });
@@ -3023,7 +3027,7 @@ function dvInit(ns){
   DVSTATE[ns].treatments = [];
   DV_DEFAULT[ns].forEach(function(name){
     var extra = {};
-    if(ns === 'ta' && name === '약침'){ extra = {'종류':'중성어혈', 'cc':'0.5CC', '개수':'1'}; }
+    if(ns === 'ta' && name === '약침'){ extra = {'종류':'어혈', 'cc':'0.5cc', '개수':'1'}; }
     dvInsertSorted(ns, { id:dvNewId(ns), base:name, extra:extra });
   });
   dvRender(ns);
@@ -3183,7 +3187,7 @@ function dvRender(ns){
     var btn = document.createElement('button');
     btn.className = 'dv-btn';
     btn.style.setProperty('--dvcolor', DV_COLORS[name] || '#0052FF');
-    btn.textContent = name;
+    btn.textContent = (name === 'S') ? 'SSP' : (name === '물') ? 'TENS' : name;
     btn.addEventListener('click', function(){ dvAdd(ns, name); });
     btnsBox.appendChild(btn);
   });
@@ -3193,23 +3197,37 @@ function dvBuildSummary(ns){
   var treatments = DVSTATE[ns].treatments.slice();
   var yakIdx = treatments.findIndex(function(t){ return t.base === '약침'; });
   var chimIdx = treatments.findIndex(function(t){ return t.base === '침(전)'; });
+  var tteumIdx = treatments.findIndex(function(t){ return t.base === '뜸'; });
   var out = [];
   for(var i=0;i<treatments.length;i++){
     if(i === yakIdx && chimIdx > -1) continue;
+    if(i === tteumIdx && chimIdx > -1) continue;
     var t = treatments[i];
-    if(i === chimIdx && yakIdx > -1){
-      var yak = treatments[yakIdx];
-      var kind = yak.extra['종류'] || '';
-      var cc = yak.extra['cc'] || '';
-      var count = yak.extra['개수'] || '';
-      var detail = kind;
-      if(cc || count) detail += '('+cc+'cc*'+count+')';
-      out.push(dvTreatmentLabel(t) + '+' + detail);
+    if(i === chimIdx){
+      var label = dvTreatmentLabel(t);
+      if(tteumIdx > -1){
+        label += '#';
+      }
+      if(yakIdx > -1){
+        var yak = treatments[yakIdx];
+        var kind = yak.extra['종류'] || '';
+        var cc = yak.extra['cc'] || '';
+        var count = yak.extra['개수'] || '';
+        var detail = kind;
+        if(cc || count) detail += '('+cc+'cc*'+count+')';
+        label += '+' + detail;
+      }
+      out.push(label);
       continue;
     }
-    if(t.base === 'I'){
+    if(t.base === '물'){
       var vI = (t.extra['부위'] && t.extra['부위'].trim()) ? t.extra['부위'].trim() : '';
-      out.push('I' + (vI ? '('+vI+')' : ''));
+      out.push('물' + (vI ? '('+vI+')' : ''));
+      continue;
+    }
+    if(t.base === 'S'){
+      var vS = (t.extra['부위'] && t.extra['부위'].trim()) ? t.extra['부위'].trim() : '';
+      out.push('S' + (vS ? '('+vS+')' : ''));
       continue;
     }
     if(t.base === '핫팩'){
