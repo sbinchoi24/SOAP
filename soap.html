@@ -1762,7 +1762,7 @@ function newPState(ns){
   }
   return {
     acuAreas: [],
-    acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:true, ir:true, ict:true, ssp:false},
+    acuSt: {경혈:'경혈2', 투자:true, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:true, ir:true, ict:true, ssp:false},
     pYakchim: {active:false, kind:'', buyi:'', cc:'', gae:''},
     pChunaActive: {단순추나:false, 복잡추나:false},
     pChunaSpine: null,
@@ -1879,7 +1879,9 @@ function renderPBody(ns){
     h += `<button type="button" class="btn-toggle${st.acuSt.경혈===k?' selected':''}" onclick="toggleGyeolhyeol('${ns}','${k}')">${k}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
-  ['투자','관절','척추','복강'].forEach(k=>{
+  h += `<button type="button" class="btn-toggle${st.acuSt.투자?' selected':''}" onclick="toggleAcuFlag('${ns}','투자')">투자</button>`;
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ['관절','척추','복강'].forEach(k=>{
     h += `<button type="button" class="btn-toggle${st.acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${ns}','${k}')">${k}</button>`;
   });
   h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
