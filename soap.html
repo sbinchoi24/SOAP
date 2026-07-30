@@ -1319,7 +1319,10 @@ function normalizeAIResponse(rawText, ns){
   }
 
   if(ns === 'ta'){
+    // 내부 판정용 마커는 최종 차트에서 제거
     lines = lines.filter(line => !/^\s*\[TA_FLAGS\]/i.test(line));
+
+    // 두통·어지럼증 계열은 근골격계 C/C가 아니라 H/D/N/V로만 관리
     const filtered = [];
     let skippingHeadGroup = false;
     for(const line of lines){
@@ -1340,6 +1343,7 @@ function normalizeAIResponse(rawText, ns){
     lines = filtered;
   }
 
+  // NRS 이외 항목의 #은 빈칸으로, 내용 없는 선택 항목은 줄 자체를 제거
   lines = lines.filter(line => !/^\s*-\s*(기타|알러지)\s*:\s*#?\s*$/.test(line));
   lines = lines.map(line => {
     if(/^\s*(O\/S|S\/H|P\/H|F\/H|TD|ROM)\s*:\s*#\s*$/.test(line)){
@@ -1487,3 +1491,1886 @@ function normalizeAIResponse(rawText, ns){
 
   return lines.join('\n');
 }
+
+/* P차트만: AI 호출 없이 빈 S/O/A 뼈대 + 현재 입력된 P 섹션만 결합 */
+function generateSkeletonChart(ns){
+  $(elId(ns,'soaOutput')).value = SOA_SKELETON;
+  $(elId(ns,'scriptOutput')).value = '';
+  const warnEl = $(elId(ns,'chartWarn'));
+  if(warnEl) warnEl.textContent = '';
+  const statusEl = $(elId(ns,'statusMsg'));
+  if(statusEl) statusEl.textContent = 'P차트만 생성했습니다. S/O/A는 직접 입력해주세요.';
+  combineChart(ns);
+}
+
+async function runGenerate(ns){
+  const activeTab = activeTabOf(ns);
+  let sourceBlob = null;
+  let directText = '';
+  let skipAI = false;
+  if(activeTab === 'text'){
+    directText = $(elId(ns,'directTextInput')).value.trim();
+    if(!directText) skipAI = true;
+  } else if(activeTab === 'upload'){
+    const f = $(elId(ns,'audioFileInput')).files[0];
+    if(!f){ alert('오디오 파일을 선택해주세요.'); return; }
+    sourceBlob = f;
+  } else {
+    const rec = RECSTATE[ns];
+    if(!rec.blob){ alert('먼저 녹음을 해주세요.'); return; }
+    sourceBlob = rec.blob;
+  }
+
+  const btn = $(elId(ns,'combineBtn'));
+  const statusEl = $(elId(ns,'statusMsg'));
+  const warnEl = $(elId(ns,'chartWarn'));
+  warnEl.textContent = '';
+
+  if(skipAI){
+    $(elId(ns,'soaOutput')).value = '';
+    $(elId(ns,'scriptOutput')).value = '';
+    statusEl.textContent = '입력 내용이 없어 P 항목만 생성했습니다.';
+    combineChart(ns);
+    return;
+  }
+
+  const apiKey = apiKeyInput.value.trim();
+  if(!apiKey){ alert('Gemini API 키를 먼저 입력하고 저장해주세요.'); return; }
+
+  btn.disabled = true;
+
+  try{
+    let base64Audio = null;
+    if(activeTab !== 'text'){
+      statusEl.textContent = '오디오 변환 중...';
+      let wavBlob;
+      try{
+        wavBlob = await convertToWav(sourceBlob);
+      }catch(convErr){
+        throw new Error('오디오 파일을 읽을 수 없습니다. 다른 형식(m4a, mp3, wav 등)으로 다시 시도해주세요. (' + convErr.message + ')');
+      }
+      if(wavBlob.size > 19*1024*1024){
+        statusEl.textContent = '';
+        alert('녹음이 너무 깁니다 (약 10분 이상). 더 짧게 나눠서 시도해주세요.');
+        btn.disabled = false;
+        return;
+      }
+      base64Audio = await blobToBase64(wavBlob);
+    }
+    statusEl.textContent = 'Gemini로 분석 중... (일반적으로 1~2분 정도 걸리고, 녹음이 길수록 더 걸릴 수 있습니다)';
+
+    const contentParts = [];
+    const tabSpecificPrompt = ns === 'ta'
+      ? `이번 요청은 TA 탭의 교통사고 진료입니다. 사고 발생 시점과 사고 관련 검사·치료를 우선 확인하세요. 두통·머리 통증·어지럼증·오심·구토는 Head pain 등의 근골격계 C/C로 만들지 마세요. 대신 실제 내용에 따라 H=두통 또는 머리 통증, D=어지럼증 또는 현훈, N=오심 또는 메스꺼움, V=구토로 판정하세요. [SCRIPT] 바로 앞에 반드시 [TA_FLAGS] H(+) D(-) N(-) V(-) 형식의 판정 줄을 하나 작성하세요. 언급되지 않은 증상은 (-)로 판정하세요. 이 판정 줄은 코드가 화면 버튼 상태와 동기화한 뒤 최종 차트에서는 제거합니다. O)에서 근골격계 C/C가 하나이면 ■ 제목을 반복하지 말고 TD와 ROM만 작성하세요. C/C가 두 개 이상이면 S)의 C/C를 같은 순서로 반복하고 각 ■ 항목 바로 아래에 해당 부위의 TD와 ROM을 작성하세요. 환자가 특정 움직임에서 통증이 발생하거나 움직이기 힘들다고 말하면 C/C에만 두지 말고 해당 부위 ROM에도 반드시 변환하여 작성하세요. 예를 들어 고개를 숙일 때 통증은 경추 굴곡 시 통증, 고개 숙이기 힘듦은 경추 굴곡 제한, 허리를 뒤로 젖힐 때 통증은 요추 신전 시 통증, 허리 뒤로 젖히기 힘듦은 요추 신전 제한으로 작성하세요. 오늘 날짜는 ${PROMPT_CURRENT_DATE}입니다.`
+      : `이번 요청은 일반 근골격계 진료입니다. 오늘 날짜는 ${PROMPT_CURRENT_DATE}입니다.`;
+    if(activeTab === 'text'){
+      contentParts.push({text: SOAP_PROMPT});
+      contentParts.push({text: tabSpecificPrompt});
+      contentParts.push({text: '\n\n아래는 이번 진료의 실제 내용입니다. 반드시 이 내용만을 근거로 작성하세요:\n' + directText});
+    } else {
+      contentParts.push({text: '아래 오디오는 이번 진료의 실제 녹음입니다. 반드시 이 녹음 내용만을 근거로 작성하세요:'});
+      contentParts.push({inline_data: {mime_type:'audio/wav', data: base64Audio}});
+      const extraNotesEl = $(elId(ns,'extraNotesInput'));
+      const extraNotes = extraNotesEl ? extraNotesEl.value.trim() : '';
+      if(extraNotes){
+        contentParts.push({text: '아래는 녹음에 추가로 의사가 직접 적은 메모입니다. 녹음 내용과 함께 반영하세요:\n' + extraNotes});
+      }
+      contentParts.push({text: SOAP_PROMPT});
+      contentParts.push({text: tabSpecificPrompt});
+    }
+
+    const MAX_TRIES = 4;
+    let data = null;
+    for(let attempt = 1; attempt <= MAX_TRIES; attempt++){
+      let resp;
+      try{
+  resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+  method: 'POST',
+  headers: {'Content-Type':'application/json'},
+  body: JSON.stringify({
+    contents: [{ parts: contentParts }]
+  })
+});
+      }catch(netErr){
+        if(attempt < MAX_TRIES){
+          statusEl.textContent = `연결이 불안정합니다. 잠시 후 자동으로 다시 시도합니다... (${attempt}/${MAX_TRIES-1})`;
+          await new Promise(r => setTimeout(r, attempt * 2500));
+          continue;
+        }
+        throw new Error('네트워크 연결에 실패했습니다. 인터넷 상태를 확인해주세요.');
+      }
+
+      data = await resp.json();
+      if(resp.ok) break;
+
+      const retryable = [429, 500, 502, 503, 504].includes(resp.status);
+      const isLast = attempt >= MAX_TRIES;
+      if(retryable && !isLast){
+        const waitSec = attempt * 3;
+        statusEl.textContent = `AI 서버가 잠시 혼잡합니다. ${waitSec}초 후 자동으로 다시 시도합니다... (${attempt}/${MAX_TRIES-1})`;
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        continue;
+      }
+      const msg = data.error?.message || '알 수 없는 오류';
+      if(retryable){
+        throw new Error('AI 서버 혼잡이 계속되고 있습니다. 잠시 후 다시 생성하기를 눌러주세요.\n(원문: ' + msg + ')');
+      }
+      throw new Error(msg);
+    }
+    const rawText = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
+    if(ns === 'ta') syncTASymptomsFromAI(rawText);
+    const text = normalizeAIResponse(rawText, ns);
+    let sMatch = text.split('O)')[0].trim();
+    sMatch = sMatch.replace(/([^\n])\nS\/H :/, '$1\n\nS/H :');
+    let rest = text.split('O)')[1] || '';
+    const oMatch = rest.split('A)')[0].trim();
+    rest = rest.split('A)')[1] || '';
+    let aMatch = rest.split('[SCRIPT]')[0].trim();
+    const scriptMatch = (rest.split('[SCRIPT]')[1] || '').trim();
+
+    aMatch = aMatch ? `${aMatch}\n${FIXED_A_EXPLANATION}` : FIXED_A_EXPLANATION;
+
+    $(elId(ns,'soaOutput')).value = `${sMatch}\n\nO)\n${oMatch}\n\nA)\n${aMatch}`;
+    $(elId(ns,'scriptOutput')).value = scriptMatch;
+
+    function fieldBlank(t, label){
+      const lines = t.split('\n');
+      for(const line of lines){
+        const marker = label + ' :';
+        const idx = line.indexOf(marker);
+        if(idx !== -1) return line.slice(idx + marker.length).trim() === '';
+      }
+      return false;
+    }
+    const blankFields = [];
+    if(fieldBlank(sMatch, 'S/H')) blankFields.push('S/H');
+    if(fieldBlank(sMatch, 'P/H')) blankFields.push('P/H');
+    if(fieldBlank(sMatch, 'F/H')) blankFields.push('F/H');
+
+    const warnings = [];
+    if(/NRS\s*#/.test(sMatch)) warnings.push('NRS 미확인');
+    if(blankFields.length) warnings.push(blankFields.join('/') + ' 미확인');
+    warnEl.textContent = warnings.length ? ('⚠️ ' + warnings.join(' · ')) : '';
+
+    statusEl.textContent = '완료. 내용을 검수해주세요.';
+    combineChart(ns);
+  }catch(err){
+    statusEl.textContent = '';
+    alert('오류가 발생했습니다: ' + err.message);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ==================== 변증 (ns별) ==================== */
+const BIJEUNG_LIST = [
+  {name:'寒凝血瘀', maek:'脈沈', seol:'舌暗苔白'},
+  {name:'氣滯血瘀', maek:'脈澀', seol:'舌暗苔白'},
+  {name:'脾胃濕熱', maek:'脈滑', seol:'舌黃苔膩'},
+  {name:'脾胃虛弱', maek:'脈弱', seol:'舌淡苔白'},
+  {name:'氣血兩虛', maek:'脈弱', seol:'舌淡苔白'},
+  {name:'腎氣不足', maek:'脈細', seol:'舌淡苔白'}
+];
+const BIJEUNG_SEL = {main:null, ta:null};
+function selectBijeung(ns, name){
+  BIJEUNG_SEL[ns] = (BIJEUNG_SEL[ns] === name) ? null : name;
+  renderBijeung(ns);
+}
+function renderBijeung(ns){
+  const body = $(elId(ns,'bijeungBody'));
+  if(!body) return;
+  body.innerHTML = BIJEUNG_LIST.map(b =>
+    `<button class="btn-toggle${BIJEUNG_SEL[ns]===b.name?' selected':''}" onclick="selectBijeung('${ns}','${b.name}')">${b.name}</button>`
+  ).join('');
+}
+function getBijeungLine(ns){
+  if(!BIJEUNG_SEL[ns]) return '';
+  const b = BIJEUNG_LIST.find(x => x.name === BIJEUNG_SEL[ns]);
+  return b ? ('\u25a0 ' + b.name + ' | ' + b.maek + ' | ' + b.seol) : '';
+}
+
+/* ==================== T/A (두통 H / 현훈 D / 오심 N / 구토 V) ==================== */
+const TA_ITEMS = [
+  {key:'H', label:'H 두통'},
+  {key:'D', label:'D 현훈'},
+  {key:'N', label:'N 오심'},
+  {key:'V', label:'V 구토'}
+];
+const TASTATE = {
+  ta: {H:false, D:false, N:false, V:false}
+};
+const TAFAC = {facility:null, 침:false, 추나:false, 한약:false, hanyakDur:null, hanyakCustom:'', hanyakUnknown:false};
+
+function toggleTA(ns, key){
+  TASTATE[ns][key] = !TASTATE[ns][key];
+  renderTA(ns);
+  if(ns === 'ta' && $('ta-soaOutput') && $('ta-soaOutput').value.trim()) combineChart('ta');
+}
+function renderTA(ns){
+  const body = $(elId(ns,'taBody'));
+  if(body){
+    body.innerHTML = TA_ITEMS.map(it =>
+      `<button class="btn-toggle${TASTATE[ns][it.key]?' selected':''}" onclick="toggleTA('${ns}','${it.key}')">${it.label}</button>`
+    ).join('');
+  }
+  if(ns === 'ta') renderTAFac();
+}
+function refreshTACombinedChart(){
+  if($('ta-soaOutput') && $('ta-soaOutput').value.trim()) combineChart('ta');
+}
+function setTAFac(v){ TAFAC.facility = (TAFAC.facility===v?null:v); renderTAFac(); refreshTACombinedChart(); }
+function toggleTAFacTx(k){ TAFAC[k] = !TAFAC[k]; renderTAFac(); refreshTACombinedChart(); }
+function setTAFacDur(d){
+  TAFAC.hanyakDur = (TAFAC.hanyakDur===String(d)?null:String(d));
+  TAFAC.hanyakUnknown = false;
+  renderTAFac();
+  refreshTACombinedChart();
+}
+function toggleTAFacUnknown(){
+  TAFAC.hanyakUnknown = !TAFAC.hanyakUnknown;
+  if(TAFAC.hanyakUnknown){ TAFAC.hanyakDur = null; TAFAC.hanyakCustom = ''; }
+  renderTAFac();
+  refreshTACombinedChart();
+}
+function setTAFacCustom(v){
+  TAFAC.hanyakCustom = v;
+  TAFAC.hanyakDur = 'custom';
+  TAFAC.hanyakUnknown = false;
+  refreshTACombinedChart();
+}
+function renderTAFac(){
+  const row = $('ta-facRow');
+  if(!row) return;
+  let h = '';
+  h += `<button type="button" class="btn-toggle${TAFAC.facility==='한의원'?' selected':''}" onclick="setTAFac('한의원')">한의원</button>`;
+  h += `<button type="button" class="btn-toggle${TAFAC.facility==='한방병원'?' selected':''}" onclick="setTAFac('한방병원')">한방병원</button>`;
+  h += `<span style="color:var(--muted);">|</span>`;
+  h += `<button type="button" class="btn-toggle${TAFAC.침?' selected':''}" onclick="toggleTAFacTx('침')">침</button>`;
+  h += `<button type="button" class="btn-toggle${TAFAC.추나?' selected':''}" onclick="toggleTAFacTx('추나')">추나</button>`;
+  h += `<button type="button" class="btn-toggle${TAFAC.한약?' selected':''}" onclick="toggleTAFacTx('한약')">한약</button>`;
+  if(TAFAC.한약){
+    h += `<span style="color:var(--muted);">|</span>`;
+    [7,10].forEach(d=>{
+      h += `<button type="button" class="btn-toggle tier2${TAFAC.hanyakDur===String(d)?' selected':''}" onclick="setTAFacDur(${d})">${d}일</button>`;
+    });
+    h += `<input type="text" class="ch-inline" placeholder="기타(일)" value="${escAttr(TAFAC.hanyakCustom)}" oninput="setTAFacCustom(this.value)" style="width:70px;flex:0 0 auto;">`;
+    h += `<button type="button" class="btn-toggle tier2${TAFAC.hanyakUnknown?' selected':''}" onclick="toggleTAFacUnknown()">모름</button>`;
+  }
+  row.innerHTML = h;
+}
+function taFacilitySentence(){
+  const any = TAFAC.침 || TAFAC.추나 || TAFAC.한약;
+
+  if(!any) return '- 이번 사고로 인한 한의원/한방병원 치료(-)';
+
+  const fac = TAFAC.facility || '한의원';
+  let hanyakText = '한약(-)';
+
+  if(TAFAC.한약){
+    let dur = '';
+
+    if(TAFAC.hanyakUnknown){
+      dur = '몇일 분인지 모름';
+    } else if(TAFAC.hanyakDur === 'custom'){
+      dur = (TAFAC.hanyakCustom || '') + '일분';
+    } else if(TAFAC.hanyakDur){
+      dur = TAFAC.hanyakDur + '일분';
+    }
+
+    hanyakText = `한약(+${dur ? ', ' + dur : ''})`;
+  }
+
+  return `- 이번 사고로 인한 ${fac} 치료(+) / 침(${TAFAC.침 ? '+' : '-'}) 추나(${TAFAC.추나 ? '+' : '-'}) ${hanyakText}`;
+}
+function getTASymptomLine(ns){
+  if(ns !== 'ta') return '';
+  return '- ' + TA_ITEMS
+    .map(it => it.key + '(' + (TASTATE.ta[it.key] ? '+' : '-') + ')')
+    .join(' ');
+}
+
+/* ==================== P 섹션 (ns별) ==================== */
+const ACU_AREAS = ['두경부','안면부','흉복부','요배부','상지부(견)','상지부(주)','상지부(완)','하지부(고)','하지부(슬)','하지부(족)'];
+/* 부위별 전용 경혈 지정: 경혈/투자/관절·척추·복강/간접구는 기존값 유지, 처치(건부·습부1·습부2 공유)/핫팩/IR/텐즈(TENS·SSP 공유)는 신규 지정 — 같은 부위 안에서 전부 서로 다른 경혈 */
+const ACU_MAP = {
+  '두경부':    {경혈:'천주',   투자:['풍부','풍지'],    관절:null,   척추:'대추',   복강:null,   간접구:'완골', 처치:'예풍', 핫팩:'옥침', IR:null, 텐즈:'견정'},
+  '안면부':    {경혈:'상관',   투자:['지창','협거'],    관절:null,   척추:null,     복강:null,   간접구:'예풍', 처치:'승읍', 핫팩:null,   IR:null,   텐즈:'하관'},
+  '흉복부':    {경혈:'단중',   투자:null,                관절:null,   척추:null,     복강:'중완', 간접구:'중부', 처치:'관원', 핫팩:'천추', IR:'기해', 텐즈:'하완'},
+  '요배부':    {경혈:'신수',   투자:null,                관절:null,   척추:'요양관', 복강:null,   간접구:'명문', 처치:'대장수', 핫팩:'요안', IR:'질변', 텐즈:'포황'},
+  '상지부(견)':{경혈:'견우',   투자:['견료','극천'],     관절:'노수', 척추:null,     복강:null,   간접구:'견정', 처치:'비노', 핫팩:'천부', IR:'협백', 텐즈:'노회'},
+  '상지부(주)':{경혈:'수삼리', 투자:['곡지','척택'],     관절:'소해', 척추:null,     복강:null,   간접구:'공최', 처치:'상렴', 핫팩:'하렴', IR:'곡택', 텐즈:'주료'},
+  '상지부(완)':{경혈:'열결',   투자:['내관','외관'],     관절:'양지', 척추:null,     복강:null,   간접구:'합곡', 처치:'신문', 핫팩:'노궁', IR:'후계', 텐즈:'소부'},
+  '하지부(고)':{경혈:'풍시',   투자:null,                관절:'환도', 척추:null,     복강:null,   간접구:'곡천', 처치:'승부', 핫팩:'은문', IR:'부극', 텐즈:'위양'},
+  '하지부(슬)':{경혈:'족삼리', 투자:['양릉천','음릉천'], 관절:'독비', 척추:null,     복강:null,   간접구:'위중', 처치:'혈해', 핫팩:'승산', IR:'승근', 텐즈:'비양'},
+  '하지부(족)':{경혈:'태충',   투자:['삼음교','현종'],   관절:'신맥', 척추:null,     복강:null,   간접구:'태계', 처치:'조해', 핫팩:'곤륜', IR:'태백', 텐즈:'구허'}
+};
+function acuShortName(a){ return a.replace(/\(.*\)$/,''); }
+const AREA_LABELS = {
+  '상지부(견)':['견','상지'], '상지부(주)':['주','상지'], '상지부(완)':['완','상지'],
+  '하지부(고)':['고','하지'], '하지부(슬)':['슬','하지'], '하지부(족)':['족','하지']
+};
+function areaLabel(a){
+  const pair = AREA_LABELS[a];
+  if(!pair) return a;
+  return `${pair[0]} <span class="area-sub">${pair[1]}</span>`;
+}
+const CHUNA_BTNS = ['COX','drop','Lumbar roll','MET','SCS','골타','JS123','경추 thrust','흉추 thrust'];
+const CHUNA_TEXT_BTNS = ['MET','SCS'];
+
+function newPState(ns){
+  if(ns === 'ta'){
+    return {
+      acuAreas: [],
+      acuSt: {경혈:'경혈2', 투자:false, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:false, ir:true, ict:true, ssp:false},
+      pYakchim: {active:true, kind:'어혈', buyi:'', cc:'0.5cc', gae:'1'},
+      pChunaActive: {단순추나:true, 복잡추나:false},
+      pChunaSpine: null,
+      chunaSelected: {COX:true, 'drop':true, 'Lumbar roll':true, JS123:true},
+      chunaText: {},
+      pTaping: {active:false, buyi:'', gae:'4', allergy:false},
+      pShockwave: {active:false, buyi:'', ta:'', noFracture:false},
+      pSilbi: {sel:null, gen:null},
+      pHerbActive: {},
+      herb: {},
+      taJcheop: {active:false, name:'', days:'7', gagam:''}
+    };
+  }
+  return {
+    acuAreas: [],
+    acuSt: {경혈:'경혈2', 투자:true, 관절:false, 척추:false, 복강:false, 전침:true, 건부:false, 습부1:false, 습부2:true, 간접구:true, 핫팩:true, ir:true, ict:true, ssp:false},
+    pYakchim: {active:false, kind:'', buyi:'', cc:'', gae:''},
+    pChunaActive: {단순추나:false, 복잡추나:false},
+    pChunaSpine: null,
+    chunaSelected: {},
+    chunaText: {},
+    pTaping: {active:false, buyi:'', gae:'4', allergy:false},
+    pShockwave: {active:false, buyi:'', ta:'', noFracture:false},
+    pSilbi: {sel:null, gen:null},
+    pHerbActive: {'보험약':false, '상비약':false, '탕약':false},
+    herb: {'보험약':{name:'',perDay:'',totalDays:''}, '상비약':{name:'',perDay:'',totalDays:''}, '탕약':{name:'',perDay:'',totalDays:''}},
+    taJcheop: {active:false, name:'', days:'7', gagam:''}
+  };
+}
+const PSTATE = { main: newPState('main'), ta: newPState('ta') };
+
+function toggleAcuArea(ns, area){
+  const st = PSTATE[ns];
+  const idx = st.acuAreas.indexOf(area);
+  if(idx>=0){ st.acuAreas.splice(idx,1); }
+  else{ if(st.acuAreas.length>=2) st.acuAreas.shift(); st.acuAreas.push(area); }
+  renderPBody(ns);
+}
+function toggleGyeolhyeol(ns, k){ const st=PSTATE[ns]; st.acuSt.경혈 = (st.acuSt.경혈===k) ? null : k; renderPBody(ns); }
+function toggleAcuFlag(ns, k){ PSTATE[ns].acuSt[k] = !PSTATE[ns].acuSt[k]; renderPBody(ns); }
+function setTensSsp(ns, kind){
+  const st = PSTATE[ns];
+  if(st.acuSt[kind]){
+    st.acuSt[kind] = false;
+  } else {
+    st.acuSt.ict = false;
+    st.acuSt.ssp = false;
+    st.acuSt[kind] = true;
+  }
+  renderPBody(ns);
+}
+function toggleTaping(ns){ PSTATE[ns].pTaping.active = !PSTATE[ns].pTaping.active; renderPBody(ns); }
+function toggleTapingAllergy(ns){ PSTATE[ns].pTaping.allergy = !PSTATE[ns].pTaping.allergy; renderPBody(ns); }
+function toggleShockwave(ns){ PSTATE[ns].pShockwave.active = !PSTATE[ns].pShockwave.active; renderPBody(ns); }
+function toggleShockwaveNoFracture(ns){ PSTATE[ns].pShockwave.noFracture = !PSTATE[ns].pShockwave.noFracture; renderPBody(ns); }
+function toggleYakchim(ns){ PSTATE[ns].pYakchim.active = !PSTATE[ns].pYakchim.active; renderPBody(ns); }
+function setYakchimKind(ns, v){ PSTATE[ns].pYakchim.kind = (PSTATE[ns].pYakchim.kind===v?'':v); renderPBody(ns); }
+function setYakchimCc(ns, v){ PSTATE[ns].pYakchim.cc = (PSTATE[ns].pYakchim.cc===v?'':v); renderPBody(ns); }
+function setYakchimGae(ns, v){ PSTATE[ns].pYakchim.gae = (PSTATE[ns].pYakchim.gae===String(v)?'':String(v)); renderPBody(ns); }
+function toggleChuna(ns, type){
+  const st = PSTATE[ns];
+  if(type==='단순추나' && !st.pChunaActive['단순추나']) st.pChunaActive['복잡추나']=false;
+  if(type==='복잡추나' && !st.pChunaActive['복잡추나']) st.pChunaActive['단순추나']=false;
+  st.pChunaActive[type] = !st.pChunaActive[type];
+  if(!st.pChunaActive['복잡추나']) st.pChunaSpine = null;
+  renderPBody(ns);
+}
+function setChunaSpine(ns, v){ PSTATE[ns].pChunaSpine = (PSTATE[ns].pChunaSpine===v?null:v); renderPBody(ns); }
+function applyChunaPreset(ns, name){
+  const st = PSTATE[ns];
+  if(name==='C 경추'){ st.chunaSelected={COX:true,MET:true,JS123:true,SCS:true}; st.chunaText={MET:'사각근, 견갑거근, 승모근',SCS:'견갑거근'}; }
+  else{ st.chunaSelected={COX:true,MET:true,SCS:true}; st.chunaText={MET:'햄스트링, 둔근, 이상근, 내전근',SCS:'장요근'}; }
+  renderPBody(ns);
+}
+function toggleChunaBtn(ns, k){ PSTATE[ns].chunaSelected[k] = !PSTATE[ns].chunaSelected[k]; renderPBody(ns); }
+function setChunaText(ns, k, v){ PSTATE[ns].chunaText[k]=v; }
+function toggleHerb(ns, k){ PSTATE[ns].pHerbActive[k]=!PSTATE[ns].pHerbActive[k]; renderPBody(ns); }
+function toggleTaJcheop(ns){ PSTATE[ns].taJcheop.active = !PSTATE[ns].taJcheop.active; renderPBody(ns); }
+function setSilbiSel(ns, v){
+  const st = PSTATE[ns];
+  st.pSilbi.sel = (st.pSilbi.sel===v ? null : v);
+  if(st.pSilbi.sel !== '유') st.pSilbi.gen = null;
+  renderPBody(ns);
+}
+function setSilbiGen(ns, v){ PSTATE[ns].pSilbi.gen = (PSTATE[ns].pSilbi.gen===v ? null : v); renderPBody(ns); }
+function getSilbiLine(ns){
+  const st = PSTATE[ns].pSilbi;
+  if(!st.sel) return '';
+  if(st.sel === '거부') return '\u25a0 \uc2e4\ube44 : \uc870\ud68c \uac70\ubd80';
+  if(st.sel === '유'){
+    const gen = st.gen ? ' (' + st.gen + '\uc138\ub300)' : '';
+    return '\u25a0 \uc2e4\ube44 : \uc720' + gen;
+  }
+  return '\u25a0 \uc2e4\ube44 : \ubb34';
+}
+
+function resetPBody(ns){
+  PSTATE[ns] = newPState(ns);
+  renderPBody(ns);
+}
+
+function renderPBody(ns){
+  const st = PSTATE[ns];
+  const body = $(elId(ns,'pBody'));
+  if(!body) return;
+  const isTA = ns === 'ta';
+  let h = '';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  ACU_AREAS.slice(0,4).forEach(a=>{
+    h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ACU_AREAS.slice(4,7).forEach(a=>{
+    h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ACU_AREAS.slice(7).forEach(a=>{
+    h += `<button type="button" class="btn-toggle${st.acuAreas.includes(a)?' selected':''}" onclick="toggleAcuArea('${ns}','${a}')">${areaLabel(a)}</button>`;
+  });
+  h += '</div>';
+  const needs2 = st.acuSt.경혈==='경혈2' || st.acuSt.습부2;
+  if(needs2 && st.acuAreas.length<2){
+    h += '<div style="font-size:11.5px;color:var(--danger);margin-top:4px;">부위를 두 개 선택해주세요</div>';
+  }
+  h += '</div>';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  ['경혈1','경혈2'].forEach(k=>{
+    h += `<button type="button" class="btn-toggle${st.acuSt.경혈===k?' selected':''}" onclick="toggleGyeolhyeol('${ns}','${k}')">${k}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  h += `<button type="button" class="btn-toggle${st.acuSt.투자?' selected':''}" onclick="toggleAcuFlag('${ns}','투자')">투자</button>`;
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ['관절','척추','복강'].forEach(k=>{
+    h += `<button type="button" class="btn-toggle${st.acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${ns}','${k}')">${k}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  h += `<button type="button" class="btn-toggle${st.acuSt.전침?' selected':''}" onclick="toggleAcuFlag('${ns}','전침')">전침</button>`;
+  h += '</div>';
+
+  h += '<div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${st.acuSt.건부?' selected':''}" onclick="toggleAcuFlag('${ns}','건부')">건부</button>`;
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  ['습부1','습부2'].forEach(k=>{
+    h += `<button type="button" class="btn-toggle${st.acuSt[k]?' selected':''}" onclick="toggleAcuFlag('${ns}','${k}')">${k}</button>`;
+  });
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  h += `<button type="button" class="btn-toggle${st.acuSt.간접구?' selected':''}" onclick="toggleAcuFlag('${ns}','간접구')">뜸</button>`;
+  h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+  if(!isTA){
+    h += `<button type="button" class="btn-toggle${st.acuSt.핫팩?' selected':''}" onclick="toggleAcuFlag('${ns}','핫팩')">핫팩</button>`;
+  }
+  h += `<button type="button" class="btn-toggle${st.acuSt.ir?' selected':''}" onclick="toggleAcuFlag('${ns}','ir')">IR</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.ict?' selected':''}" onclick="setTensSsp('${ns}','ict')">TENS</button>`;
+  h += `<button type="button" class="btn-toggle${st.acuSt.ssp?' selected':''}" onclick="setTensSsp('${ns}','ssp')">SSP</button>`;
+  h += '</div></div>';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${st.pYakchim.active?' selected':''}" onclick="toggleYakchim('${ns}')">약침</button>`;
+  if(st.pYakchim.active){
+    const yakGroups = [['태반'],['어혈','죽염','신경통'],['봉독','뇌순환'],['심부'],['코어강화']];
+    yakGroups.forEach((grp,gi)=>{
+      if(gi>0) h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+      grp.forEach(k=>{
+        h += `<button type="button" class="btn-toggle tier2${st.pYakchim.kind===k?' selected':''}" onclick="setYakchimKind('${ns}','${k}')">${k}</button>`;
+      });
+    });
+  }
+  h += '</div>';
+  if(st.pYakchim.active){
+    h += '<div class="btn-toggle-row">';
+    h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(st.pYakchim.buyi)}" oninput="PSTATE.${ns}.pYakchim.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(st.pYakchim.buyi)}px;flex:0 0 auto;">`;
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    [0.5,1,2,3,4].forEach(n=>{
+      const v = n+'cc';
+      h += `<button type="button" class="btn-toggle tier2${st.pYakchim.cc===v?' selected':''}" onclick="setYakchimCc('${ns}','${v}')">${v}</button>`;
+    });
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    [1,2,3,4].forEach(n=>{
+      h += `<button type="button" class="btn-toggle tier2${st.pYakchim.gae===String(n)?' selected':''}" onclick="setYakchimGae('${ns}',${n})">${n}개</button>`;
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  h += '<div class="p-group"><div class="btn-toggle-row">';
+  h += `<button type="button" class="btn-toggle${st.pChunaActive['단순추나']?' selected':''}" onclick="toggleChuna('${ns}','단순추나')">단순추나</button>`;
+  h += `<button type="button" class="btn-toggle${st.pChunaActive['복잡추나']?' selected':''}" onclick="toggleChuna('${ns}','복잡추나')">복잡추나</button>`;
+  if(st.pChunaActive['복잡추나']){
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    h += `<button type="button" class="btn-toggle${st.pChunaSpine==='경추'?' selected':''}" onclick="setChunaSpine('${ns}','경추')">경추</button>`;
+    h += `<button type="button" class="btn-toggle${st.pChunaSpine==='요추'?' selected':''}" onclick="setChunaSpine('${ns}','요추')">요추</button>`;
+  }
+  if(st.pChunaActive['단순추나'] || st.pChunaActive['복잡추나']){
+    h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+    h += `<button type="button" class="btn-toggle tier2" onclick="applyChunaPreset('${ns}','C 경추')">C 경추</button>`;
+    h += `<button type="button" class="btn-toggle tier2" onclick="applyChunaPreset('${ns}','C 요추')">C 요추</button>`;
+  }
+  h += '</div>';
+  if(st.pChunaActive['복잡추나'] && !st.pChunaSpine){
+    h += '<div style="font-size:11.5px;color:var(--danger);margin:-4px 0 8px;">경추 또는 요추를 선택해주세요</div>';
+  }
+  if(st.pChunaActive['단순추나'] || st.pChunaActive['복잡추나']){
+    h += '<div style="margin-top:6px;">';
+    h += '<div class="btn-toggle-row">';
+    CHUNA_BTNS.forEach(k=>{
+      const active = !!st.chunaSelected[k];
+      h += `<button type="button" class="btn-toggle tier3${active?' selected':''}" onclick="toggleChunaBtn('${ns}','${k}')">${k}</button>`;
+      if(active && CHUNA_TEXT_BTNS.includes(k)){
+        h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(st.chunaText[k]||'')}" oninput="setChunaText('${ns}','${k}',this.value);this.style.width=inputWidthFor(this.value,90,200)+'px'" style="width:${inputWidthFor(st.chunaText[k]||'',90,200)}px;flex:0 0 auto;">`;
+      }
+    });
+    h += '</div></div>';
+  }
+  h += '</div>';
+
+  if(!isTA){
+    h += '<div class="p-group">';
+    h += '<div class="btn-toggle-row">';
+    h += `<button type="button" class="btn-toggle${st.pTaping.active?' selected':''}" onclick="toggleTaping('${ns}')">테이핑</button>`;
+    if(st.pTaping.active){
+      h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(st.pTaping.buyi)}" oninput="PSTATE.${ns}.pTaping.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(st.pTaping.buyi)}px;flex:0 0 auto;">`;
+      h += `<input type="number" class="ch-inline" min="1" value="${escAttr(st.pTaping.gae)}" oninput="PSTATE.${ns}.pTaping.gae=this.value" style="width:44px;flex:0 0 auto;">`;
+      h += `<span style="font-size:12px;color:var(--muted);">개</span>`;
+      h += `<button type="button" class="btn-toggle tier2${st.pTaping.allergy?' selected':''}" onclick="toggleTapingAllergy('${ns}')">알러지 없음</button>`;
+    }
+    h += '</div>';
+    h += '<div class="btn-toggle-row">';
+    h += `<button type="button" class="btn-toggle${st.pShockwave.active?' selected':''}" onclick="toggleShockwave('${ns}')">충격파</button>`;
+    if(st.pShockwave.active){
+      h += `<input type="text" class="ch-inline" placeholder="부위" value="${escAttr(st.pShockwave.buyi)}" oninput="PSTATE.${ns}.pShockwave.buyi=this.value;this.style.width=inputWidthFor(this.value)+'px'" style="width:${inputWidthFor(st.pShockwave.buyi)}px;flex:0 0 auto;">`;
+      h += `<input type="number" class="ch-inline" min="1" placeholder="타수" value="${escAttr(st.pShockwave.ta)}" oninput="PSTATE.${ns}.pShockwave.ta=this.value" style="width:56px;flex:0 0 auto;">`;
+      h += `<span style="font-size:12px;color:var(--muted);">타</span>`;
+      h += `<button type="button" class="btn-toggle tier2${st.pShockwave.noFracture?' selected':''}" onclick="toggleShockwaveNoFracture('${ns}')">골절, 골다공증 없음</button>`;
+    }
+    h += '</div>';
+
+    h += '<div class="btn-toggle-row">';
+    [['유','실비 유'],['무','실비 무'],['거부','실비 조회 거부']].forEach(pair=>{
+      h += `<button type="button" class="btn-toggle${st.pSilbi.sel===pair[0]?' selected':''}" onclick="setSilbiSel('${ns}','${pair[0]}')">${pair[1]}</button>`;
+    });
+    if(st.pSilbi.sel === '유'){
+      h += '<span style="color:var(--muted);margin:0 2px;">|</span>';
+      [1,2,3,4].forEach(n=>{
+        h += `<button type="button" class="btn-toggle tier2${st.pSilbi.gen===n?' selected':''}" onclick="setSilbiGen('${ns}',${n})">${n}세대</button>`;
+      });
+    }
+    h += '</div>';
+    h += '</div>';
+
+    h += '<div class="p-group"><div class="btn-toggle-row">';
+    h += `<button type="button" class="btn-toggle${st.pHerbActive['보험약']?' selected':''}" onclick="toggleHerb('${ns}','보험약')">보험약</button>`;
+    h += `<button type="button" class="btn-toggle${st.pHerbActive['상비약']?' selected':''}" onclick="toggleHerb('${ns}','상비약')">상비약</button>`;
+    h += `<button type="button" class="btn-toggle${st.pHerbActive['탕약']?' selected':''}" onclick="toggleHerb('${ns}','탕약')">탕약</button>`;
+    h += '</div>';
+    function herbRow(label, key, unit){
+      const store = st.herb[key];
+      return `<div class="taping-row">
+        <span class="herb-label">${label}</span>
+        <input type="text" class="ch-inline" placeholder="약 이름" value="${escAttr(store.name)}" oninput="PSTATE.${ns}.herb['${key}'].name=this.value;this.style.width=inputWidthFor(this.value,90,200)+'px'" style="width:${inputWidthFor(store.name,90,200)}px;flex:0 0 auto;">
+        <span style="color:var(--muted);margin:0 2px;">|</span>
+        <span style="font-size:12px;color:var(--muted);">1일</span>
+        <input type="number" class="ch-inline" value="${escAttr(store.perDay)}" oninput="PSTATE.${ns}.herb['${key}'].perDay=this.value" style="width:40px;flex:0 0 auto;">
+        <span style="font-size:12px;color:var(--muted);">${unit}</span>
+        <span style="color:var(--muted);margin:0 2px;">|</span>
+        <span style="font-size:12px;color:var(--muted);">총</span>
+        <input type="number" class="ch-inline" value="${escAttr(store.totalDays)}" oninput="PSTATE.${ns}.herb['${key}'].totalDays=this.value" style="width:40px;flex:0 0 auto;">
+        <span style="font-size:12px;color:var(--muted);">일</span>
+      </div>`;
+    }
+    if(st.pHerbActive['보험약']) h += herbRow('보험약', '보험약', '회');
+    if(st.pHerbActive['상비약']) h += herbRow('상비약', '상비약', '회');
+    if(st.pHerbActive['탕약']) h += herbRow('탕약', '탕약', '첩');
+    h += '</div>';
+  } else {
+    /* TA 탭: 테이핑/충격파/실비/기존 한약군 대신 TA 첩약만 */
+    const jc = st.taJcheop;
+    const days = jc.days || '7';
+    const cheop = (parseFloat(days)||0) * 2;
+    h += '<div class="p-group"><div class="btn-toggle-row">';
+    h += `<button type="button" class="btn-toggle${jc.active?' selected':''}" onclick="toggleTaJcheop('${ns}')">TA 첩약</button>`;
+    h += '</div>';
+    if(jc.active){
+      h += '<div class="taping-row">';
+      h += `<span class="herb-label" style="width:auto;">처방명</span>`;
+      h += `<input type="text" class="ch-inline" placeholder="처방명" value="${escAttr(jc.name)}" oninput="PSTATE.ta.taJcheop.name=this.value;this.style.width=inputWidthFor(this.value,100,220)+'px'" style="width:${inputWidthFor(jc.name,100,220)}px;flex:0 0 auto;">`;
+      h += `<input type="text" class="ch-inline" readonly value="${cheop}첩" style="width:60px;flex:0 0 auto;text-align:center;">`;
+      h += `<input type="number" class="ch-inline" value="${escAttr(days)}" oninput="PSTATE.ta.taJcheop.days=this.value;renderPBody('ta')" style="width:50px;flex:0 0 auto;">`;
+      h += `<span style="font-size:12px;color:var(--muted);">일</span>`;
+      h += '<span style="color:var(--muted);margin:0 4px;">|</span>';
+      h += `<span class="herb-label" style="width:auto;">가감 약재</span>`;
+      h += `<input type="text" class="ch-inline" placeholder="가감 약재" value="${escAttr(jc.gagam)}" oninput="PSTATE.ta.taJcheop.gagam=this.value;this.style.width=inputWidthFor(this.value,120,260)+'px'" style="width:${inputWidthFor(jc.gagam,120,260)}px;flex:0 0 auto;">`;
+      h += '</div>';
+    }
+    h += '</div>';
+  }
+
+  body.innerHTML = h;
+}
+
+function buildPText(ns){
+  const st = PSTATE[ns];
+  const isTA = ns === 'ta';
+  const a0 = st.acuAreas[0], a1 = st.acuAreas[1];
+  const m0 = a0 ? ACU_MAP[a0] : null, m1 = a1 ? ACU_MAP[a1] : null;
+  const parts = [];
+  function isLimb(area){ return area && (area.indexOf('상지부')===0 || area.indexOf('하지부')===0); }
+  function pickArea(key){
+    const cands = [];
+    if(a0) cands.push({area:a0, m:m0});
+    if(a1) cands.push({area:a1, m:m1});
+    cands.sort((x,y)=> (isLimb(y.area)?1:0) - (isLimb(x.area)?1:0));
+    for(const cd of cands){ if(cd.m && cd.m[key]) return cd; }
+    return null;
+  }
+  let acuPointsStr = '';
+  if(st.acuSt.경혈==='경혈2' && m0 && m1){ acuPointsStr = `${m0.경혈} ${m1.경혈}`; parts.push(`경혈2부위(${acuPointsStr} 등 ${acuShortName(a0)} ${acuShortName(a1)})`); }
+  else if(st.acuSt.경혈==='경혈1' && m0){ acuPointsStr = m0.경혈; parts.push(`경혈1부위(${acuPointsStr} 등 ${acuShortName(a0)})`); }
+  if(st.acuSt.투자){ const p=pickArea('투자'); if(p) parts.push(`투자(${p.m.투자.join(' ')})`); }
+  if(st.acuSt.관절){ const p=pickArea('관절'); if(p) parts.push(`관절(${p.m.관절})`); }
+  if(st.acuSt.척추){ const p=pickArea('척추'); if(p) parts.push(`척추(${p.m.척추})`); }
+  if(st.acuSt.복강){ const p=pickArea('복강'); if(p) parts.push(`복강(${p.m.복강})`); }
+  if(st.acuSt.전침) parts.push('침전기자극술');
+  if(st.acuSt.습부2 && m0 && m1) parts.push(`습부2부위(${m0.처치} ${m1.처치} 등 ${acuShortName(a0)} ${acuShortName(a1)})`);
+  else if(st.acuSt.습부2 && m0) parts.push(`습부2부위(${m0.처치} 등 ${acuShortName(a0)})`);
+  if(st.acuSt.습부1 && m0) parts.push(`습부1부위(${m0.처치} 등 ${acuShortName(a0)})`);
+  if(st.acuSt.건부 && m0) parts.push(`건부(${m0.처치} 등 ${acuShortName(a0)})`);
+  if(st.acuSt.간접구){ const p=pickArea('간접구'); if(p) parts.push(`기기구(${p.m.간접구})`); }
+  if(!isTA && st.acuSt.핫팩){ const p=pickArea('핫팩'); if(p) parts.push(`경피경근온열(${p.m.핫팩} 등 ${acuShortName(p.area)})`); }
+  if(st.acuSt.ir){ const p=pickArea('IR'); if(p) parts.push(`경피적외선조사(${p.m.IR} 등 ${acuShortName(p.area)})`); }
+  if(st.acuSt.ict){ const p=pickArea('텐즈'); if(p) parts.push(`TENS(${p.m.텐즈} 등 ${acuShortName(p.area)})`); }
+  if(st.acuSt.ssp){ const p=pickArea('텐즈'); if(p) parts.push(`SSP(${p.m.텐즈} 등 ${acuShortName(p.area)})`); }
+
+  let result = 'P) \n' + parts.join(', ') + ' * 등, 어깨 부위는 0.3cm 이하로 천자함';
+
+  if(st.pYakchim.active){
+    const main = (st.pYakchim.kind||'') + (st.pYakchim.cc ? ' '+st.pYakchim.cc : '') + (st.pYakchim.gae ? '*'+st.pYakchim.gae : '');
+    let buyi = st.pYakchim.buyi;
+    if(isTA && !buyi && acuPointsStr){ buyi = acuPointsStr; }
+    const detail = main + (buyi ? ` (${buyi})` : '');
+    result += `\n■ 약침 : ${detail}`;
+  }
+  const chunaType = st.pChunaActive['단순추나'] ? '단순추나' : (st.pChunaActive['복잡추나'] ? '복잡추나' : '');
+  if(chunaType){
+    const techList = [];
+    CHUNA_BTNS.forEach(k=>{
+      if(!st.chunaSelected[k]) return;
+      const txt = st.chunaText[k] ? `(${st.chunaText[k]})` : '';
+      techList.push(k+txt);
+    });
+    result += `\n■ ${chunaType}${techList.length ? ' : '+techList.join(' - ') : ''}`;
+    if(chunaType === '복잡추나'){
+      if(st.pChunaSpine === '경추'){
+        result += '\n- 상기 환자 경추 추간판 탈출증으로 인한 항강통 및 상지 방사통 호소하여 교정기법 포함한 복잡추나 시행함\n- 복잡추나 시행 이후 통증 감소 및 관절가동범위 증가를 확인함';
+      } else if(st.pChunaSpine === '요추'){
+        result += '\n- 상기 환자 요추 추간판 탈출증으로 인한 요통 및 하지 방사통 호소하여 교정기법 포함한 복잡추나 시행함\n- 복잡추나 시행 이후 통증 감소 및 관절가동범위 증가를 확인함';
+      }
+    } else if(chunaType === '단순추나'){
+      result += '\n- 단순추나 시행 이후 통증 감소 및 관절가동범위 증가를 확인함';
+    }
+  }
+
+  if(!isTA){
+    let extGroupStarted = false;
+    if(st.pTaping.active){
+      const gae = st.pTaping.gae || '4';
+      const buyiPart = st.pTaping.buyi ? st.pTaping.buyi+' ' : '';
+      result += `${extGroupStarted?'\n':'\n\n'}■ 테이핑 : ${buyiPart}(${gae}개)${st.pTaping.allergy ? ' / 알러지 없음' : ''}`;
+      extGroupStarted = true;
+    }
+    if(st.pShockwave.active){
+      const buyiPart = st.pShockwave.buyi ? st.pShockwave.buyi+' ' : '';
+      result += `${extGroupStarted?'\n':'\n\n'}■ 충격파 : ${buyiPart}(${st.pShockwave.ta || ''}타)${st.pShockwave.noFracture ? ' / 골절, 골다공증 없음' : ''}`;
+      extGroupStarted = true;
+    }
+    const silbiLine = getSilbiLine(ns);
+    if(silbiLine){
+      result += `\n\n${silbiLine}`;
+    }
+    let herbGroupStarted = false;
+    function herbLine(label, store, unit){
+      const dose = (store.perDay || store.totalDays) ? `1일 ${store.perDay||''}${unit} 총 ${store.totalDays||''}일` : '';
+      const s = [store.name, dose].filter(Boolean).join(' ');
+      const line = `${herbGroupStarted?'\n':'\n\n'}■ ${label}${s ? ' : '+s : ''}`;
+      herbGroupStarted = true;
+      return line;
+    }
+    if(st.pHerbActive['보험약']) result += herbLine('보험약', st.herb['보험약'], '회');
+    if(st.pHerbActive['상비약']) result += herbLine('상비약', st.herb['상비약'], '회');
+    if(st.pHerbActive['탕약']) result += herbLine('탕약', st.herb['탕약'], '첩');
+
+  } else if(st.taJcheop.active){
+    const jc = st.taJcheop;
+    const days = jc.days || '7';
+    const cheop = (parseFloat(days)||0) * 2;
+    const namePart = jc.name || '(처방명)';
+    const gagamPart = jc.gagam || '';
+    result += `\n\n■ ${namePart} ${cheop}첩 ${days}일 처방${gagamPart? ' / '+gagamPart:''}`;
+    result += '\n' + buildTaJcheopSentence(cheop, days, namePart, gagamPart);
+  }
+  return result;
+}
+
+/* TA 첩약 문구 자동 생성 (C/C 키워드 기반) */
+function detectCC(text){
+  text = text || '';
+  return {
+    요통: /요통|허리/.test(text),
+    항강통: /항강통|목\s*뒤|경추/.test(text),
+    무릎: /무릎|슬관절/.test(text),
+    팔꿈치: /팔꿈치|주관절/.test(text)
+  };
+}
+function taSourceText(){
+  const t1 = $('ta-directTextInput') ? $('ta-directTextInput').value : '';
+  const t2 = $('ta-extraNotesInput') ? $('ta-extraNotesInput').value : '';
+  const t3 = $('ta-scriptOutput') ? $('ta-scriptOutput').value : '';
+  const t4 = $('ta-soaOutput') ? $('ta-soaOutput').value : '';
+  return [t1,t2,t3,t4].join(' ');
+}
+function buildTaJcheopSentence(cheop, days, name, gagam){
+  const cc = detectCC(taSourceText());
+  const painPhrases = [];
+  if(cc.항강통) painPhrases.push('NRS # 수준의 항강통 및 경추 관절가동범위 제한');
+  if(cc.요통) painPhrases.push('NRS # 수준의 요통 및 요추 관절가동범위 제한');
+  if(cc.팔꿈치) painPhrases.push('NRS # 수준의 팔꿈치 통증 및 주관절 관절가동범위 제한');
+  if(cc.무릎) painPhrases.push('NRS # 수준의 무릎 통증 및 슬관절 관절가동범위 제한');
+  if(!painPhrases.length) painPhrases.push('NRS # 수준의 통증 및 관절가동범위 제한');
+  const painText = painPhrases.join(', ');
+
+  const headache = TASTATE.ta.H;
+  const headacheText = headache ? ', 두통 동반되고' : '';
+
+  const examParts = [];
+  if(cc.항강통) examParts.push('SPURLING(+/+)');
+  if(cc.요통) examParts.push('SLRT(+/+)');
+  const examText = examParts.length ? `, 이학적 검사상 ${examParts.join(' 및 ')} 확인되었으며` : '';
+
+  const romParts = [];
+  if(cc.항강통) romParts.push('경추부');
+  if(cc.요통) romParts.push('요추부');
+  if(cc.팔꿈치) romParts.push('주관절');
+  if(cc.무릎) romParts.push('슬관절');
+  const romText = romParts.length ? romParts.join(' 및 ') : '관절';
+
+  const namePart = name || '(처방명)';
+  const gagamText = gagam ? `${namePart}을 기본방으로 설정하고 ${gagam} 등의 약재를 더하여` : `${namePart}을 기본방으로 하여`;
+
+  return `- 상기 환자 TA로 인한 ${painText} 호소하며${headacheText}${examText}, 본원 치료로 호전 보임에도 불구하고 ${romText} 관절가동범위 내 통증 잔여하여 환자 동의 하 ${days}일분을 처방하였으며, ${gagamText} 교통사고 후 통증 개선 및 신속한 일상 복귀를 위하여 본 첩약을 처방함`;
+}
+
+/* ==================== 차트 결합 ==================== */
+function normalizeSectionBreaks(text){
+  const lines = text.split('\n');
+  const headers = new Set(['S)','O)','A)','P)']);
+  const out = [];
+  for(let i=0;i<lines.length;i++){
+    const cur = lines[i].trim();
+    if(headers.has(cur) && out.length>0){
+      while(out.length && out[out.length-1].trim()===''){ out.pop(); }
+      out.push('');
+    }
+    out.push(lines[i]);
+  }
+  return out.join('\n');
+}
+function chartHeader(){
+  const now = new Date();
+  const md = (now.getMonth()+1) + '/' + now.getDate();
+  return '----------------------------------------------------------------------\n* ' + md;
+}
+function combineChart(ns){
+  let soa = $(elId(ns,'soaOutput')).value;
+  const hasSoa = soa.trim() !== '';
+  let lines = soa.split('\n');
+
+  if(hasSoa){
+    if(ns === 'ta'){
+      const symptomLine = getTASymptomLine(ns);
+      if(symptomLine){
+        // 이전에 들어간 H/D/N/V 줄을 제거한 뒤 모든 C/C가 끝난 위치에 한 번만 삽입
+        lines = lines.filter(line => !/^\s*-\s*H\([+-]\)\s+D\([+-]\)\s+N\([+-]\)\s+V\([+-]\)\s*$/.test(line));
+        const ccIdx = lines.findIndex(line => line.trim() === 'C/C');
+        let insertAt = -1;
+        if(ccIdx >= 0){
+          for(let i = ccIdx + 1; i < lines.length; i++){
+            if(/^O\/S\s*:/.test(lines[i].trim())){
+              insertAt = i;
+              break;
+            }
+          }
+        }
+        if(insertAt >= 0){
+          while(insertAt > ccIdx + 1 && lines[insertAt - 1].trim() === ''){
+            lines.splice(insertAt - 1, 1);
+            insertAt--;
+          }
+          lines.splice(insertAt, 0, '', symptomLine, '');
+        }
+      }
+
+      const facilityLine = taFacilitySentence();
+      if(facilityLine){
+        let osIdx = -1;
+        for(let i=0;i<lines.length;i++){ if(/^O\/S/.test(lines[i].trim())){ osIdx = i; break; } }
+        if(osIdx >= 0){
+          let blockEnd = lines.length;
+          for(let i=osIdx+1;i<lines.length;i++){
+            const t = lines[i].trim();
+            if(t === '' || /^(S\/H|P\/H|F\/H)/.test(t) || t === 'O)'){ blockEnd = i; break; }
+          }
+          let insertPos = blockEnd;
+          for(let i=osIdx+1;i<blockEnd;i++){
+            if(/^-\s*치료\s*:/.test(lines[i].trim())){ insertPos = i+1; }
+          }
+          lines.splice(insertPos, 0, facilityLine);
+        }
+      }
+    }
+
+    const bijeungLine = getBijeungLine(ns);
+    if(bijeungLine){
+      let aIdx = -1;
+      for(let i=0;i<lines.length;i++){ if(lines[i].trim() === 'A)'){ aIdx = i; break; } }
+      if(aIdx >= 0){
+        let insertAt = lines.length;
+        for(let i=aIdx+1;i<lines.length;i++){
+          const t = lines[i].trim();
+          if(t === '' || /^[SOAP]\)/.test(t) || t.startsWith('[SCRIPT]')){ insertAt = i; break; }
+        }
+        lines.splice(insertAt, 0, bijeungLine);
+      } else {
+        lines.push('', 'A)', bijeungLine);
+      }
+    }
+    soa = lines.join('\n');
+    soa = normalizeSectionBreaks(soa);
+  }
+
+  const p = buildPText(ns);
+  let full = hasSoa ? `${soa}\n\n${p}\n\n${chartHeader()}` : `${p}\n\n${chartHeader()}`;
+  full = uppercaseEnglish(full);
+  const out = $(elId(ns,'fullOutput'));
+  out.value = full;
+  autoGrow(out);
+}
+
+/* 생성하기 버튼: 분석 + 결합을 한 번에 */
+$('main-combineBtn').addEventListener('click', ()=>runGenerate('main'));
+$('ta-combineBtn').addEventListener('click', ()=>runGenerate('ta'));
+
+/* P차트만 버튼: AI 호출 없이 빈 S/O/A 뼈대 + P만 결합 */
+$('main-skeletonBtn').addEventListener('click', ()=>generateSkeletonChart('main'));
+$('ta-skeletonBtn').addEventListener('click', ()=>generateSkeletonChart('ta'));
+
+/* 차트 textarea 자동 높이 (스크롤 대신 통으로 표시) */
+['main-fullOutput','ta-fullOutput'].forEach(id=>{
+  const el = $(id);
+  if(el) el.addEventListener('input', ()=>autoGrow(el));
+});
+
+/* 전달 카드 접기/펴기 */
+function toggleDeliverCard(ns){ $(elId(ns,'deliver-card')).classList.toggle('collapsed'); }
+
+/* ==================== 복사 버튼 ==================== */
+document.querySelectorAll('[data-copy]').forEach(btn=>{
+  let revertTimer = null;
+  btn.addEventListener('click', async ()=>{
+    const el = $(btn.dataset.copy);
+    try{
+      await navigator.clipboard.writeText(el.value);
+    }catch(e){
+      el.select();
+      document.execCommand('copy');
+    }
+    if(revertTimer) clearTimeout(revertTimer);
+    btn.style.background = 'var(--primary)';
+    btn.style.color = '#fff';
+    revertTimer = setTimeout(()=>{
+      btn.style.background = '';
+      btn.style.color = '';
+      revertTimer = null;
+    }, 1200);
+  });
+});
+
+/* ==================== 청구 수가 조회 (통증 탭 전용) ==================== */
+var CQ = {visit:null, cupping:null, chuna:null};
+var CQ_ALL = [
+  {visit:'초진',cupping:'1부위',chuna:'없음',label:'침+습부(1부위)+전침',평일:14300,주말:15500,조합:['이체+전침+관절+습부1부위(컵4)+IR+변증','이체+전침+관절+습부1부위(컵3)+IR+변증','이체+전침+척추+습부1부위(컵3)+IR+변증']},
+  {visit:'초진',cupping:'2부위',chuna:'없음',label:'침+습부(2부위)+전침',평일:15800,주말:17200,조합:['이체+전침+관절+습부2부위(컵4)+IR+변증','이체+전침+척추+습부2부위(컵3)+IR+변증']},
+  {visit:'초진',cupping:'없음',chuna:'없음',label:'침+전침',평일:11000,주말:12400,조합:['이체+전침+척추+IR+변증','이체+전침+투자+IR+변증']},
+  {visit:'초진',cupping:'없음',chuna:'없음',label:'침',평일:10000,주말:11200,조합:['이체+투자+IR+변증','이체+척추+IR+변증']},
+  {visit:'초진',cupping:'1부위',chuna:'단순',label:'침+습부(1부위)+단순+전침',평일:27500,주말:28900,조합:['이체+전침+관절+습부1부위(컵3)+핫팩+단순+변증','이체+전침+척추+습부1부위(컵5)+IR+단순+변증']},
+  {visit:'초진',cupping:'2부위',chuna:'단순',label:'침+습부(2부위)+단순+전침',평일:29000,주말:30400,조합:['이체+전침+투자+습부2부위(컵4)+IR+단순+변증','이체+전침+척추+습부2부위(컵4)+IR+단순+변증']},
+  {visit:'초진',cupping:'1부위',chuna:'복잡',label:'침+습부(1부위)+복잡+전침',평일:49900,주말:51300,조합:['이체+전침+투자+습부1부위(컵5)+IR+복잡+변증','이체+전침+척추+습부1부위(컵5)+IR+단순+변증']},
+  {visit:'초진',cupping:'2부위',chuna:'복잡',label:'침+습부(2부위)+복잡+전침',평일:50400,주말:51800,조합:['이체+전침+투자+습부2부위(컵5)+IR+복잡+변증']},
+  {visit:'재진',cupping:'1부위',chuna:'없음',label:'침+습부(1부위)+전침',평일:11200,주말:12100,조합:['이체+전침+투자+습부1부위(컵1)+핫팩','이체+전침+관절+습부1부위(컵2)+핫팩','이체+전침+척추+습부1부위(컵1)+핫팩']},
+  {visit:'재진',cupping:'2부위',chuna:'없음',label:'침+습부(2부위)+전침',평일:12700,주말:13600,조합:['이체+투자+습부2부위(컵4)+핫팩','이체+관절+습부2부위(컵4)+핫팩','이체+척추+습부2부위(컵3)+핫팩','이체+투자+습부2부위(컵2)+핫팩']},
+  {visit:'재진',cupping:'없음',chuna:'없음',label:'침+전침',평일:7900,주말:8800,조합:['이체+전침+척추+IR','이체+전침+투자+IR']},
+  {visit:'재진',cupping:'없음',chuna:'없음',label:'침',평일:6800,주말:7700,조합:['이체+투자+IR','이체+척추+IR']},
+  {visit:'재진',cupping:'2부위',chuna:'단순',label:'침+습부(2부위)+단순+전침',평일:26000,주말:26800,조합:['이체+전침+투자+습부2부위(컵5)+IR+단순','이체+전침+척추+습부2부위(컵5)+IR+단순']},
+  {visit:'재진',cupping:'1부위',chuna:'복잡',label:'침+습부(1부위)+복잡+전침',평일:46800,주말:47700,조합:['이체+전침+투자+습부1부위(컵5)+IR+복잡','이체+전침+척추+습부1부위(컵5)+IR+복잡']},
+  {visit:'재진',cupping:'2부위',chuna:'복잡',label:'침+습부(2부위)+복잡+전침',평일:48300,주말:49200,조합:['이체+전침+투자+습부2부위(컵5)+IR+복잡','이체+전침+척추+습부2부위(컵5)+IR+복잡']},
+];
+var PART_ORDER = ['변증','IR','핫팩','전침','이체','경혈','관절','척추','투자','습부','단순','복잡'];
+function cqGetPartOrder(p){for(var i=0;i<PART_ORDER.length;i++){if(p.indexOf(PART_ORDER[i])>=0)return i;}return 99;}
+function cqSortCombo(c){var p=c.split('+');p.sort(function(a,b){return cqGetPartOrder(a.trim())-cqGetPartOrder(b.trim());});return p.join('+');}
+function cqColorPart(p){
+  p=p.trim();
+  if(p.indexOf('변증')>=0)return '<span style="color:var(--danger);font-weight:700">'+p+'</span>';
+  if(p==='IR'||p.indexOf('핫팩')>=0)return '<span style="color:var(--muted)">'+p+'</span>';
+  if(p.indexOf('전침')>=0)return '<span style="color:var(--primary-dark);font-weight:600">'+p+'</span>';
+  if(p.indexOf('이체')>=0||p.indexOf('경혈')>=0)return '<span style="color:var(--primary);font-weight:700">'+p+'</span>';
+  if(p.indexOf('관절')>=0||p.indexOf('척추')>=0||p.indexOf('투자')>=0)return '<span style="color:#5b9bff;font-weight:600">'+p+'</span>';
+  if(p.indexOf('습부')>=0)return '<span style="color:#a07840;font-weight:700">'+p+'</span>';
+  if(p.indexOf('단순')>=0||p.indexOf('복잡')>=0)return '<span style="color:#2e7d32;font-weight:700">'+p+'</span>';
+  return '<span>'+p+'</span>';
+}
+function cqRenderCombo(c){var parts=cqSortCombo(c).split('+');return parts.map(cqColorPart).join('<span class="cq-combo-sep">+</span>');}
+function cqMatches(row){
+  if(CQ.visit&&row.visit!==CQ.visit)return false;
+  if(CQ.cupping&&row.cupping!==CQ.cupping)return false;
+  if(CQ.chuna&&row.chuna!==CQ.chuna)return false;
+  return true;
+}
+function setCQ(type,val,btn){
+  if(CQ[type]===val){
+    CQ[type]=null;btn.classList.remove('selected');
+  }else{
+    CQ[type]=val;
+    var groups={visit:['초진','재진'],cupping:['없음','1부위','2부위'],chuna:['없음','단순','복잡']};
+    groups[type].forEach(function(v){
+      var id='cq-'+(type==='chuna'&&v==='없음'?'추나없음':v);
+      var b=document.getElementById(id);
+      if(b)b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+  }
+  renderCQResult();
+}
+function resetCQ(){
+  CQ={visit:null,cupping:null,chuna:null};
+  CQ65=null;
+  document.querySelectorAll('.cq-btn').forEach(function(b){b.classList.remove('selected');});
+  renderCQResult();
+  renderCQ65Result();
+}
+function renderCQResult(){
+  var hasFilter=CQ.visit||CQ.cupping||CQ.chuna;
+  var rows=hasFilter?CQ_ALL.filter(cqMatches):CQ_ALL;
+  var html='';
+  if(!rows.length){
+    html='<div class="cq-empty">해당 조합이 없습니다.</div>';
+  }else{
+    rows.forEach(function(row){
+      html+='<div class="cq-row-card'+(hasFilter?' filtered':'')+'">';
+      html+='<div class="cq-row-head">';
+      html+='<span class="cq-badge cq-badge-'+row.visit+'">'+row.visit+'</span>';
+      html+='<span class="cq-row-label">'+row.label+'</span>';
+      html+='<span class="cq-price-weekday">'+row.평일.toLocaleString()+'원</span>';
+      html+='<span class="cq-price-sep">/</span>';
+      html+='<span class="cq-price-weekend">'+row.주말.toLocaleString()+'원</span>';
+      html+='</div>';
+      html+='<div class="cq-combos">';
+      row.조합.forEach(function(c,i){
+        html+='<div class="cq-combo"><span class="cq-combo-num">'+(i+1)+'</span>'+cqRenderCombo(c)+'</div>';
+      });
+      html+='</div></div>';
+    });
+  }
+  document.getElementById('cq-result-page').innerHTML=html;
+}
+function toggleCQ(){
+  document.querySelector('.cq-card').classList.toggle('collapsed');
+}
+
+/* ==================== 65세 이상 청구 (통증 탭 전용) ==================== */
+var CQ65 = null;
+var CQ65_DATA = {
+  '초진': {평일:7900, 주말:9400, combo:'변증+이체', note:'핫팩 물치 침 BC'},
+  '재진': {평일:1900, 주말:1900, combo:'자락(경혈)+투자', note:'핫팩 물치 침 BC'}
+};
+function setCQ65(val, btn){
+  if(CQ65 === val){
+    CQ65 = null;
+    btn.classList.remove('selected');
+  } else {
+    CQ65 = val;
+    ['초진','재진'].forEach(function(v){
+      var b = document.getElementById('cq-65-'+v);
+      if(b) b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+  }
+  renderCQ65Result();
+}
+function renderCQ65Result(){
+  var box = document.getElementById('cq-65-result');
+  if(!box) return;
+  if(!CQ65){ box.innerHTML=''; return; }
+  var d = CQ65_DATA[CQ65];
+  var html = '<div class="cq-row-card filtered">';
+  html += '<div class="cq-row-head">';
+  html += '<span class="cq-badge cq-badge-'+CQ65+'">'+CQ65+'</span>';
+  html += '<span class="cq-row-label">65세 이상</span>';
+  html += '<span class="cq-price-weekday">'+d.평일.toLocaleString()+'원</span>';
+  html += '<span class="cq-price-sep">/</span>';
+  html += '<span class="cq-price-weekend">'+d.주말.toLocaleString()+'원</span>';
+  html += '</div>';
+  html += '<div class="cq-combos">';
+  html += '<div class="cq-combo cq-combo-row">';
+  html += '<span>'+cqRenderCombo(d.combo)+'</span>';
+  html += '<span class="cq-combo-note">'+d.note+'</span>';
+  html += '</div>';
+  html += '</div></div>';
+  box.innerHTML = html;
+}
+
+/* ==================== 청구(업데이트) — 2026년 수가 (통증 탭 전용) ==================== */
+var CQ2 = {visit:null, treat:null, chuna:null, pt:false};
+var CQ2_ALL = [
+  {visit:'초진',treat:'습부2부위',chuna:'없음',평일:17100,주말:18500,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+변증'},
+  {visit:'초진',treat:'습부1부위',chuna:'없음',평일:15600,주말:17000,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+변증'},
+  {visit:'초진',treat:'습부2부위',chuna:'복잡',평일:52700,주말:54100,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+변증+복잡추나'},
+  {visit:'초진',treat:'습부1부위',chuna:'복잡',평일:51200,주말:52600,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+변증+복잡추나'},
+  {visit:'초진',treat:'건부',chuna:'없음',평일:14400,주말:15800,combo:'이체+전침+온뜸+(관절/척추/투자)+IR+기기구술+변증'},
+  {visit:'초진',treat:'없음',chuna:'없음',평일:12500,주말:14000,combo:'이체+(관절/척추/투자)+IR+기기구술+변증'},
+  {visit:'초진',treat:null,chuna:'없음',isPT:true,평일:8000,주말:9400,combo:'IR+기기구술+변증'},
+  {visit:'초진',treat:null,chuna:'복잡',isPT:true,평일:43500,주말:45000,combo:'IR+기기구술+변증+복잡추나'},
+
+  {visit:'재진',treat:'습부2부위',chuna:'없음',평일:14000,주말:14900,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR'},
+  {visit:'재진',treat:'습부1부위',chuna:'없음',평일:12500,주말:13400,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR'},
+  {visit:'재진',treat:'습부2부위',chuna:'복잡',평일:49500,주말:50400,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+복잡추나'},
+  {visit:'재진',treat:'습부1부위',chuna:'복잡',평일:48000,주말:48900,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+복잡추나'},
+  {visit:'재진',treat:'건부',chuna:'없음',평일:11200,주말:12100,combo:'이체+전침+온뜸+척추+IR'},
+  {visit:'재진',treat:'없음',chuna:'없음',평일:9400,주말:10300,combo:'이체+척추+IR'},
+  {visit:'재진',treat:null,chuna:'없음',isPT:true,평일:6100,주말:7000,combo:'IR+기기구술'},
+  {visit:'재진',treat:null,chuna:'복잡',isPT:true,평일:41600,주말:42500,combo:'IR+기기구술+복잡추나'}
+];
+var CQ2_65_DATA = {
+  '초진': {평일:9000, 주말:10500, combo:'경혈+자락+(관절/척추/투자)'},
+  '재진': {평일:1900, 주말:4500, combo:'경혈+자락+(관절/척추/투자)'}
+};
+var CQ2_65SEL = null;
+
+/* 요청된 표기 순서: 변증 → IR(및 온뜸/기기구술 등 물리적 처치) → 침 관련(경혈/자락/이체/관절/척추/투자) → 전침 → 건부/습부 → 추나 */
+var PART_ORDER2 = ['변증','IR','온뜸','기기구술','이체','경혈','자락','관절','척추','투자','전침','습부','건부','복잡','단순'];
+function cq2GetPartOrder(p){for(var i=0;i<PART_ORDER2.length;i++){if(p.indexOf(PART_ORDER2[i])>=0)return i;}return 99;}
+function cq2SortCombo(c){var p=c.split('+');p.sort(function(a,b){return cq2GetPartOrder(a.trim())-cq2GetPartOrder(b.trim());});return p.join('+');}
+function cq2RenderCombo(c){var parts=cq2SortCombo(c).split('+');return parts.map(cqColorPart).join('<span class="cq-combo-sep">+</span>');}
+
+function cq2Matches(row){
+  if(!!row.isPT !== !!CQ2.pt) return false;
+  if(CQ2.visit && row.visit !== CQ2.visit) return false;
+  if(CQ2.chuna && row.chuna !== CQ2.chuna) return false;
+  if(!CQ2.pt && CQ2.treat && row.treat !== CQ2.treat) return false;
+  return true;
+}
+function setCQ2(type, val, btn){
+  if(CQ2[type] === val){
+    CQ2[type] = null;
+    btn.classList.remove('selected');
+  } else {
+    CQ2[type] = val;
+    var groups = {visit:['초진','재진'], treat:['없음','건부','습부1부위','습부2부위'], chuna:['없음','복잡']};
+    groups[type].forEach(function(v){
+      var id = 'cq2-' + (type==='chuna' ? (v==='없음'?'추나없음':'추나복잡') : v);
+      var b = document.getElementById(id);
+      if(b) b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+  }
+  renderCQ2Result();
+}
+function toggleCQ2PT(btn){
+  CQ2.pt = !CQ2.pt;
+  btn.classList.toggle('selected', CQ2.pt);
+  renderCQ2Result();
+}
+function resetCQ2(){
+  CQ2 = {visit:null, treat:null, chuna:null, pt:false};
+  CQ2_65SEL = null;
+  document.querySelectorAll('#cq2-body .cq-btn').forEach(function(b){ b.classList.remove('selected'); });
+  renderCQ2Result();
+  renderCQ2_65Result();
+}
+function renderCQ2Result(){
+  var hasFilter = CQ2.visit || CQ2.treat || CQ2.chuna || CQ2.pt;
+  var rows = hasFilter ? CQ2_ALL.filter(cq2Matches) : CQ2_ALL.filter(function(r){ return !r.isPT; });
+  var html = '';
+  if(!rows.length){
+    html = '<div class="cq-empty">해당 조합이 없습니다.</div>';
+  } else {
+    rows.forEach(function(row){
+      var label = row.isPT ? ('물리치료' + (row.chuna==='복잡' ? '+복잡' : '')) : ('침' + (row.treat && row.treat!=='없음' ? '+'+row.treat : '') + (row.chuna==='복잡' ? '+복잡' : '') + '+전침');
+      html += '<div class="cq-row-card'+(hasFilter?' filtered':'')+'">';
+      html += '<div class="cq-row-head">';
+      html += '<span class="cq-badge cq-badge-'+row.visit+'">'+row.visit+'</span>';
+      html += '<span class="cq-row-label">'+label+'</span>';
+      html += '<span class="cq-price-weekday">'+row.평일.toLocaleString()+'원</span>';
+      html += '<span class="cq-price-sep">/</span>';
+      html += '<span class="cq-price-weekend">'+row.주말.toLocaleString()+'원</span>';
+      html += '</div>';
+      html += '<div class="cq-combos">';
+      html += '<div class="cq-combo">'+cq2RenderCombo(row.combo)+'</div>';
+      html += '</div></div>';
+    });
+  }
+  document.getElementById('cq2-result-page').innerHTML = html;
+}
+function setCQ2_65(val, btn){
+  if(CQ2_65SEL === val){
+    CQ2_65SEL = null;
+    btn.classList.remove('selected');
+  } else {
+    CQ2_65SEL = val;
+    ['초진','재진'].forEach(function(v){
+      var b = document.getElementById('cq2-65-'+v);
+      if(b) b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+  }
+  renderCQ2_65Result();
+}
+function renderCQ2_65Result(){
+  var box = document.getElementById('cq2-65-result');
+  if(!box) return;
+  if(!CQ2_65SEL){ box.innerHTML = ''; return; }
+  var d = CQ2_65_DATA[CQ2_65SEL];
+  var html = '<div class="cq-row-card filtered">';
+  html += '<div class="cq-row-head">';
+  html += '<span class="cq-badge cq-badge-'+CQ2_65SEL+'">'+CQ2_65SEL+'</span>';
+  html += '<span class="cq-row-label">65세 이상</span>';
+  html += '<span class="cq-price-weekday">'+d.평일.toLocaleString()+'원</span>';
+  html += '<span class="cq-price-sep">/</span>';
+  html += '<span class="cq-price-weekend">'+d.주말.toLocaleString()+'원</span>';
+  html += '</div>';
+  html += '<div class="cq-combos">';
+  html += '<div class="cq-combo">'+cq2RenderCombo(d.combo)+'</div>';
+  html += '</div></div>';
+  box.innerHTML = html;
+}
+function toggleCQ2(){
+  document.getElementById('cq2-card').classList.toggle('collapsed');
+}
+
+/* ==================== 피부 시술 선택 ==================== */
+var SKIN_CATALOG = {
+  '리프팅': [
+    {name:'슈링크 100샷', tiers:{'체험':9000,'1회':29000,'3회':79000}},
+    {name:'슈링크 300샷', tiers:{'체험':55000,'1회':79000,'3회':199000}},
+    {name:'슈링크 600샷', tiers:{'체험':108000,'1회':129000,'3회':299000}},
+    {name:'볼뉴머 300샷', tiers:{'체험':249000,'1회':349000,'3회':899000}},
+    {name:'볼뉴머 600샷', tiers:{'체험':449000,'1회':599000,'3회':1490000}},
+    {name:'볼뉴머 + 슈링크 100샷 추가', tiers:{'체험':9000,'1회':25000}},
+    {name:'볼뉴머 + 슈링크 300샷 추가', tiers:{'체험':55000,'1회':72000}},
+    {name:'볼뉴머 + 슈링크 600샷 추가', tiers:{'체험':108000,'1회':116000}}
+  ],
+  '여드름': [
+    {name:'여드름 기본 관리', tiers:{'체험':19000,'1회':70000,'4회':259000,'8회':459000}},
+    {name:'여드름 스케일링', tiers:{'체험':49000,'1회':90000,'4회':339000,'8회':639000}},
+    {name:'블랙필 집중 관리', tiers:{'체험':59000,'1회':120000,'4회':439000,'8회':799000}},
+    {name:'AMTS 원데이', tiers:{'체험':69000,'1회':130000,'4회':489000,'8회':889000}},
+    {name:'AMTS 2 STEP', tiers:{'1회':180000,'4회':659000,'8회':1199000}},
+    {name:'피지 여드름균 골드 PTT', tiers:{'체험':159000,'1회':250000,'3회':599000}},
+    {name:'염증약침 또는 자국약침', tiers:{'시술':5000}},
+    {name:'진정 관리 업그레이드', tiers:{'LED':9000,'이온토':19000,'LDM':29000}}
+  ],
+  '토닝': [
+    {name:'제네시스 토닝', tiers:{'체험':25000,'1회':50000,'5회':239000,'10회':450000}},
+    {name:'제네시스 리페어', tiers:{'체험':35000,'1회':70000,'5회':314000,'10회':600000}},
+    {name:'듀얼 토닝', tiers:{'체험':30000,'1회':60000,'5회':269000,'10회':499000}},
+    {name:'듀얼 리페어', tiers:{'체험':40000,'1회':80000,'5회':344000,'10회':649000}}
+  ],
+  '모공·흉터': [
+    {name:'RF시크릿 모공 흉터', tiers:{'체험':79000,'1회':129000,'3회':329000}},
+    {name:'RF시크릿 라디쥬', tiers:{'체험':159000,'1회':319000,'3회':638000}},
+    {name:'RF시크릿 PLLA', tiers:{'체험':179000,'1회':339000,'3회':678000}},
+    {name:'RF시크릿 엑소좀', tiers:{'체험':249000,'1회':399000,'3회':798000}},
+    {name:'RF시크릿 PDRN', tiers:{'체험':129000,'1회':199000,'3회':398000}},
+    {name:'어붐 프락셀 나비존', tiers:{'체험':19000,'1회':39000,'3회':99000}},
+    {name:'어붐 프락셀 풀페이스', tiers:{'체험':39000,'1회':79000,'3회':179000}},
+    {name:'어붐 PDRN', tiers:{'체험':49000,'1회':99000,'3회':259000}},
+    {name:'새살침 스팟 관리', tiers:{'체험':30000,'1회':50000}},
+    {name:'진정 관리 업그레이드', tiers:{'LED':9000,'LDM':29000}}
+  ],
+  '스킨부스터': [
+    {name:'미주안약침 2cc', tiers:{'체험':99000,'1회':150000,'3회':399000}},
+    {name:'연아약침 2cc', tiers:{'체험':69000,'1회':120000,'3회':329000}},
+    {name:'진정 관리 업그레이드', tiers:{'LED':9000,'이온토':19000,'LDM':29000}}
+  ],
+  '재생·진정': [
+    {name:'LED 재생 레이저', tiers:{'체험':9000,'1회':19000,'10회':149000}},
+    {name:'이온토 미백 관리', tiers:{'체험':19000,'1회':29000,'10회':249000}},
+    {name:'LDM 관리', tiers:{'체험':29000,'1회':49000,'10회':349000}}
+  ],
+  '바이오셀': [
+    {name:'바이오셀', tiers:{'체험':149000,'4회':990000,'8+1회':1990000}}
+  ],
+  '바디': [
+    {name:'바디 기본 관리', tiers:{'체험':59000,'1회':129000,'5회':490000,'10회':890000}},
+    {name:'바디 재생 기기 관리', tiers:{'체험':99000,'1회':219000,'5회':949000,'10회':1690000}},
+    {name:'바디 쏠라테라피 재생 관리', tiers:{'체험':119000,'1회':239000,'5회':990000,'10회':1779000}}
+  ]
+};
+
+/* ==================== 비급여·패키지 ==================== */
+var NC_CATALOG = {
+  '태반 추나 패키지': [
+    {name:'스타트 프로그램 5회 (10% 할인)', tiers:{'시술':259000}},
+    {name:'집중 관리 프로그램 10회 (20% 할인)', tiers:{'시술':459000}},
+    {name:'회복 프로그램 20회 (30% 할인)', tiers:{'시술':819000}}
+  ],
+  '공진단·경옥고': [
+    {name:'사향공진단', tiers:{'1환':70000,'10환':630000,'30환':1750000}},
+    {name:'사향총명공진단', tiers:{'10환':450000,'30환':1080000}},
+    {name:'목향공진단', tiers:{'10환':120000,'30환':300000}},
+    {name:'경옥고', tiers:{'1박스':100000}},
+    {name:'관절고', tiers:{'1박스':80000}},
+    {name:'총명경옥고', tiers:{'1박스':120000}},
+    {name:'녹용보아고', tiers:{'1박스':140000}}
+  ],
+  '소아·청소년': [
+    {name:'성장 한약', tiers:{'2주':250000,'4주':450000,'8주':630000}},
+    {name:'성장 약침 12회', tiers:{'시술':120000}},
+    {name:'성장 추나 12회', tiers:{'시술':300000}},
+    {name:'소아 성장 패키지', tiers:{'12주':990000}},
+    {name:'성장 골든타임 패키지', tiers:{'12주':1390000}},
+    {name:'입맛 워터젤리', tiers:{'1박스':45000,'3박스':120000}},
+    {name:'면역 워터젤리', tiers:{'1박스':45000,'3박스':120000}},
+    {name:'성장 워터젤리', tiers:{'1박스':45000,'3박스':120000}}
+  ],
+  '한약': [
+    {name:'일반 한약', tiers:{'2주':300000,'4주':540000,'8주':972000,'12주':1377000}},
+    {name:'녹용 한약', tiers:{'2주':430000,'4주':774000,'8주':1393200,'12주':1973700}}
+  ]
+};
+
+/* ==================== 다이어트 ==================== */
+var DIET_CATALOG = {
+  '쏙 이지': [
+    {name:'스타터', tiers:{'1박스':69000,'2+1박스':138000,'3박스':207000}},
+    {name:'베이직', tiers:{'1박스':69000,'2+1박스':138000,'3박스':207000}},
+    {name:'플러스', tiers:{'1박스':69000,'2+1박스':138000,'3박스':207000}}
+  ],
+  '쏙 프리미엄': [
+    {name:'1 + 3개월', tiers:{'시술':414000}},
+    {name:'2 + 6개월 (10% 할인)', tiers:{'시술':745200}},
+    {name:'3 + 9개월 (15% 할인)', tiers:{'시술':1055700}}
+  ]
+};
+
+function fmtWon(n){ return Number(n).toLocaleString() + '\uc6d0'; }
+function fmtPriceTooltip(tabns, price){
+  if(tabns === 'skin'){
+    var vatPrice = Math.round(price * 1.1);
+    return fmtWon(price) + ' / VAT\ud3ec\ud568 ' + fmtWon(vatPrice);
+  }
+  return fmtWon(price);
+}
+function catKey(cat, name){ return cat + '__' + name; }
+
+var CAT_CONFIG = {
+  skin: { catalog: SKIN_CATALOG, collapsible: true },
+  nc:   { catalog: NC_CATALOG,   collapsible: true },
+  diet: { catalog: DIET_CATALOG, collapsible: false }
+};
+var CATSEL = { skin:{}, nc:{}, diet:{} };
+var CATDC  = { skin:0, nc:0, diet:0 };
+
+function catToggleTier(tabns, cat, name, tier, btn){
+  var sel = CATSEL[tabns];
+  var key = catKey(cat, name);
+  var nowActive = !btn.classList.contains('selected');
+  var sufRow = btn.closest('.skin-suffix-row');
+  if(sufRow){
+    Array.prototype.forEach.call(sufRow.querySelectorAll('button.skin-btn'), function(b){ b.classList.remove('selected'); });
+  }
+  if(nowActive){
+    btn.classList.add('selected');
+    sel[key] = tier;
+  } else {
+    delete sel[key];
+  }
+  var itemBtn = sufRow && sufRow.parentNode ? sufRow.parentNode.querySelector('.skin-btn.direct') : null;
+  if(itemBtn){
+    itemBtn.classList.toggle('selected', !!sel[key]);
+  }
+}
+function catBolnewmerBaseSelected(){
+  var sel = CATSEL.skin;
+  return !!(sel[catKey('\ub9ac\ud504\ud305','\ubcfc\ub274\uba38 300\uc0f7')] || sel[catKey('\ub9ac\ud504\ud305','\ubcfc\ub274\uba38 600\uc0f7')]);
+}
+function catToggleItemOpen(tabns, cat, name, btn){
+  if(tabns === 'skin' && name.indexOf('\ubcfc\ub274\uba38 + ') === 0 && !catBolnewmerBaseSelected()){
+    alert('\ubcfc\ub274\uba38 300\uc0f7 \ub610\ub294 600\uc0f7\uc744 \uba3c\uc800 \uc120\ud0dd\ud574\uc8fc\uc138\uc694.');
+    return;
+  }
+  var sel = CATSEL[tabns];
+  var row = btn.closest('.skin-item-row');
+  var sufWrap = row ? row.querySelector('.skin-suffix-row') : null;
+  var wasOpen = btn.classList.contains('viewing');
+  if(wasOpen){
+    btn.classList.remove('viewing');
+    btn.classList.remove('selected');
+    var key = catKey(cat, name);
+    delete sel[key];
+    if(sufWrap) sufWrap.innerHTML = '';
+    return;
+  }
+  btn.classList.add('viewing');
+  var key2 = catKey(cat, name);
+  var selTier = sel[key2];
+  var item = (CAT_CONFIG[tabns].catalog[cat]||[]).find(function(it){ return it.name === name; });
+  if(!item) return;
+  var h = '';
+  Object.keys(item.tiers).forEach(function(tier){
+    var price = item.tiers[tier];
+    var label = (tier === '\uc2dc\uc220') ? '\uc120\ud0dd' : tier;
+    h += '<button type="button" class="skin-btn suffix'+(selTier===tier?' selected':'')+'" data-price="'+fmtPriceTooltip(tabns, price)+'" onclick="catToggleTier(\''+tabns+'\',\''+cat+'\',\''+name.replace(/'/g,"\\'")+'\',\''+tier+'\',this)">'+label+'</button>';
+  });
+  if(sufWrap) sufWrap.innerHTML = h;
+}
+
+var CAT_EXCLUSIVE_CATEGORIES = {'쏙 프리미엄': true};
+function catToggleSingleTier(tabns, cat, name, tier, btn){
+  var sel = CATSEL[tabns];
+  var key = catKey(cat, name);
+  var nowActive = !btn.classList.contains('selected');
+  if(nowActive && CAT_EXCLUSIVE_CATEGORIES[cat]){
+    var items = (CAT_CONFIG[tabns].catalog[cat]||[]);
+    items.forEach(function(it){
+      if(it.name === name) return;
+      delete sel[catKey(cat, it.name)];
+    });
+    var group = btn.closest('.skin-group');
+    if(group){
+      Array.prototype.forEach.call(group.querySelectorAll('.skin-btn.direct.selected'), function(b){
+        if(b !== btn) b.classList.remove('selected');
+      });
+    }
+  }
+  if(nowActive){
+    btn.classList.add('selected');
+    sel[key] = tier;
+  } else {
+    delete sel[key];
+    btn.classList.remove('selected');
+  }
+}
+function buildCatItemHTML(tabns, cat, item){
+  var sel = CATSEL[tabns];
+  var key = catKey(cat, item.name);
+  var selTier = sel[key];
+  var tierKeys = Object.keys(item.tiers);
+  var h = '<div class="skin-item-row">';
+  if(tierKeys.length === 1){
+    var onlyTier = tierKeys[0];
+    var price = item.tiers[onlyTier];
+    h += '<button type="button" class="skin-btn direct'+(selTier?' selected':'')+'" data-price="'+fmtPriceTooltip(tabns, price)+'" onclick="catToggleSingleTier(\''+tabns+'\',\''+cat+'\',\''+item.name.replace(/'/g,"\\'")+'\',\''+onlyTier+'\',this)">'+item.name+'</button>';
+  } else {
+    h += '<button type="button" class="skin-btn direct'+(selTier?' selected':'')+'" onclick="catToggleItemOpen(\''+tabns+'\',\''+cat+'\',\''+item.name.replace(/'/g,"\\'")+'\',this)">'+item.name+'</button>';
+    h += '<div class="skin-suffix-row"></div>';
+  }
+  h += '</div>';
+  return h;
+}
+function toggleCatGroup(headerEl){
+  var group = headerEl.closest('.skin-group');
+  if(group) group.classList.toggle('collapsed');
+}
+function buildCatGroupHTML(tabns, cat){
+  var cfg = CAT_CONFIG[tabns];
+  var items = cfg.catalog[cat];
+  var modeClass = cfg.collapsible ? ' skin-group-collapsible' : ' skin-group-flat';
+  var collapsibleClass = cfg.collapsible ? ' collapsed' : '';
+  var titleHTML = cfg.collapsible
+    ? '<div class="skin-group-title cq-toggle-header" onclick="toggleCatGroup(this)"><span>'+cat+'</span><span class="cq-chevron"></span></div>'
+    : '<div class="skin-group-title">'+cat+'</div>';
+  var html = '<div class="skin-group'+collapsibleClass+modeClass+'">'+titleHTML+'<div class="skin-group-body">';
+  items.forEach(function(item){ html += buildCatItemHTML(tabns, cat, item); });
+  html += '</div></div>';
+  return html;
+}
+function buildCatUI(tabns, containerId){
+  var cfg = CAT_CONFIG[tabns];
+  var h = '';
+  Object.keys(cfg.catalog).forEach(function(cat){ h += buildCatGroupHTML(tabns, cat); });
+  document.getElementById(containerId).innerHTML = '<div class="skin-grid">'+h+'</div>';
+}
+
+function catSetDiscount(tabns, pct, btn){
+  if(CATDC[tabns] === pct){
+    CATDC[tabns] = 0;
+    btn.classList.remove('selected');
+  } else {
+    CATDC[tabns] = pct;
+    var row = document.getElementById(tabns+'-dc-row');
+    if(row){
+      Array.prototype.forEach.call(row.querySelectorAll('.skin-dc-btn'), function(b){ b.classList.remove('selected'); });
+    }
+    btn.classList.add('selected');
+  }
+}
+function catDiscountedPrice(tabns, price){
+  var pct = CATDC[tabns];
+  if(!pct) return price;
+  return Math.round(price * (100 - pct) / 100);
+}
+/* 할인 적용 + (피부 탭인 경우) VAT 10% 자동 반영된 최종 결제 금액 */
+function catFinalPrice(tabns, price){
+  var p = catDiscountedPrice(tabns, price);
+  if(tabns === 'skin') p = Math.round(p * 1.1);
+  return p;
+}
+function catShowTotal(tabns, totalId){
+  var cfg = CAT_CONFIG[tabns];
+  var sel = CATSEL[tabns];
+  var total = 0;
+  Object.keys(cfg.catalog).forEach(function(cat){
+    cfg.catalog[cat].forEach(function(item){
+      var key = catKey(cat, item.name);
+      var tier = sel[key];
+      if(!tier) return;
+      total += catFinalPrice(tabns, item.tiers[tier]);
+    });
+  });
+  var el = document.getElementById(totalId);
+  if(el) el.textContent = fmtWon(total) + (tabns === 'skin' ? ' (VAT 10% 포함)' : '');
+}
+function catTodayMD(){ var d = new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
+
+function catGenerate(tabns, resultId){
+  var cfg = CAT_CONFIG[tabns];
+  var sel = CATSEL[tabns];
+  var date = catTodayMD();
+  var lines = [];
+  var handledKeys = {};
+  var dcNote = CATDC[tabns] ? (' ('+CATDC[tabns]+'% DC)') : '';
+
+  if(tabns === 'skin'){
+    var liftItems = cfg.catalog['\ub9ac\ud504\ud305'] || [];
+    ['\ubcfc\ub274\uba38 300\uc0f7','\ubcfc\ub274\uba38 600\uc0f7'].forEach(function(baseName){
+      var baseKey = catKey('\ub9ac\ud504\ud305', baseName);
+      var baseTier = sel[baseKey];
+      if(!baseTier) return;
+      var addonItem = liftItems.find(function(it){
+        return it.name.indexOf('\ubcfc\ub274\uba38 + ') === 0 && !!sel[catKey('\ub9ac\ud504\ud305', it.name)];
+      });
+      if(!addonItem) return;
+      var addonKey = catKey('\ub9ac\ud504\ud305', addonItem.name);
+      var addonTier = sel[addonKey];
+      var baseItem = liftItems.find(function(it){ return it.name === baseName; });
+      var basePrice = catFinalPrice(tabns, baseItem.tiers[baseTier]);
+      var addonPrice = catFinalPrice(tabns, addonItem.tiers[addonTier]);
+      var sum = basePrice + addonPrice;
+      var addonShortName = addonItem.name.replace('\ubcfc\ub274\uba38 + ', '');
+      lines.push('* '+date+' '+baseName+' + '+addonShortName+' | '+fmtWon(basePrice)+' + '+fmtWon(addonPrice)+' = '+fmtWon(sum)+' \uacb0\uc81c'+dcNote);
+      handledKeys[baseKey] = true;
+      handledKeys[addonKey] = true;
+    });
+
+    var upgradeName = '진정 관리 업그레이드';
+    Object.keys(cfg.catalog).forEach(function(cat){
+      var items = cfg.catalog[cat];
+      var upgradeItem = items.find(function(it){ return it.name === upgradeName; });
+      if(!upgradeItem) return;
+      var upgradeKey = catKey(cat, upgradeName);
+      if(handledKeys[upgradeKey]) return;
+      var upgradeTier = sel[upgradeKey];
+      if(!upgradeTier) return;
+      var otherItem = items.find(function(it){
+        if(it.name === upgradeName) return false;
+        var k = catKey(cat, it.name);
+        return !handledKeys[k] && !!sel[k];
+      });
+      if(!otherItem) return;
+      var otherKey = catKey(cat, otherItem.name);
+      var otherTier = sel[otherKey];
+      var otherPrice = catFinalPrice(tabns, otherItem.tiers[otherTier]);
+      var upgradePrice = catFinalPrice(tabns, upgradeItem.tiers[upgradeTier]);
+      var sum = otherPrice + upgradePrice;
+      var otherTierText = (otherTier === '시술') ? '' : (' '+otherTier);
+      lines.push('* '+date+' '+otherItem.name+otherTierText+' + '+upgradeName+' '+upgradeTier+' | '+fmtWon(otherPrice)+' + '+fmtWon(upgradePrice)+' = '+fmtWon(sum)+' 결제'+dcNote);
+      handledKeys[otherKey] = true;
+      handledKeys[upgradeKey] = true;
+    });
+  }
+
+  Object.keys(cfg.catalog).forEach(function(cat){
+    cfg.catalog[cat].forEach(function(item){
+      var key = catKey(cat, item.name);
+      if(handledKeys[key]) return;
+      var tier = sel[key];
+      if(!tier) return;
+      var price = catFinalPrice(tabns, item.tiers[tier]);
+      var tierText = (tier === '\uc2dc\uc220') ? '' : (' '+tier);
+      lines.push('* '+date+' '+item.name+tierText+' | '+fmtWon(price)+' \uacb0\uc81c'+dcNote);
+    });
+  });
+  document.getElementById(resultId).value = lines.join('\n');
+}
+
+function catReset(tabns, containerId, resultId, totalId){
+  CATSEL[tabns] = {};
+  CATDC[tabns] = 0;
+  var row = document.getElementById(tabns+'-dc-row');
+  if(row){
+    Array.prototype.forEach.call(row.querySelectorAll('.skin-dc-btn'), function(b){ b.classList.remove('selected'); });
+  }
+  buildCatUI(tabns, containerId);
+  document.getElementById(resultId).value = '';
+  var totalEl = document.getElementById(totalId);
+  if(totalEl) totalEl.textContent = '';
+}
+
+/* ==================== 전달 탭 (통증 탭 전용) ==================== */
+var DV_COLORS = {
+  'JB':'#7C8FD4','돔':'#5B7C99','핫팩':'#FF6B35','물':'#3B8DCC','S':'#2F80ED','약침':'#0052FF',
+  '침':'#00C48C','침(전)':'#00C48C',
+  '건부':'#88BB00','습부1':'#88BB00','습부2':'#88BB00','뜸':'#D4A574',
+  '추나':'#A67C52','추나(환자복)':'#A67C52','충격파':'#1A1D29','BC':'#5B6B81'
+};
+var DV_FORM = { '핫팩':['부위'], '물':['부위'], 'S':['부위'], '약침':['종류','cc','개수'] };
+var DV_DEFAULT = {
+  main: ['BC','습부2','침(전)','물','핫팩','뜸'],
+  ta:   ['추나','습부2','침(전)','물','핫팩','약침','뜸']
+};
+var DV_CHIM_BASES = ['침','침(전)'];
+var DV_CHIM_POS = ['앞침','엎침','옆침/좌','옆침/우'];
+var DV_EXCLUSIVE = ['습부1','습부2','건부'];
+var DV_EXCLUSIVE2 = ['침','침(전)'];
+var DV_EXCLUSIVE3 = ['추나','추나(환자복)'];
+var DV_EXCLUSIVE4 = ['물','S'];
+var DV_BTN_ORDER = ['핫팩','돔','JB','물','S','침','침(전)','약침','뜸','습부2','습부1','건부','BC','추나','추나(환자복)','충격파'];
+
+var DVSTATE = {
+  main: {treatments:[], seq:1},
+  ta:   {treatments:[], seq:1}
+};
+function dvNewId(ns){ return 'dv-'+ns+'-'+(DVSTATE[ns].seq++)+'-'+Date.now(); }
+
+function dvInsertSorted(ns, obj){
+  var list = DVSTATE[ns].treatments;
+  var orderIdx = DV_BTN_ORDER.indexOf(obj.base);
+  var insertAt = list.length;
+  for(var i=0;i<list.length;i++){
+    if(DV_BTN_ORDER.indexOf(list[i].base) > orderIdx){ insertAt = i; break; }
+  }
+  list.splice(insertAt, 0, obj);
+}
+function dvAdd(ns, base){
+  var list = DVSTATE[ns].treatments;
+  if(DV_EXCLUSIVE.indexOf(base) >= 0){
+    list = list.filter(function(t){ return DV_EXCLUSIVE.indexOf(t.base) < 0; });
+  }
+  if(DV_EXCLUSIVE2.indexOf(base) >= 0){
+    list = list.filter(function(t){ return DV_EXCLUSIVE2.indexOf(t.base) < 0; });
+  }
+  if(DV_EXCLUSIVE4.indexOf(base) >= 0){
+    list = list.filter(function(t){ return DV_EXCLUSIVE4.indexOf(t.base) < 0; });
+  }
+  if(DV_EXCLUSIVE3.indexOf(base) >= 0){
+    list = list.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
+    list = list.filter(function(t){ return t.base !== 'BC'; });
+  } else if(base === 'BC'){
+    list = list.filter(function(t){ return DV_EXCLUSIVE3.indexOf(t.base) < 0; });
+  }
+  DVSTATE[ns].treatments = list;
+  dvInsertSorted(ns, { id:dvNewId(ns), base:base, extra:{} });
+  dvRender(ns);
+}
+function dvRemove(ns, id){
+  DVSTATE[ns].treatments = DVSTATE[ns].treatments.filter(function(t){ return t.id !== id; });
+  dvRender(ns);
+}
+function dvInit(ns){
+  DVSTATE[ns].treatments = [];
+  DV_DEFAULT[ns].forEach(function(name){
+    var extra = {};
+    if(ns === 'ta' && name === '약침'){ extra = {'종류':'어혈', 'cc':'0.5cc', '개수':'1'}; }
+    dvInsertSorted(ns, { id:dvNewId(ns), base:name, extra:extra });
+  });
+  dvRender(ns);
+}
+function dvReset(ns){
+  $(elId(ns,'deliver-name')).value = '';
+  $(elId(ns,'deliver-region')).value = '';
+  $(elId(ns,'deliver-result')).value = '';
+  dvInit(ns);
+}
+function deliverReset(ns){ dvReset(ns); }
+
+function dvTreatmentLabel(t){
+  if(DV_CHIM_BASES.indexOf(t.base) >= 0 && t.extra && t.extra['자세']){
+    return t.extra['자세'] + (t.base === '침(전)' ? '(전)' : '');
+  }
+  return t.base;
+}
+
+var dvDrag = null;
+function dvAttachDrag(chip, id, ns){
+  chip.dataset.id = id;
+  chip.style.touchAction = 'none';
+  chip.addEventListener('pointerdown', function(e){
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.closest('.dv-del')) return;
+    e.preventDefault();
+    var startX = e.clientX, startY = e.clientY, started = false;
+    function onMove(ev){
+      if(!started && (Math.abs(ev.clientX-startX)>6 || Math.abs(ev.clientY-startY)>6)){
+        started = true;
+        dvDrag = { id: id, ns: ns };
+        chip.classList.add('dv-dragging');
+      }
+    }
+    function onUp(ev){
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      chip.classList.remove('dv-dragging');
+      if(started && dvDrag){
+        var el = document.elementFromPoint(ev.clientX, ev.clientY);
+        var targetChip = el && el.closest('#'+elId(ns,'deliver-chips')+' [data-id]');
+        if(targetChip && targetChip.dataset.id !== dvDrag.id){
+          var rect = targetChip.getBoundingClientRect();
+          var insertBefore = (ev.clientX - rect.left) < rect.width/2;
+          dvReorder(ns, dvDrag.id, targetChip.dataset.id, insertBefore);
+        } else if(!targetChip){
+          var container = el && el.closest('#'+elId(ns,'deliver-chips'));
+          if(container) dvReorderToEnd(ns, dvDrag.id);
+        }
+      }
+      dvDrag = null;
+    }
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+}
+function dvReorder(ns, draggedId, targetId, insertBefore){
+  var list = DVSTATE[ns].treatments;
+  var idx = list.findIndex(function(t){ return t.id === draggedId; });
+  if(idx === -1) return;
+  var obj = list.splice(idx, 1)[0];
+  var targetIdx = list.findIndex(function(t){ return t.id === targetId; });
+  var insertAt = insertBefore ? targetIdx : targetIdx + 1;
+  list.splice(Math.max(0, insertAt), 0, obj);
+  dvRender(ns);
+}
+function dvReorderToEnd(ns, draggedId){
+  var list = DVSTATE[ns].treatments;
+  var idx = list.findIndex(function(t){ return t.id === draggedId; });
+  if(idx === -1) return;
+  var obj = list.splice(idx, 1)[0];
+  list.push(obj);
+  dvRender(ns);
+}
+
+function dvRender(ns){
+  var chipsBox = $(elId(ns,'deliver-chips'));
+  var btnsBox = $(elId(ns,'deliver-btns'));
+  if(!chipsBox || !btnsBox) return;
+  chipsBox.innerHTML = '';
+  btnsBox.innerHTML = '';
+  var treatments = DVSTATE[ns].treatments;
+
+  treatments.forEach(function(t){
+    var color = DV_COLORS[t.base] || '#0052FF';
+    var fields = DV_FORM[t.base];
+    if(fields){
+      var chip = document.createElement('div');
+      chip.className = 'dv-chip-split';
+      chip.style.setProperty('--dvcolor', color);
+      var label = document.createElement('div');
+      label.className = 'dv-label'; label.textContent = t.base;
+      chip.appendChild(label);
+      fields.forEach(function(f){
+        var inp = document.createElement('input');
+        inp.placeholder = f;
+        inp.value = t.extra[f] || '';
+        inp.addEventListener('input', function(e){ t.extra[f] = e.target.value; });
+        chip.appendChild(inp);
+      });
+      var del = document.createElement('div');
+      del.className = 'dv-del'; del.textContent = '✕';
+      del.addEventListener('click', function(){ dvRemove(ns, t.id); });
+      chip.appendChild(del);
+      dvAttachDrag(chip, t.id, ns);
+      chipsBox.appendChild(chip);
+    } else if(DV_CHIM_BASES.indexOf(t.base) >= 0){
+      var chip2 = document.createElement('div');
+      chip2.className = 'dv-chip-split';
+      chip2.style.setProperty('--dvcolor', color);
+      var label2 = document.createElement('div');
+      label2.className = 'dv-label'; label2.textContent = t.base;
+      chip2.appendChild(label2);
+      var sel = document.createElement('select');
+      var optD = document.createElement('option');
+      optD.value = ''; optD.textContent = '자세';
+      sel.appendChild(optD);
+      DV_CHIM_POS.forEach(function(p){
+        var o = document.createElement('option'); o.value = p; o.textContent = p;
+        sel.appendChild(o);
+      });
+      if(!t.extra) t.extra = {};
+      sel.value = t.extra['자세'] || '';
+      sel.addEventListener('change', function(e){ t.extra['자세'] = e.target.value; });
+      chip2.appendChild(sel);
+      var del2 = document.createElement('div');
+      del2.className = 'dv-del'; del2.textContent = '✕';
+      del2.addEventListener('click', function(){ dvRemove(ns, t.id); });
+      chip2.appendChild(del2);
+      dvAttachDrag(chip2, t.id, ns);
+      chipsBox.appendChild(chip2);
+    } else {
+      var chip3 = document.createElement('div');
+      chip3.className = 'dv-chip';
+      chip3.style.setProperty('--dvcolor', color);
+      var sp = document.createElement('span'); sp.textContent = t.base;
+      chip3.appendChild(sp);
+      var del3 = document.createElement('span');
+      del3.className = 'dv-del'; del3.textContent = '✕';
+      del3.addEventListener('click', function(){ dvRemove(ns, t.id); });
+      chip3.appendChild(del3);
+      dvAttachDrag(chip3, t.id, ns);
+      chipsBox.appendChild(chip3);
+    }
+  });
+
+  var added = {};
+  treatments.forEach(function(t){ added[t.base] = true; });
+  DV_BTN_ORDER.forEach(function(name){
+    if(name === '습부1'){
+      var brk = document.createElement('div');
+      brk.style.flexBasis = '100%';
+      brk.style.height = '0';
+      btnsBox.appendChild(brk);
+    }
+    if(added[name]) return;
+    var btn = document.createElement('button');
+    btn.className = 'dv-btn';
+    btn.style.setProperty('--dvcolor', DV_COLORS[name] || '#0052FF');
+    btn.textContent = (name === 'S') ? 'SSP' : (name === '물') ? 'TENS' : name;
+    btn.addEventListener('click', function(){ dvAdd(ns, name); });
+    btnsBox.appendChild(btn);
+  });
+}
+
+function dvBuildSummary(ns){
+  var treatments = DVSTATE[ns].treatments.slice();
+  var yakIdx = treatments.findIndex(function(t){ return t.base === '약침'; });
+  var chimIdx = treatments.findIndex(function(t){ return t.base === '침(전)'; });
+  var tteumIdx = treatments.findIndex(function(t){ return t.base === '뜸'; });
+  var out = [];
+  for(var i=0;i<treatments.length;i++){
+    if(i === yakIdx && chimIdx > -1) continue;
+    if(i === tteumIdx && chimIdx > -1) continue;
+    var t = treatments[i];
+    if(i === chimIdx){
+      var label = dvTreatmentLabel(t);
+      if(tteumIdx > -1){
+        label += '#';
+      }
+      if(yakIdx > -1){
+        var yak = treatments[yakIdx];
+        var kind = yak.extra['종류'] || '';
+        var cc = yak.extra['cc'] || '';
+        var count = yak.extra['개수'] || '';
+        var detail = kind;
+        if(cc || count) detail += '('+cc+'cc*'+count+')';
+        label += '+' + detail;
+      }
+      out.push(label);
+      continue;
+    }
+    if(t.base === '물'){
+      var vI = (t.extra['부위'] && t.extra['부위'].trim()) ? t.extra['부위'].trim() : '';
+      out.push('물' + (vI ? '('+vI+')' : ''));
+      continue;
+    }
+    if(t.base === 'S'){
+      var vS = (t.extra['부위'] && t.extra['부위'].trim()) ? t.extra['부위'].trim() : '';
+      out.push('S' + (vS ? '('+vS+')' : ''));
+      continue;
+    }
+    if(t.base === '핫팩'){
+      var vH = t.extra['부위'] || '';
+      out.push('HP' + (vH ? '('+vH+')' : ''));
+      continue;
+    }
+    var fields = DV_FORM[t.base];
+    if(fields){
+      var vals = fields.map(function(f){ return t.extra[f]; }).filter(function(v){ return v; });
+      out.push(t.base + (vals.length ? '('+vals.join('/')+')' : ''));
+    } else {
+      out.push(dvTreatmentLabel(t));
+    }
+  }
+  return out.map(function(s,i){ return (i+1)+s; }).join(' ');
+}
+
+function deliverCopy(ns){
+  var name = $(elId(ns,'deliver-name')).value.trim();
+  var region = $(elId(ns,'deliver-region')).value.trim();
+  var summary = dvBuildSummary(ns);
+  var prefix = [name, region].filter(function(v){ return v; }).join(' ');
+  var text = (prefix ? prefix + ' ' : '') + summary;
+  var el = $(elId(ns,'deliver-result'));
+  el.value = text;
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(function(){ showToastDv('복사되었습니다'); }).catch(function(){ dvFallbackCopy(el); });
+  } else {
+    dvFallbackCopy(el);
+  }
+}
+function dvFallbackCopy(el){
+  el.removeAttribute('readonly');
+  el.select(); el.setSelectionRange(0,99999);
+  try{ document.execCommand('copy'); showToastDv('복사되었습니다'); }
+  catch(e){ showToastDv('복사 실패 — 직접 선택 후 복사하세요'); }
+  el.setAttribute('readonly','');
+}
+function showToastDv(msg){
+  if(typeof showToast === 'function'){ showToast(msg); return; }
+  alert(msg);
+}
+
+/* ==================== 초기화 ==================== */
+renderPBody('main');
+renderPBody('ta');
+renderBijeung('main');
+renderBijeung('ta');
+renderTA('ta');
+buildCatUI('skin', 'skin-p-buttons');
+buildCatUI('nc', 'nc-p-buttons');
+buildCatUI('diet', 'diet-p-buttons');
+renderCQResult();
+renderCQ65Result();
+document.querySelector('.cq-card').classList.add('collapsed');
+renderCQ2Result();
+renderCQ2_65Result();
+document.getElementById('cq2-card').classList.add('collapsed');
+dvInit('main');
+dvInit('ta');
+var _dvCard = $('main-deliver-card');
+if(_dvCard) _dvCard.classList.add('collapsed');
+var _taDvCard = $('ta-deliver-card');
+if(_taDvCard) _taDvCard.classList.add('collapsed');
+
+</script>
+</body>
+</html>
