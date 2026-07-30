@@ -323,7 +323,7 @@
 
   .two-col{
     display:grid;
-    grid-template-columns:0.95fr 1.55fr 1.25fr;
+    grid-template-columns:0.85fr 1.95fr 1.15fr;
     gap:16px;
     align-items:start;
   }
@@ -613,6 +613,7 @@
       <div class="card cq-card" id="cq2-card">
         <div class="card-header cq-toggle-header" onclick="toggleCQ2()">
           <span class="step-badge">5</span>청구(업데이트)
+          <span style="font-size:11px;color:var(--muted);font-weight:600;margin-left:8px;">2026-07-29 기준 · 변증은 초진만</span>
           <span class="cq-chevron" id="cq2-chevron"></span>
         </div>
         <div id="cq2-body" class="cq-body">
@@ -2545,27 +2546,27 @@ function renderCQ65Result(){
 /* ==================== 청구(업데이트) — 2026년 수가 (통증 탭 전용) ==================== */
 var CQ2 = {visit:null, treat:null, chuna:null, pt:false};
 var CQ2_ALL = [
-  {visit:'초진',treat:'습부2부위',chuna:'없음',평일:17100,주말:18500,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+변증'},
-  {visit:'초진',treat:'습부1부위',chuna:'없음',평일:15600,주말:17000,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+변증'},
-  {visit:'초진',treat:'습부2부위',chuna:'복잡',평일:52700,주말:54100,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+변증+복잡추나'},
-  {visit:'초진',treat:'습부1부위',chuna:'복잡',평일:51200,주말:52600,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+변증+복잡추나'},
-  {visit:'초진',treat:'건부',chuna:'없음',평일:14400,주말:15800,combo:'이체+전침+온뜸+(관절/척추/투자)+IR+기기구술+변증'},
-  {visit:'초진',treat:'없음',chuna:'없음',평일:12500,주말:14000,combo:'이체+(관절/척추/투자)+IR+기기구술+변증'},
-  {visit:'초진',treat:null,chuna:'없음',isPT:true,평일:8000,주말:9400,combo:'IR+기기구술+변증'},
-  {visit:'초진',treat:null,chuna:'복잡',isPT:true,평일:43500,주말:45000,combo:'IR+기기구술+변증+복잡추나'},
+  {visit:'초진',treat:'습부2부위',chuna:'없음',평일:18600,주말:20000,combo:'변증+IR+이체+투자+(관절/척추)+전침+기기구술+습부2부위'},
+  {visit:'초진',treat:'습부1부위',chuna:'없음',평일:17100,주말:18500,combo:'변증+IR+이체+투자+(관절/척추)+전침+기기구술+습부1부위'},
+  {visit:'초진',treat:'습부2부위',chuna:'복잡',평일:54100,주말:55600,combo:'변증+IR+이체+투자+(관절/척추)+전침+기기구술+습부2부위+복잡추나'},
+  {visit:'초진',treat:'습부1부위',chuna:'복잡',평일:52600,주말:54100,combo:'변증+IR+이체+투자+(관절/척추)+전침+기기구술+습부1부위+복잡추나'},
+  {visit:'초진',treat:'건부',chuna:'없음',평일:15800,주말:17300,combo:'변증+IR+이체+투자+(관절/척추)+전침+기기구술+건부'},
+  {visit:'초진',treat:'없음',chuna:'없음',평일:14000,주말:15400,combo:'변증+IR+이체+투자+(관절/척추)+전침+기기구술'},
+  {visit:'초진',treat:null,chuna:'없음',isPT:true,평일:8000,주말:9400,combo:'변증+IR+기기구술'},
+  {visit:'초진',treat:null,chuna:'복잡',isPT:true,평일:43500,주말:45000,combo:'변증+IR+기기구술+복잡추나'},
 
-  {visit:'재진',treat:'습부2부위',chuna:'없음',평일:14000,주말:14900,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR'},
-  {visit:'재진',treat:'습부1부위',chuna:'없음',평일:12500,주말:13400,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR'},
-  {visit:'재진',treat:'습부2부위',chuna:'복잡',평일:49500,주말:50400,combo:'이체+전침+온뜸+(관절/척추/투자)+습부2부위+IR+기기구술+복잡추나'},
-  {visit:'재진',treat:'습부1부위',chuna:'복잡',평일:48000,주말:48900,combo:'이체+전침+온뜸+(관절/척추/투자)+습부1부위+IR+기기구술+복잡추나'},
-  {visit:'재진',treat:'건부',chuna:'없음',평일:11200,주말:12100,combo:'이체+전침+온뜸+척추+IR'},
-  {visit:'재진',treat:'없음',chuna:'없음',평일:9400,주말:10300,combo:'이체+척추+IR'},
-  {visit:'재진',treat:null,chuna:'없음',isPT:true,평일:6100,주말:7000,combo:'IR+기기구술'},
-  {visit:'재진',treat:null,chuna:'복잡',isPT:true,평일:41600,주말:42500,combo:'IR+기기구술+복잡추나'}
+  {visit:'재진',treat:'습부2부위',chuna:'없음',평일:15400,주말:16300,combo:'IR+이체+투자+(관절/척추)+전침+기기구술+습부2부위'},
+  {visit:'재진',treat:'습부1부위',chuna:'없음',평일:13900,주말:14800,combo:'IR+이체+투자+(관절/척추)+전침+기기구술+습부1부위'},
+  {visit:'재진',treat:'습부2부위',chuna:'복잡',평일:51000,주말:51900,combo:'IR+이체+투자+(관절/척추)+전침+기기구술+습부2부위+복잡추나'},
+  {visit:'재진',treat:'습부1부위',chuna:'복잡',평일:49500,주말:50400,combo:'IR+이체+투자+(관절/척추)+전침+기기구술+습부1부위+복잡추나'},
+  {visit:'재진',treat:'건부',chuna:'없음',평일:12700,주말:13600,combo:'IR+이체+투자+(관절/척추)+전침+기기구술+건부'},
+  {visit:'재진',treat:'없음',chuna:'없음',평일:10900,주말:11800,combo:'IR+이체+투자+(관절/척추)+전침+기기구술'},
+  {visit:'재진',treat:null,chuna:'없음',isPT:true,평일:4800,주말:5700,combo:'IR+기기구술'},
+  {visit:'재진',treat:null,chuna:'복잡',isPT:true,평일:40400,주말:41300,combo:'IR+기기구술+복잡추나'}
 ];
 var CQ2_65_DATA = {
-  '초진': {평일:9000, 주말:10500, combo:'경혈+자락+(관절/척추/투자)'},
-  '재진': {평일:1900, 주말:4500, combo:'경혈+자락+(관절/척추/투자)'}
+  '초진': {평일:9000, 주말:10500, combo:'자락+(관절/척추/투자)'},
+  '재진': {평일:1900, 주말:4500, combo:'자락+(관절/척추/투자)'}
 };
 var CQ2_65SEL = null;
 
