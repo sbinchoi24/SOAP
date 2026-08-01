@@ -2364,7 +2364,7 @@ function combineChart(ns){
   }
 
   const p = buildPText(ns);
-  let full = hasSoa ? `${soa}\n\n${p}\n\n${chartHeader()}` : `${p}\n\n${chartHeader()}`;
+  let full = hasSoa ? `${chartHeader()}\n\n${soa}\n\n${p}` : `${chartHeader()}\n\n${p}`;
   full = uppercaseEnglish(full);
   const out = $(elId(ns,'fullOutput'));
   out.value = full;
