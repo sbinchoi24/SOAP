@@ -928,6 +928,13 @@ function autoGrow(el){
 function uppercaseEnglish(text){
   return String(text || '');
 }
+/* [수정] 줄 단위로 정확히 분리 — 본문에 'O)' 'A)' 문자열이 섞여도 안전 */
+function splitAtLine(text, re){
+  const lines = String(text || '').split('\n');
+  const idx = lines.findIndex(function(l){ return re.test(l); });
+  if(idx < 0) return [lines.join('\n'), ''];
+  return [lines.slice(0, idx).join('\n'), lines.slice(idx + 1).join('\n')];
+}
 
 /* ==================== 페이지 전환 ==================== */
 function switchPage(name, btn){
@@ -1373,7 +1380,7 @@ function normalizeAIResponse(rawText, ns){
     ? lines.slice(ccIndex + 1, osIndex).filter(line => line.trim().startsWith('■')).map(line => line.trim())
     : [];
 
-  // ========== NEW: S/H, P/H, F/H를 O/S 블록 직후로 이동 ==========
+  // ========== S/H, P/H, F/H를 O/S 블록 직후로 이동 ==========
   const aIndex = lines.findIndex(line => line.trim() === 'A)');
   const oIndex = lines.findIndex((line, i) => line.trim() === 'O)' && (aIndex < 0 || i < aIndex));
 
@@ -1394,7 +1401,7 @@ function normalizeAIResponse(rawText, ns){
   const shIndex = lines.findIndex((line, i) => i > osBlockEnd && /^S\/H\s*:/.test(line.trim()));
   const phIndex = lines.findIndex((line, i) => i > osBlockEnd && /^P\/H\s*:/.test(line.trim()));
   const fhIndex = lines.findIndex((line, i) => i > osBlockEnd && /^F\/H\s*:/.test(line.trim()));
-  
+
   const shLine = shIndex >= 0 ? lines[shIndex] : 'S/H :';
   const phBlock = [];
   if(phIndex >= 0){
@@ -1412,13 +1419,13 @@ function normalizeAIResponse(rawText, ns){
   }
   const fhLine = fhIndex >= 0 ? lines[fhIndex] : 'F/H :';
 
-  // O/S 블록 이후에 삽입하기 위해 기존 S/H, P/H, F/H 제거
-  if(shIndex >= 0) lines.splice(shIndex, 1);
-  if(phIndex >= 0){
-    const phLineCount = phBlock.length;
-    lines.splice(phIndex, phLineCount);
-  }
-  if(fhIndex >= 0) lines.splice(fhIndex, 1);
+  /* [수정] 기존 S/H, P/H, F/H 제거 — 반드시 뒤에서부터 지워야 인덱스가 밀리지 않음.
+     앞에서부터 지우면 P/H·F/H 위치가 당겨져 엉뚱한 줄이 삭제되고 원본이 남아 중복 출력됨 */
+  const removals = [];
+  if(shIndex >= 0) removals.push([shIndex, 1]);
+  if(phIndex >= 0) removals.push([phIndex, phBlock.length]);
+  if(fhIndex >= 0) removals.push([fhIndex, 1]);
+  removals.sort(function(a, b){ return b[0] - a[0]; }).forEach(function(r){ lines.splice(r[0], r[1]); });
 
   // 인덱스 재계산 (삭제 후 변경됨)
   const newOsBlockEnd = lines.findIndex((line, i) => i > osIndex && /^-\s*(검사|치료)\s*:/.test(line.trim()));
@@ -1621,13 +1628,17 @@ async function runGenerate(ns){
     const rawText = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
     if(ns === 'ta') syncTASymptomsFromAI(rawText);
     const text = normalizeAIResponse(rawText, ns);
-    let sMatch = text.split('O)')[0].trim();
+
+    /* [수정] 섹션 분리를 줄 단위로 수행하고, A)는 한 줄만 취함.
+       모델이 [SCRIPT] 마커를 누락하거나 변형해도 대화 전문이 A)로 새지 않음 */
+    const oSplit = splitAtLine(text, /^\s*O\)\s*$/);
+    let sMatch = oSplit[0].trim();
     sMatch = sMatch.replace(/([^\n])\nS\/H :/, '$1\n\nS/H :');
-    let rest = text.split('O)')[1] || '';
-    const oMatch = rest.split('A)')[0].trim();
-    rest = rest.split('A)')[1] || '';
-    let aMatch = rest.split('[SCRIPT]')[0].trim();
-    const scriptMatch = (rest.split('[SCRIPT]')[1] || '').trim();
+    const aSplit = splitAtLine(oSplit[1], /^\s*A\)\s*$/);
+    const oMatch = aSplit[0].trim();
+    const scSplit = splitAtLine(aSplit[1], /^\s*\**\s*\[?\s*SCRIPT\s*\]?\s*\**\s*$/i);
+    let aMatch = (scSplit[0].split('\n').map(function(s){ return s.trim(); }).filter(Boolean)[0]) || '';
+    const scriptMatch = scSplit[1].trim();
 
     aMatch = aMatch ? `${aMatch}\n${FIXED_A_EXPLANATION}` : FIXED_A_EXPLANATION;
 
@@ -2140,8 +2151,9 @@ function buildPText(ns){
     return null;
   }
   let acuPointsStr = '';
+  /* [수정] 경혈2인데 부위를 하나만 고른 경우 경혈이 통째로 빠지던 문제 — 경혈1로 폴백 */
   if(st.acuSt.경혈==='경혈2' && m0 && m1){ acuPointsStr = `${m0.경혈} ${m1.경혈}`; parts.push(`경혈2부위(${acuPointsStr} 등 ${acuShortName(a0)} ${acuShortName(a1)})`); }
-  else if(st.acuSt.경혈==='경혈1' && m0){ acuPointsStr = m0.경혈; parts.push(`경혈1부위(${acuPointsStr} 등 ${acuShortName(a0)})`); }
+  else if(st.acuSt.경혈 && m0){ acuPointsStr = m0.경혈; parts.push(`경혈1부위(${acuPointsStr} 등 ${acuShortName(a0)})`); }
   if(st.acuSt.투자){ const p=pickArea('투자'); if(p) parts.push(`투자(${p.m.투자.join(' ')})`); }
   if(st.acuSt.관절){ const p=pickArea('관절'); if(p) parts.push(`관절(${p.m.관절})`); }
   if(st.acuSt.척추){ const p=pickArea('척추'); if(p) parts.push(`척추(${p.m.척추})`); }
@@ -2157,7 +2169,8 @@ function buildPText(ns){
   if(st.acuSt.ict){ const p=pickArea('텐즈'); if(p) parts.push(`TENS(${p.m.텐즈} 등 ${acuShortName(p.area)})`); }
   if(st.acuSt.ssp){ const p=pickArea('텐즈'); if(p) parts.push(`SSP(${p.m.텐즈} 등 ${acuShortName(p.area)})`); }
 
-  let result = 'P) \n' + parts.join(', ') + ' * 등, 어깨 부위는 0.3cm 이하로 천자함';
+  /* [수정] 선택 항목이 하나도 없으면 꼬리 문구만 남던 문제 방지 */
+  let result = 'P) \n' + (parts.length ? parts.join(', ') + ' * 등, 어깨 부위는 0.3cm 이하로 천자함' : '');
 
   if(st.pYakchim.active){
     const main = (st.pYakchim.kind||'') + (st.pYakchim.cc ? ' '+st.pYakchim.cc : '') + (st.pYakchim.gae ? '*'+st.pYakchim.gae : '');
@@ -2290,10 +2303,11 @@ function normalizeSectionBreaks(text){
   }
   return out.join('\n');
 }
+/* [수정] 날짜가 위, 구분선이 아래로 */
 function chartHeader(){
   const now = new Date();
   const md = (now.getMonth()+1) + '/' + now.getDate();
-  return '----------------------------------------------------------------------\n* ' + md;
+  return '* ' + md + '\n----------------------------------------------------------------------';
 }
 function combineChart(ns){
   let soa = $(elId(ns,'soaOutput')).value;
