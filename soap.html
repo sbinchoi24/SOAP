@@ -1270,7 +1270,7 @@ const FIXED_A_EXPLANATION = '- 초기 통증 증가 가능성 및 경과에 따�
 /* P차트만 버튼에 사용하는 빈 S/O/A 뼈대 (직접 입력용) */
 const SOA_SKELETON = `S)
 C/C
-■  (NRS #)
+■  (NRS 5)
 -
 
 O/S :
@@ -1627,7 +1627,7 @@ async function runGenerate(ns){
     }
     const rawText = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join('') || '';
     if(ns === 'ta') syncTASymptomsFromAI(rawText);
-    const text = normalizeAIResponse(rawText, ns);
+    const text = normalizeAIResponse(rawText, ns).replace(/NRS\s*#/g, 'NRS 5');
 
     /* [수정] 섹션 분리를 줄 단위로 수행하고, A)는 한 줄만 취함.
        모델이 [SCRIPT] 마커를 누락하거나 변형해도 대화 전문이 A)로 새지 않음 */
